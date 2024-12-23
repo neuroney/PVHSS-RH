@@ -1,0 +1,163 @@
+#include "VHSSElg.h"
+
+void Elgamal_Gen(Elgamal_PK &pk, Elgamal_SK &d, int skLen)
+{
+    ZZ p, q;
+
+    // GenGermainPrime(p, 1536); // safe prime
+    p = conv<ZZ>("2410312426921032588580116606028314112912093247945688951359675039065257391591803200669085024107346049663448766280888004787862416978794958324969612987890774651455213339381625224770782077917681499676845543137387820057597345857904599109461387122099507964997815641342300677629473355281617428411794163967785870370368969109221591943054232011562758450080579587850900993714892283476646631181515063804873375182260506246992837898705971012525843324401232986857004760339321639");
+    // GenGermainPrime(q, 1536);
+    q = conv<ZZ>("2410312426921032588580116606028314112912093247945688951359675039065257391591803200669085024107346049663448766280888004787862416978794958324969612987890774651455213339381625224770782077917681499676845543137387820057597345857904599109461387122099507964997815641342300677629473355281617428411794163967785870370368969109221591943054232011562758450080579587850900993714892283476646631181515063804873375182260506246992837898705971012525843324401232986857004760339319223");
+
+    mul(pk.N, p, q);        // N = p * q
+    mul(pk.N2, pk.N, pk.N); // N^2
+
+    RandomBnd(pk.g, pk.N2);
+    while (Jacobi(pk.g, pk.N) != 1)
+    {
+        RandomBnd(pk.g, pk.N2);
+    }
+
+    add(pk.f, pk.N, 1);
+
+    RandomBits(d, skLen);
+    PowerMod(pk.h, pk.g, d, pk.N2);
+}
+
+void Elgamal_Enc(Elgamal_CT &ct, const Elgamal_PK &pk, const ZZ &x)
+{
+    ZZ r;
+    RandomBnd(r, pk.N);
+
+    PowerMod(ct[0], pk.g, r, pk.N2);
+    PowerMod(ct[1], pk.h, r, pk.N2);
+    MulMod(ct[1], ct[1], 1 + pk.N * x, pk.N2);
+}
+
+void Elgamal_skEnc(Elgamal_CT &ct, const Elgamal_PK &pk, const ZZ &x)
+{
+    ZZ r;
+    RandomBnd(r, pk.N);
+
+    PowerMod(ct[0], pk.g, r, pk.N2);
+    MulMod(ct[0], ct[0], 1 - pk.N * x, pk.N2);
+    PowerMod(ct[1], pk.h, r, pk.N2);
+}
+
+void Elgamal_Dec(ZZ &x, const Elgamal_PK &pk, const Elgamal_SK &sk, const Elgamal_CT &ct)
+{
+    ZZ temp;
+    PowerMod(temp, ct[0], -sk, pk.N2);
+    MulMod(temp, ct[1], temp, pk.N2);
+
+    sub(temp, temp, 1);
+    div(x, temp, pk.N);
+}
+
+void HSS_Gen(HSS_PK &pk, HSS_EK &ek0, HSS_EK &ek1, int skLen, int vkLen)
+{
+    Elgamal_SK s;
+    Elgamal_Gen(pk, s, skLen);
+
+    ZZ VK;
+    RandomBits(VK, vkLen);
+
+    RandomBits(ek0[0], skLen);
+    add(ek1[0], ek0[0], s);
+
+    RandomBits(ek0[1], vkLen);
+    add(ek1[1], ek0[1], VK);
+
+    RandomBits(ek0[2], vkLen * skLen);
+    add(ek1[2], ek0[2], (s * VK) % pk.N);
+}
+
+
+void HSS_Input(HSS_CT &I, const HSS_PK &pk, const ZZ &x)
+{
+    Elgamal_Enc(I[0], pk, x);
+    Elgamal_skEnc(I[1], pk, x);
+}
+
+void HSS_ConvertInput(HSS_MV &Mx, int idx, const HSS_PK &pk, const HSS_EK &ek, const HSS_CT &Ix, int &prf_key)
+{
+    HSS_MV M1;
+    M1[0] = idx;
+    M1[1] = ek[0];
+    M1[2] = ek[1];
+    M1[3] = ek[2];
+    HSS_Mul(Mx, idx, pk, Ix, M1, prf_key);
+}
+
+void HSS_Mul(HSS_MV &Mz, int idx, const HSS_PK &pk, const HSS_CT &Ix, const HSS_MV &My, int &prf_key)
+{
+    ZZ temp1, temp2;
+    PowerMod(temp1, Ix[0][1], My[0], pk.N2);
+    PowerMod(temp2, Ix[0][0], -My[1], pk.N2);
+    MulMod(Mz[0], temp1, temp2, pk.N2);
+    HSS_DDLog(Mz[0], pk, Mz[0]);
+    Mz[0] = PRF_ZZ(prf_key++, pk.N) + Mz[0];
+
+    PowerMod(temp1, Ix[1][1], My[0], pk.N2);
+    PowerMod(temp2, Ix[1][0], -My[1], pk.N2);
+    MulMod(Mz[1], temp1, temp2, pk.N2);
+    HSS_DDLog(Mz[1], pk, Mz[1]);
+    Mz[1] = PRF_ZZ(prf_key++, pk.N) + Mz[1];
+
+    PowerMod(temp1, Ix[0][1], My[2], pk.N2);
+    PowerMod(temp2, Ix[0][0], -My[3], pk.N2);
+    MulMod(Mz[2], temp1, temp2, pk.N2);
+    HSS_DDLog(Mz[2], pk, Mz[2]);
+    Mz[2] = PRF_ZZ(prf_key++, pk.N) + Mz[2];
+
+    PowerMod(temp1, Ix[1][1], My[2], pk.N2);
+    PowerMod(temp2, Ix[1][0], -My[3], pk.N2);
+    MulMod(Mz[3], temp1, temp2, pk.N2);
+    HSS_DDLog(Mz[3], pk, Mz[3]);
+    Mz[3] = PRF_ZZ(prf_key++, pk.N) + Mz[3];
+}
+
+void HSS_DDLog(ZZ &z, const HSS_PK &pk, const ZZ &g)
+{
+    ZZ h1, h, temp1;
+    DivRem(h1, h, g, pk.N); // h = g % N; h1 = g / N
+    InvMod(temp1, h, pk.N);
+    MulMod(z, h1, temp1, pk.N);
+}
+
+void HSS_AddMemory(HSS_MV &Mz, const HSS_PK &pk, const HSS_MV &Mx, const HSS_MV &My)
+{
+    add(Mz[0], Mx[0], My[0]);
+    add(Mz[1], Mx[1], My[1]);
+    add(Mz[2], Mx[2], My[2]);
+    add(Mz[3], Mx[3], My[3]);
+}
+
+void HSS_Evaluate(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const HSS_PK &pk, const HSS_EK &ekb, int &prf_key, vector<vector<int>> F_TEST)
+{
+    HSS_MV M1, Monomial, tmp;
+    M1[0] = b;
+    M1[1] = ekb[0];
+    M1[2] = ekb[1];
+    M1[3] = ekb[2];
+
+    y_b_res[0] = 0;
+    y_b_res[1] = 0;
+    y_b_res[2] = 0;
+    y_b_res[3] = 0;
+
+    int i, j, k;
+    for (i = 0; i < F_TEST.size(); ++i)
+    {
+        copy(begin(M1), end(M1), begin(Monomial));
+        for (j = 0; j < Ix.size(); ++j)
+        {
+            for (k = 0; k < F_TEST[i][j]; ++k)
+            {
+                HSS_Mul(tmp, b, pk, Ix[j], Monomial, prf_key);
+                copy(begin(tmp), end(tmp), begin(Monomial));
+            }
+        }
+        HSS_AddMemory(y_b_res, pk, y_b_res, Monomial);
+    }
+}
