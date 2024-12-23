@@ -32,5 +32,5 @@ To install the project, follow these steps:
     ```
 4. To run an example:
     ```bash
-    cd build/PVHSS
+    build/PVHSS
     ```
