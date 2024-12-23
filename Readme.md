@@ -8,12 +8,6 @@ with result hiding property in the PVHSS paper.
 
 **What this codebase is not**: it is not for production use; it is not extensively tested.
 
-## Table of Contents
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## Installation
 To install the project, follow these steps:
 
