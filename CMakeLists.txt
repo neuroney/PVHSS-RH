@@ -1,13 +1,23 @@
 cmake_minimum_required(VERSION 3.10)
 project(PVHSS VERSION 0.1.0)
 
-include(CTest)
-enable_testing()
+set(PVHSS_ROOT_DIR $ENV{HOME})
+set(PVHSS_INCLUDE_DIR "${PVHSS_ROOT_DIR}/include")
+set(PVHSS_LIBRARY_DIR "${PVHSS_ROOT_DIR}/lib")
 
-include_directories($ENV{HOME}/include)
-link_directories($ENV{HOME}/lib)
+include_directories(
+    ${PVHSS_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/include
+)
 
-add_executable(PVHSS main.cpp timetester.cpp PVHSS.cpp CAPSNARK.cpp VHSSElg.cpp helper.cpp)
+link_directories(${PVHSS_LIBRARY_DIR})
+
+file(GLOB SOURCES 
+    "test/main.cpp"
+    "src/*.cpp"
+)
+
+add_executable(PVHSS ${SOURCES})
 target_link_libraries(PVHSS ntl m gmp pthread relic)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
