@@ -1,12 +1,20 @@
 cmake_minimum_required(VERSION 3.10)
 project(PVHSS VERSION 0.1.0)
 
-set(PVHSS_ROOT_DIR $ENV{HOME})
-set(PVHSS_INCLUDE_DIR "${PVHSS_ROOT_DIR}/include")
-set(PVHSS_LIBRARY_DIR "${PVHSS_ROOT_DIR}/lib")
+set(CMAKE_CXX_STANDARD 14)
+
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+find_package(NTL REQUIRED)
+find_package(GMP REQUIRED)
+find_package(RLC REQUIRED)
+
+include_directories(${NTL_INCLUDE_PATHS} ${GMP_INCLUDE_PATHS})
 
 include_directories(
-    ${PVHSS_INCLUDE_DIR}
+    ${NTL_INCLUDE_PATHS}
+    ${GMP_INCLUDE_PATHS}
+    ${RLC_INCLUDE_PATHS}
     ${CMAKE_SOURCE_DIR}/include
 )
 
@@ -18,8 +26,5 @@ file(GLOB SOURCES
 )
 
 add_executable(PVHSS ${SOURCES})
-target_link_libraries(PVHSS ntl m gmp pthread relic)
-
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-include(CPack)
+target_link_libraries(PVHSS ${NTL_LIBRARIES}
+${GMP_LIBRARIES} ${RLC_LIBRARIES} m pthread )
