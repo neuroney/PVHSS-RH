@@ -1,6 +1,6 @@
-#include "CAPSNARK.h"
+#include "Ped.h"
 
-void Biv_ComGen(CK &ck)
+void Ped_ComGen(CK &ck)
 {
     core_init();
     ep_curve_init();
@@ -25,7 +25,7 @@ void Biv_ComGen(CK &ck)
     ep_mul_gen(ck.h, z);
 }
 
-void Biv_Com(ep_t C, bn_t rho, const CK &ck, const ZZ &x_ZZ)
+void Ped_Com(ep_t C, bn_t rho, const CK &ck, const ZZ &x_ZZ)
 {
     bn_null(rho);
     bn_new(rho);
@@ -48,7 +48,7 @@ void Biv_Com(ep_t C, bn_t rho, const CK &ck, const ZZ &x_ZZ)
     ep_add(C, t1, t2);   // c= h^r g1^x
 }
 
-bool Biv_OpenVer(const CK &ck, const ep_t C, const ZZ &x_ZZ, bn_t rho)
+bool Ped_OpenVer(const CK &ck, const ep_t C, const ZZ &x_ZZ, bn_t rho)
 {
     bn_t x;
     bn_new(x);
@@ -63,24 +63,22 @@ bool Biv_OpenVer(const CK &ck, const ep_t C, const ZZ &x_ZZ, bn_t rho)
     ep_mul(t2, ck.g1, x);
     ep_add(cc, t1, t2);
 
-    return (ep_cmp(C, cc) == RLC_EQ); //&& Biv_ComVer(C, ck));
+    return (ep_cmp(C, cc) == RLC_EQ); //&& Ped_ComVer(C, ck));
 }
 
-void BivPE_Gen(CK &ck)
+void Ped_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const CK &ck, int &prf_key)
 {
-    Biv_ComGen(ck);
-}
+    bn_null(pi.y);
+    bn_new(pi.y);
+    ZZ2bn(pi.y, yb % ck.g1_order_ZZ);
 
-void BivPE_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const CK &ck, int &prf_key)
-{
     bn_t delta;
-    Biv_Com(pi.C, delta, ck, yb);
-    Biv_Com(pi.D, pi.upsilon, ck, Yb);
+    Ped_Com(pi.D, delta, ck, Yb);
 
     ep_t h_delta;
     ep_new(h_delta);
     ep_mul(h_delta, ck.h, delta);
 
     fp12_new(pi.e);
-    pp_map_oatep_k12(pi.e, h_delta, ck.g2_A);
+    pp_map_oatep_k12(pi.e, h_delta, ck.g2);
 }
