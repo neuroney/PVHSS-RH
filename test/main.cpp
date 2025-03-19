@@ -1,6 +1,5 @@
 #include "timetester.h"
 
-
 int main(int, char **)
 { 
     int degree_f = 16;
@@ -8,8 +7,9 @@ int main(int, char **)
     int cyctimes = 5;
     for (int deg = 1; deg < degree_f; deg++)
     {   
-        PVHSS_TIME_TEST(msg_num, deg, cyctimes);
+        //PVHSS_TIME_TEST(msg_num, deg, cyctimes);
     }
+    bgn();
     
     return 0;
 }
