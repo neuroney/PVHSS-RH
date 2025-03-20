@@ -32,7 +32,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
         param00.msg_bits = 32;
         param00.degree_f = degree_f;
         param00.msg_num = msg_num;
-        Setup(param00, ek000, ek100);
+        Setup(param00, ek000, ek100, sk000);
         KeyGen(param00, sk000);
         Time[i] = GetTime() - time;
     }
@@ -41,7 +41,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     cout << "Setup algorithm time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
     std::cout << "-------------------------------------------------------" << std::endl;
     // Key Generation Phase
-    Setup(param, ek0, ek1);
+    Setup(param, ek0, ek1, sk);
     KeyGen(param, sk);
 
     // Input Generation Phase
@@ -95,7 +95,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();
-        acc = Verify(pi0, pi1, param.ck);
+        acc = Verify(pi0, pi1, param);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
@@ -112,7 +112,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     // }
 
     // Decryption Phase
-    bn_t y;
+    dig_t y;
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();

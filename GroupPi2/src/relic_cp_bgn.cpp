@@ -70,6 +70,48 @@
      return result;
  }
  
+ int cp_bgn_enc3(g1_t out[2], bn_t r, bn_t in, const bgn_t pub) {
+    bn_t n;
+    g1_t t;
+    int result = RLC_OK;
+
+    bn_null(n);
+    bn_null(r);
+    g1_null(t);
+
+    RLC_TRY {
+        bn_new(n);
+        bn_new(r);
+        g1_new(t);
+
+        pc_get_ord(n);
+        bn_rand_mod(r, n);
+
+        /* Compute c0 = (ym + r)G. */
+        g1_mul(out[0], pub->gy, in);
+
+        g1_mul_gen(t, r);
+        g1_add(out[0], out[0], t);
+        g1_norm(out[0], out[0]);
+
+        /* Compute c1 = (zm + xr)G. */
+        g1_mul(out[1], pub->gz, in);
+        g1_mul(t, pub->gx, r);
+        g1_add(out[1], out[1], t);
+        g1_norm(out[1], out[1]);
+    }
+    RLC_CATCH_ANY {
+        result = RLC_ERR;
+    }
+    RLC_FINALLY {
+        bn_free(n);
+        bn_free(r);
+        g1_free(t);
+    }
+
+    return result;
+}
+
  int cp_bgn_enc1(g1_t out[2], const dig_t in, const bgn_t pub) {
      bn_t r, n;
      g1_t t;

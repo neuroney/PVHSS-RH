@@ -46,8 +46,8 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const PVHSS_EK &ekb, v
 
 bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
 {
-    fp12_t fp12tmp, lefthand;
-    fp12_new(fp12tmp);
+    fp12_t righthand, lefthand;
+    fp12_new(righthand);
     fp12_new(lefthand);
 
     // Compute e(d_1/d_0, g)
@@ -55,21 +55,16 @@ bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
     ep_new(eptmp);
     ep_sub(eptmp, pi1.D, pi0.D);
     pp_map_oatep_k12(lefthand, eptmp, ck.g2);
-    
-    // Compute righthand e_1 /e_0
-    fp12_t righthand;
-    fp12_new(righthand);
-    fp12_inv(righthand, pi0.e);
-    fp12_mul(righthand, righthand, pi1.e);
+    fp12_mul(lefthand, lefthand, pi0.e);
 
     // Compute e(g, g)^{Ay}
     bn_t y_bn;
     bn_new(y_bn);
     bn_sub(y_bn,pi1.y,pi0.y);
     ep_mul(eptmp, ck.g1, y_bn);
-    pp_map_oatep_k12(fp12tmp, eptmp, ck.g2_A);
+    pp_map_oatep_k12(righthand, eptmp, ck.g2_A);
+    fp12_mul(righthand, righthand, pi1.e);
     
-    fp12_mul(righthand, righthand, fp12tmp);
     // Compare lefthand and righthand
     return (fp12_cmp(lefthand, righthand) == RLC_EQ);
 }
