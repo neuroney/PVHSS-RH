@@ -20,6 +20,7 @@ typedef struct
     int degree_f;
     int msg_num;
     HSS_CT pk_f; 
+    ZZ n_out;
 } PVHSSPara;
 
 void Setup(PVHSSPara &param, PVHSS_EK &ek0, PVHSS_EK &ek1, PVHSS_SK &sk);

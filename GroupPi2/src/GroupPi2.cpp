@@ -34,7 +34,6 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const PVHSS_EK &ekb, v
     int prf_key = 0;
     HSS_MV y_b_res;
     HSS_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
-
     Prove(proof, b, y_b_res[0], y_b_res[2], param);
 }
 
@@ -123,6 +122,7 @@ void PVHSS_ACC_TEST(int msg_num, int degree_f)
     param.msg_bits = 32;
     param.degree_f = degree_f;
     param.msg_num = msg_num;
+    ZZ n_out = ZZ(10);
 
     double time = GetTime();
     Setup(param, ek0, ek1, sk);

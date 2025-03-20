@@ -14,6 +14,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     param.msg_bits = 32;
     param.degree_f = degree_f;
     param.msg_num = msg_num;
+    ZZ n_out = ZZ(10);
 
     PROOF pi0, pi1;
 

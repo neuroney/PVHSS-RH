@@ -1,21 +1,28 @@
 # PVHSS-RH
 
 ## Project Overview
-This codebase is part of the PVHSS-RH paper.
+This repository contains the implementation for Publicly Verifiable Homomorphic Secret Sharing with Result Hiding (PVHSS-RH) as described in our paper. 
 
-**What this codebase includes**: example and benchmark implementations in C++11 for the publicly verifiable homomorphic secret sharing scheme 
-with result hiding property in the PVHSS paper.
 
-**What this codebase is not**: it is not for production use; it is not extensively tested.
+### Features
+- C++11 implementation of PVHSS-RH
+- Benchmarking utilities
+
+> **Note:** This codebase is for academic and research purposes only. It is not intended for production use and has not been extensively tested for security vulnerabilities.
+
+## Prerequisites
+The PVHSS-RH implementation requires the following libraries:
+- [NTL 11.5.1](https://libntl.org/) - Number Theory Library
+- [RELIC 0.7.0](https://github.com/relic-toolkit/relic) - Pairing toolkit
+- [GMP 6.3.0](https://gmplib.org/) - GNU Multiple Precision Arithmetic Library
 
 ## Installation
-To install the project, follow these steps:
 
 1. Download the repository and navigate to the project directory:
     ```bash
     cd PVHSS-RH
     ```
-2. Install the dependencies [NTL](https://libntl.org/doc/tour-unix.html) and [relic](https://github.com/relic-toolkit/relic/wiki/Building) required by PVHSS-RT. On several Ubuntu systems this can be done directly through links above.
+2. Install the dependencies [GMP](https://gmplib.org/), [NTL](https://libntl.org/doc/tour-unix.html) and [RELIC](https://github.com/relic-toolkit/relic/wiki/Building) required by PVHSS-RH. On several Ubuntu systems this can be done directly through links above.
 
 3. Build library and executables:
     ```bash
@@ -26,5 +33,12 @@ To install the project, follow these steps:
     ```
 4. To run an example:
     ```bash
-    build/PVHSS
+    ./GroupPi1/GroupPi1
+    ./GroupPi2/GroupPi2
     ```
+
+## Project Structure
+- `common/` - Shared utilities and functions
+- `GroupPi1/` - Implementation for Group-based $\Pi_1$
+- `GroupPi2/` - Implementation for Group-based $\Pi_2$
+- `cmake/` - CMake configuration files
