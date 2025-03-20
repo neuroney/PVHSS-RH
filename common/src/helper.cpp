@@ -231,3 +231,70 @@ ZZ Combine(int n, int m)
         return ZZ(1);
     return Combine(n, m - 1) * ZZ(n - m + 1) / ZZ(m);
 }
+
+
+void Random_ZZ_pX(ZZ_pX &a, int N, int q_bit) {
+    ZZ_p coeff;
+    for (int i = 0; i < N; i++) {
+        conv(coeff, RandomBits_ZZ(q_bit));
+        SetCoeff(a, i, coeff);
+    }
+}
+
+void RLWESecretKey(ZZ_pX &sk, int N, int hsk) {
+    int interval = 0;
+    interval = N / hsk;
+    int index = rand() % interval;
+    for (int i = 0; i < hsk; i++) {
+        SetCoeff(sk, index, 1);
+        index = index + rand() % interval;
+    }
+
+}
+
+void GaussRand(ZZ_pX &e, int N) {
+    double res_standard;
+    int deviation = 8;
+    int res;
+    for (int i = 0; i < N; i++) {
+        res_standard = sqrt(-2.0 * log(rand() / (RAND_MAX + 1.0))) * sin(2.0 * PI * rand() / (RAND_MAX + 1.0));
+        res = res_standard * deviation;
+        SetCoeff(e, i, res);
+    }
+}
+
+void ZZ_pX_ScaleMul_ZZ(ZZ_pX &out, ZZ_pX in1,ZZ in2)
+{
+    ZZ_pX a;
+    conv(a,in2);
+    out=in1*a;
+}
+
+// 计算 P_d(x1, x2, x3, x4, x5) 的动态规划函数
+ZZ P_d(const vec_ZZ& x, int degree_f) {
+    int k = x.length(); // 变量个数
+
+    // 定义 dp[k+1][d+1]，初始化为 0
+    vector<vec_ZZ> dp(k + 1, vector<long long>(degree_f + 1, 0));
+
+    // 基本情况：dp[0][0] = 1
+    dp[0][0] = 1;
+
+    // 动态规划填表
+    for (int i = 1; i <= k; i++) { // 依次加入 x1, x2, ..., x5
+        for (int s = 0; s <= degree_f; s++) { // 目标和从 0 到 d
+            dp[i][s] = 0;
+            for (int j = 0; j <= s; j++) { // 变量 x[i-1] 取 j 次幂
+                dp[i][s] += pow(x[i - 1], j) * dp[i - 1][s - j];
+            }
+        }
+    }
+
+    // 计算最终结果 P_d(x1, ..., x5)
+    long long result = 0;
+    for (int s = 1; s <= degree_f; s++) {
+        result += dp[k][s];  // 累加 dp[k][1] 到 dp[k][d]
+    }
+
+    return result;
+}

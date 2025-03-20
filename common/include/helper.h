@@ -8,6 +8,7 @@
 #include <ctime>
 #include <NTL/ZZ.h>
 #include <NTL/ZZX.h>
+#include <NTL/ZZ_pX.h>
 #include <NTL/BasicThreadPool.h> 
 #include <gmp.h>
 extern "C"
@@ -19,6 +20,7 @@ using namespace std;
 using namespace NTL;
 
 const int NUMTHREADS = 8;
+#define PI 3.141592654
 
 /**
  * Converts an unsigned integer to an array of 4 unsigned bytes.
@@ -78,3 +80,20 @@ void partitions(int &cnt, vector<vector<int>> &Res, int sum, int k, vector<int> 
 void GENERATE_RANDOM_FUNCTION(int msg_num, int degree_f);
 
 ZZ Combine(int n, int m);
+
+
+void Random_ZZ_pX(ZZ_pX &a, int N, int q_bit);
+void RLWESecretKey(ZZ_pX &sk, int N, int hsk);
+
+void GaussRand(ZZ_pX &e, int N);
+
+void ZZ_pX_ScaleMul_ZZ(ZZ_pX &out, ZZ_pX in1,ZZ in2);
+
+#include <iostream>
+#include <vector>
+#include <cmath>
+
+using namespace std;
+
+// 计算 P_d(x1, x2, x3, x4, x5) 的动态规划函数
+long long P_d(int x1, int x2, int x3, int x4, int x5, int d);

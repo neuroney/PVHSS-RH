@@ -18,3 +18,6 @@ include_directories(
 add_subdirectory(common)
 add_subdirectory(GroupPi1)
 add_subdirectory(GroupPi2)
+add_subdirectory(GroupHSS)
+add_subdirectory(RLWEHSS)
+
