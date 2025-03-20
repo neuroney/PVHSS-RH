@@ -272,29 +272,74 @@ void ZZ_pX_ScaleMul_ZZ(ZZ_pX &out, ZZ_pX in1,ZZ in2)
 
 // 计算 P_d(x1, x2, x3, x4, x5) 的动态规划函数
 ZZ P_d(const vec_ZZ& x, int degree_f) {
+    double start = GetTime();
     int k = x.length(); // 变量个数
 
     // 定义 dp[k+1][d+1]，初始化为 0
-    vector<vec_ZZ> dp(k + 1, vector<long long>(degree_f + 1, 0));
-
-    // 基本情况：dp[0][0] = 1
-    dp[0][0] = 1;
-
+    Mat<ZZ> dp;
+    dp.SetDims(k + 1, degree_f + 1);
+    dp[0][0] = ZZ(1); 
+    
+    ZZ tmp;
     // 动态规划填表
     for (int i = 1; i <= k; i++) { // 依次加入 x1, x2, ..., x5
         for (int s = 0; s <= degree_f; s++) { // 目标和从 0 到 d
-            dp[i][s] = 0;
-            for (int j = 0; j <= s; j++) { // 变量 x[i-1] 取 j 次幂
-                dp[i][s] += pow(x[i - 1], j) * dp[i - 1][s - j];
+            dp[i][s] = ZZ(0);
+            for (int j = 0; j <= s; j++) { 
+                power(tmp, x[i - 1], j); 
+                mul(tmp, tmp, dp[i - 1][s - j]); 
+                add(dp[i][s], dp[i][s], tmp); 
             }
         }
     }
 
     // 计算最终结果 P_d(x1, ..., x5)
-    long long result = 0;
+    ZZ result(0);
     for (int s = 1; s <= degree_f; s++) {
-        result += dp[k][s];  // 累加 dp[k][1] 到 dp[k][d]
+        add(result, result, dp[k][s]); 
     }
 
+    start = GetTime() - start;
+    cout << "Time: " << start << " seconds" << endl;
+    return result;
+}
+
+
+ZZ P_d2(const vec_ZZ& x, int degree_f) {
+    double start = GetTime();
+    int k = x.length();
+
+    // 使用一维数组而非二维矩阵，从而改善缓存命中率
+    vector<ZZ> dp_prev(degree_f + 1, ZZ(0));
+    vector<ZZ> dp_curr(degree_f + 1, ZZ(0));
+    
+    dp_prev[0] = ZZ(1);
+    
+    for (int i = 0; i < k; i++) {
+        for (int s = 0; s <= degree_f; s++) {
+            dp_curr[s] = ZZ(0);
+            for (int j = 0; j <= s; j++) {
+                if (j == 0) {
+                    add(dp_curr[s], dp_curr[s], dp_prev[s]);
+                } else {
+                    ZZ tmp;
+                    power(tmp, x[i], j);
+                    mul(tmp, tmp, dp_prev[s-j]);
+                    add(dp_curr[s], dp_curr[s], tmp);
+                }
+            }
+        }
+        // Swap current and previous arrays
+        dp_prev.swap(dp_curr);
+    }
+    
+    // 计算最终结果
+    ZZ result(0);
+    for (int s = 1; s <= degree_f; s++) {
+        add(result, result, dp_prev[s]);
+    }
+    
+    start = GetTime() - start;
+    cout << "Time: " << start * 1000 << " ms" << endl;
     return result;
 }

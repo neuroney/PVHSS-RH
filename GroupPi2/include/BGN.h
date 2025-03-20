@@ -1,6 +1,7 @@
 #pragma once
 #include "helper.h"
 #include "relic_cp_bgn.h"
+
 typedef struct
 {
     ZZ g1_order_ZZ; // g2_order_ZZ;

@@ -154,7 +154,7 @@
      return result;
  }
  
- int cp_bgn_dec1(dig_t *out, const g1_t in[2], const bgn_t prv) {
+ int cp_bgn_dec1(dig_t& out, const g1_t in[2], const bgn_t prv) {
      bn_t r, n;
      g1_t s, t, u;
      int i, result = RLC_ERR;
@@ -185,12 +185,12 @@
          g1_copy(u, s);
  
          if (g1_is_infty(t) == 1){
-             *out = 0;
+             out = 0;
              result = RLC_OK;
          } else {
-             for (i = 0; i < INT_MAX; i++) {
+             for (i = 0; i < M_MAX; i++) {
                  if (g1_cmp(t, u) == RLC_EQ) {
-                     *out = i + 1;
+                     out = i + 1;
                      result = RLC_OK;
                      break;
                  }

@@ -170,12 +170,9 @@ void HSS_Mult(vec_ZZ_pX &db, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_Z
     PKE_DDec(db, pkePara, modulus, pkeSk, C);
 }
 
-void HSS_ConvertInput(ZZ_pX &tb_y, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX ek, vec_ZZ_pX C_X) {
-    int index=rand()%10;
+void HSS_ConvertInput(vec_ZZ_pX &tb_y, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX ek, vec_ZZ_pX C_X) {
     tb_y.SetLength(2);
-    vec_ZZ_pX db;
-    db.SetLength(2);
-    HSS_Mult(db, pkePara, modulus, ek, C_X);
+    HSS_Mult(tb_y, pkePara, modulus, ek, C_X);
 }
 
 void HSS_Addmemory(vec_ZZ_pX &tb, vec_ZZ_pX C_X, vec_ZZ_pX C_Y) {
@@ -257,4 +254,17 @@ void HSS_Eval(ZZ_pX &tb_y, int b, PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ
         tb_temp[1] = 0;
     }
     tb_y = tb[0];
+}
+
+void HSS_Evaluate_P_d2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, const PKE_Para &pkePara, ZZ_pXModulus modulus, const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f)
+{
+    vec_ZZ_pX tmp1, tmp2;
+
+    int k = Ix.size(); 
+
+    Vec<vec_ZZ_pX> dp_prev, dp_curr;
+    dp_prev.SetLength(1+degree_f);
+    dp_curr.SetLength(1+degree_f);
+
+
 }

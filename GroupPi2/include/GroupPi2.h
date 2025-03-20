@@ -29,7 +29,7 @@ void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ &x);
 
 void Compute(PROOF &proof, int b, const PVHSSPara &param, const PVHSS_EK &ekb, vector<PVHSS_CT> &Ix, vector<vector<int>> F_TEST);
 bool Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSPara &param);
-void Decode(dig_t y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk);
+void Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk);
 
 
 void Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const PVHSSPara &param);

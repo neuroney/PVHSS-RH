@@ -33,7 +33,8 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const PVHSS_EK &ekb, v
 {
     int prf_key = 0;
     HSS_MV y_b_res;
-    HSS_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
+    //HSS_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
+    HSS_Evaluate_P_d2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
     Prove(proof, b, y_b_res[0], y_b_res[2], param);
 }
 
@@ -63,7 +64,7 @@ bool Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSPara &param)
     return (fp12_cmp(lefthand, righthand) == RLC_EQ);
 }
 
-void Decode(dig_t y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk)
+void Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk)
 {
     g1_t in[2];
     g1_new(in[0]);
@@ -71,7 +72,7 @@ void Decode(dig_t y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk)
     g1_sub(in[0], pi1.C[0], pi0.C[0]);
     g1_sub(in[1], pi1.C[1], pi0.C[1]);
 
-    cp_bgn_dec1(&y, in, sk);
+    cp_bgn_dec1(y, in, sk);
 }
 
 void Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const PVHSSPara &param)
@@ -119,11 +120,9 @@ void PVHSS_ACC_TEST(int msg_num, int degree_f)
     PVHSS_SK sk;
     param.skLen = 1024;
     param.vkLen = 256;
-    param.msg_bits = 32;
+    param.msg_bits = 1;
     param.degree_f = degree_f;
     param.msg_num = msg_num;
-    ZZ n_out = ZZ(10);
-
     double time = GetTime();
     Setup(param, ek0, ek1, sk);
     KeyGen(param, sk);
@@ -176,7 +175,8 @@ void PVHSS_ACC_TEST(int msg_num, int degree_f)
     Decode(y_dig, pi0, pi1, sk);
     
     
-    NativeEval(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);
+    // NativeEval(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);
+    y_native = P_d2(X,degree_f) % param.ck.g1_order_ZZ;
     cout << "True result: " << y_native << endl;
     cout << "Eval result: " << y_dig << endl;
     core_clean();

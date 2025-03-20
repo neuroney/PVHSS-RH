@@ -161,3 +161,92 @@ void HSS_Evaluate(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const HSS_PK
         HSS_AddMemory(y_b_res, pk, y_b_res, Monomial);
     }
 }
+
+void HSS_Evaluate_P_d(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const HSS_PK &pk, const HSS_EK &ekb, int &prf_key, int degree_f)
+{
+    HSS_MV tmp1, tmp2;
+
+    int k = Ix.size(); 
+
+    Mat<HSS_MV> dp;
+    dp.SetDims(k + 1, degree_f + 1);
+    dp[0][0][0] = b;
+    dp[0][0][1] = ekb[0];
+    dp[0][0][2] = ekb[1];
+    dp[0][0][3] = ekb[2]; 
+    
+    // 动态规划填表
+    for (int i = 1; i <= k; i++) { // 依次加入 x1, x2, ..., x5
+        for (int s = 0; s <= degree_f; s++) { // 目标和从 0 到 d
+            dp[i][s][0] = 0;
+            dp[i][s][1] = 0;
+            dp[i][s][2] = 0;
+            dp[i][s][3] = 0;
+            for (int j = 0; j <= s; j++) { 
+                copy(begin(dp[i - 1][s - j]), end(dp[i - 1][s - j]), begin(tmp1));
+                for (int h=0; h < j;++h) {
+                    HSS_Mul(tmp2, b, pk, Ix[i - 1], tmp1, prf_key);
+                    copy(begin(tmp2), end(tmp2), begin(tmp1));
+                }
+                HSS_AddMemory(dp[i][s], pk, dp[i][s], tmp1);
+            }
+        }
+    }
+
+    y_b_res[0] = 0;
+    y_b_res[1] = 0;
+    y_b_res[2] = 0;
+    y_b_res[3] = 0;
+    for (int s = 1; s <= degree_f; s++) {
+        HSS_AddMemory(y_b_res, pk, y_b_res, dp[k][s]); 
+    }
+
+}
+
+
+
+void HSS_Evaluate_P_d2(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const HSS_PK &pk, const HSS_EK &ekb, int &prf_key, int degree_f)
+{
+    HSS_MV tmp1, tmp2;
+
+    int k = Ix.size(); 
+
+    Vec<HSS_MV> dp_prev, dp_curr;
+    dp_prev.SetLength(1+degree_f);
+    dp_curr.SetLength(1+degree_f);
+    
+    dp_prev[0][0] = b;
+    dp_prev[0][1] = ekb[0];
+    dp_prev[0][2] = ekb[1];
+    dp_prev[0][3] = ekb[2]; 
+    
+    // 动态规划填表
+    for (int i = 1; i <= k; i++) { // 依次加入 x1, x2, ..., x5
+        for (int s = 0; s <= degree_f; s++) { // 目标和从 0 到 d
+            dp_curr[s][0] = 0;
+            dp_curr[s][1] = 0;
+            dp_curr[s][2] = 0;
+            dp_curr[s][3] = 0;
+            HSS_AddMemory(dp_curr[s], pk, dp_curr[s], dp_prev[s]);
+            for (int j = 1; j <= s; j++) { 
+
+                copy(begin(dp_prev[s - j]), end(dp_prev[s - j]), begin(tmp1));
+                for (int h=0; h < j;++h) {
+                    HSS_Mul(tmp2, b, pk, Ix[i - 1], tmp1, prf_key);
+                    copy(begin(tmp2), end(tmp2), begin(tmp1));
+                }
+                HSS_AddMemory(dp_curr[s], pk, dp_curr[s], tmp1);
+            }
+        }
+        dp_prev.swap(dp_curr);
+    }
+
+    y_b_res[0] = 0;
+    y_b_res[1] = 0;
+    y_b_res[2] = 0;
+    y_b_res[3] = 0;
+    for (int s = 1; s <= degree_f; s++) {
+        HSS_AddMemory(y_b_res, pk, y_b_res, dp_prev[s]); 
+    }
+
+}

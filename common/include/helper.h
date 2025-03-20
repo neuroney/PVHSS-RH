@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <algorithm>
 #include <ctime>
+#include <NTL/vector.h>
+#include <NTL/matrix.h>
 #include <NTL/ZZ.h>
 #include <NTL/ZZX.h>
 #include <NTL/ZZ_pX.h>
@@ -21,6 +23,7 @@ using namespace NTL;
 
 const int NUMTHREADS = 8;
 #define PI 3.141592654
+#define M_MAX 100
 
 /**
  * Converts an unsigned integer to an array of 4 unsigned bytes.
@@ -89,11 +92,6 @@ void GaussRand(ZZ_pX &e, int N);
 
 void ZZ_pX_ScaleMul_ZZ(ZZ_pX &out, ZZ_pX in1,ZZ in2);
 
-#include <iostream>
-#include <vector>
-#include <cmath>
-
-using namespace std;
-
 // 计算 P_d(x1, x2, x3, x4, x5) 的动态规划函数
-long long P_d(int x1, int x2, int x3, int x4, int x5, int d);
+ZZ P_d(const vec_ZZ& x, int degree_f);
+ZZ P_d2(const vec_ZZ& x, int degree_f);

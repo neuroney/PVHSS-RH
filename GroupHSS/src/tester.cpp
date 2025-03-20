@@ -107,7 +107,8 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     {
         int prf_key = 0;
         time = GetTime();
-        HSS_Evaluate(y0, 0, Ix, pk, ek0, prf_key, F_TEST);
+        //HSS_Evaluate(y0, 0, Ix, pk, ek0, prf_key, F_TEST);
+        HSS_Evaluate_P_d2(y0, 0, Ix, pk, ek0, prf_key, degree_f);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
@@ -117,7 +118,7 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     {
         int prf_key = 0;
         time = GetTime();
-        HSS_Evaluate(y1, 1, Ix, pk, ek1, prf_key, F_TEST);
+        HSS_Evaluate_P_d2(y1, 1, Ix, pk, ek1, prf_key, degree_f);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);

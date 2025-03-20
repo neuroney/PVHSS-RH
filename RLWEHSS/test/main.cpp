@@ -1,12 +1,18 @@
 #include "tester.h"
 
 int main(int, char **)
-{
-    int x1 = 1, x2 = 2, x3 = 3, x4 = 4, x5 = 5;
-    int d = 5;  // 指数最大和
+{   
+    Vec<ZZ> x;
+    x.SetLength(5);
+    x[0] = conv<ZZ>(1);
+    x[1] = conv<ZZ>(2);
+    x[2] = conv<ZZ>(3);
+    x[3] = conv<ZZ>(4);
+    x[4] = conv<ZZ>(5);
+    int d =5;  // 指数最大和
 
-    long long result = P_d(x1, x2, x3, x4, x5, d);
-    cout << "P_" << d << "(" << x1 << "," << x2 << "," << x3 << "," << x4 << "," << x5 << ") = " << result << endl;
+    ZZ result = P_d2(x, d);
+    cout << result << endl;
 
     return 0;
 }

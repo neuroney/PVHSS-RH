@@ -34,7 +34,8 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const PVHSS_EK &ekb, v
 {
     int prf_key = 0;
     HSS_MV y_b_res; 
-    HSS_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
+    //HSS_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
+    HSS_Evaluate_P_d2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
    
     HSS_MV sk_b;
     HSS_ConvertInput(sk_b, b, param.pk, ekb, param.pk_f, prf_key);
@@ -100,6 +101,7 @@ void PVHSS_ACC_TEST(int msg_num, int degree_f)
     for (int i = 0; i < msg_num; ++i)
     {
         RandomBits(X[i], param.msg_bits);
+        //X[i] = i+1;
     }
 
     vector<PVHSS_CT>  Ix;
@@ -142,7 +144,8 @@ void PVHSS_ACC_TEST(int msg_num, int degree_f)
     Decode(y_eval_bn, pi0, pi1, sk);
     bn2ZZ(y_eval, y_eval_bn);
     y_eval = y_eval % param.ck.g1_order_ZZ;
-    NativeEval(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);
+    y_native = P_d(X, degree_f) % param.ck.g1_order_ZZ;
+    // NativeEval(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);
     cout << "True result: " << y_native << endl;
     cout << "Eval result: " << y_eval << endl;
     core_clean();
