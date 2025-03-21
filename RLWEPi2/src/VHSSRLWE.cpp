@@ -1,5 +1,5 @@
 
-#include "HSSRLWE.h"
+#include "VHSSRLWE.h"
 
 void GenData(Data &data, PKE_Para pkePara, vec_ZZ_pX pkePk)
 {
@@ -11,7 +11,7 @@ void GenData(Data &data, PKE_Para pkePara, vec_ZZ_pX pkePk)
     for (int i = 0; i < pkePara.num_data; i++)
     {
         RandomBits(data.X[i], pkePara.msg_bit);
-        HSS_Enc(C_x, pkePara, modulus, pkePk, data.X[i]);
+        VHSS_Enc(C_x, pkePara, modulus, pkePk, data.X[i]);
         data.C_X.append(C_x);
     }
     for (int i = 0; i < 10; i++)
@@ -170,13 +170,13 @@ void HSS_Gen(vec_ZZ_pX &hssEk_1, vec_ZZ_pX &hssEk_2,
     hssEk_2[1] = pkeSk[1] - hssEk_1[1];
 }
 
-void HSS_Enc(vec_ZZ_pX &C, const PKE_Para &pkePara, ZZ_pXModulus &modulus, vec_ZZ_pX &pkePk, const ZZ &x)
+void VHSS_Enc(vec_ZZ_pX &C, const PKE_Para &pkePara, ZZ_pXModulus &modulus, vec_ZZ_pX &pkePk, const ZZ &x)
 {
     C.SetLength(4);
     PKE_OKDM(C, pkePara, modulus, pkePk, x);
 }
 
-void HSS_Mult(vec_ZZ_pX &db, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX pkeSk, vec_ZZ_pX C)
+void VHSS_Mult(vec_ZZ_pX &db, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX pkeSk, vec_ZZ_pX C)
 {
     db.SetLength(2);
     PKE_DDec(db, pkePara, modulus, pkeSk, C);
@@ -185,7 +185,7 @@ void HSS_Mult(vec_ZZ_pX &db, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_Z
 void HSS_ConvertInput(vec_ZZ_pX &tb_y, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX ek, vec_ZZ_pX C_X)
 {
     tb_y.SetLength(2);
-    HSS_Mult(tb_y, pkePara, modulus, ek, C_X);
+    VHSS_Mult(tb_y, pkePara, modulus, ek, C_X);
 }
 
 void HSS_AddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX& C_Y)
@@ -204,7 +204,7 @@ void f(vec_ZZ_pX &tb, int b, int d, int num_data, int loop, int beg_ind, int *in
         if (d == 1)
         {
             prfkey = (prfkey + 1) % 10;
-            HSS_Mult(tb_temp, pkePara, modulus, ek, C_X[ind_var[0]]);
+            VHSS_Mult(tb_temp, pkePara, modulus, ek, C_X[ind_var[0]]);
 
             if (b == 1)
             {
@@ -222,7 +222,7 @@ void f(vec_ZZ_pX &tb, int b, int d, int num_data, int loop, int beg_ind, int *in
         }
         else
         {
-            HSS_Mult(tb_temp, pkePara, modulus, ek, C_X[ind_var[0]]);
+            VHSS_Mult(tb_temp, pkePara, modulus, ek, C_X[ind_var[0]]);
             prfkey = (prfkey + 1) % 10;
 
             if (b == 1)
@@ -238,7 +238,7 @@ void f(vec_ZZ_pX &tb, int b, int d, int num_data, int loop, int beg_ind, int *in
 
             for (int i = 1; i < d; i++)
             {
-                HSS_Mult(tb_temp, pkePara, modulus, tb_temp, C_X[ind_var[i]]);
+                VHSS_Mult(tb_temp, pkePara, modulus, tb_temp, C_X[ind_var[i]]);
                 prfkey = (prfkey + 1) % 10;
                 if (b == 1)
                 {
@@ -287,14 +287,14 @@ void HSS_Eval(ZZ_pX &tb_y, int b, PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ
     tb_y = tb[0];
 }
 
-void HSS_Evaluate_P_d2(vec_ZZ_pX &y_b_res, int b, const Vec<vec_ZZ_pX> &Ix, const PKE_Para &pkePara, ZZ_pXModulus modulus, const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f, const vec_ZZ_pX &M1)
+void HSS_Evaluate_P_d2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, const PKE_Para &pkePara, ZZ_pXModulus modulus, const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f, const vec_ZZ_pX &M1)
 {
  
     vec_ZZ_pX tmp1, tmp2;
     tmp1.SetLength(2);
     tmp2.SetLength(2);
 
-    int k = Ix.length();
+    int k = Ix.size();
     
     Mat<ZZ_pX> dp_prev, dp_curr;
     dp_prev.SetDims(1 + degree_f, 2);
@@ -315,7 +315,7 @@ void HSS_Evaluate_P_d2(vec_ZZ_pX &y_b_res, int b, const Vec<vec_ZZ_pX> &Ix, cons
                 copy(begin(dp_prev[s - j]), end(dp_prev[s - j]), begin(tmp1));
                 for (int h = 0; h < j; ++h)
                 {
-                    HSS_Mult(tmp2, pkePara, modulus, tmp1, Ix[i - 1]);
+                    VHSS_Mult(tmp2, pkePara, modulus, tmp1, Ix[i - 1]);
                     copy(begin(tmp2), end(tmp2), begin(tmp1));
                 }
                 HSS_AddMemory(dp_curr[s], dp_curr[s], tmp1);
@@ -329,4 +329,29 @@ void HSS_Evaluate_P_d2(vec_ZZ_pX &y_b_res, int b, const Vec<vec_ZZ_pX> &Ix, cons
     for (int s = 1; s <= degree_f; s++) {
         HSS_AddMemory(y_b_res, y_b_res, dp_prev[s]); 
     }
+}
+
+
+void VHSS_Gen(VHSS_Para &vhssPara, PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX pkeSk)
+{
+    Random_ZZ_pX(vhssPara.alpha, pkePara.N, 1);
+    vec_ZZ_pX alpha_pkeSk;
+    alpha_pkeSk.SetLength(2);
+    vhssPara.vhssEk_1.SetLength(2);
+    vhssPara.vhssEk_2.SetLength(2);
+    vhssPara.vhssEk_3.SetLength(2);
+    vhssPara.vhssEk_4.SetLength(2);
+
+    alpha_pkeSk[0] = vhssPara.alpha;
+    MulMod(alpha_pkeSk[1], vhssPara.alpha, pkeSk[1], modulus);
+
+    Random_ZZ_pX(vhssPara.vhssEk_1[0], pkePara.N, pkePara.q_bit);
+    Random_ZZ_pX(vhssPara.vhssEk_1[1], pkePara.N, pkePara.q_bit);
+    Random_ZZ_pX(vhssPara.vhssEk_3[0], pkePara.N, pkePara.q_bit);
+    Random_ZZ_pX(vhssPara.vhssEk_3[1], pkePara.N, pkePara.q_bit);
+
+    vhssPara.vhssEk_2[0] = pkeSk[0] - vhssPara.vhssEk_1[0];
+    vhssPara.vhssEk_2[1] = pkeSk[1] - vhssPara.vhssEk_1[1];
+    vhssPara.vhssEk_4[0] = alpha_pkeSk[0] - vhssPara.vhssEk_3[0];
+    vhssPara.vhssEk_4[1] = alpha_pkeSk[1] - vhssPara.vhssEk_3[1];
 }

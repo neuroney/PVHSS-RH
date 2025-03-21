@@ -20,4 +20,8 @@ add_subdirectory(GroupPi1)
 add_subdirectory(GroupPi2)
 add_subdirectory(GroupHSS)
 add_subdirectory(RLWEHSS)
+add_subdirectory(RLWEPi1)
+add_subdirectory(RLWEPi2)
+
+
 

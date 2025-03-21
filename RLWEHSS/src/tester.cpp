@@ -213,17 +213,35 @@ void Time_Eval(int msg_num, int degree_f, int cyctimes) {
     //data
     Data data;
     GenData(data, pkePara, pkePk);
-    ZZ_pX y, y1, y2;
+    vec_ZZ_pX y1, y2;
     int prf_key;
+
+    vec_ZZ_pX C1;
+    vec_ZZ_pX M1, M2;
+    HSS_Enc(C1, pkePara, modulus, pkePk, ZZ(1));
+    HSS_ConvertInput(M1, pkePara, modulus, hssEk_1, C1);
+    HSS_ConvertInput(M2, pkePara, modulus, hssEk_2, C1);
 
     auto *Time = new double[cyctimes];
     double time,mean,stdev;
     for (int i = 0; i < cyctimes; i++) {
         prf_key = 0;
         time = GetTime();
-        HSS_Eval(y1, 1, pkePara, modulus, hssEk_1, data.C_X, data.PRF, prf_key);
+        // HSS_Eval(y1, 1, pkePara, modulus, hssEk_1, data.C_X, data.PRF, prf_key, );
+        HSS_Evaluate_P_d2(y1, 1, data.C_X, pkePara, modulus, hssEk_1, prf_key, degree_f, M1);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean,stdev,Time,cyctimes);
     cout << "Eval algo time: " << mean * 1000 << " ms  RSD: "<<stdev*100<<"%\n";
+}
+
+
+void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
+{
+    Time_Gen(msg_num, degree_f, cyctimes);
+    Time_Enc(msg_num, degree_f, cyctimes);
+    Time_Dec(msg_num, degree_f, cyctimes);
+    //Time_Eval_Subalgo(msg_num, degree_f, cyctimes);
+    Time_Eval(msg_num, degree_f, cyctimes);
+
 }

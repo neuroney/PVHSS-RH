@@ -140,7 +140,6 @@ void HSS_Evaluate_P_d2(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const H
     HSS_MV tmp1, tmp2;
 
     int k = Ix.size(); 
-
     Vec<HSS_MV> dp_prev, dp_curr;
     dp_prev.SetLength(1+degree_f);
     dp_curr.SetLength(1+degree_f);
@@ -155,7 +154,6 @@ void HSS_Evaluate_P_d2(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const H
             dp_curr[s][1] = 0;
             HSS_AddMemory(dp_curr[s], pk, dp_curr[s], dp_prev[s]);
             for (int j = 1; j <= s; j++) { 
-
                 copy(begin(dp_prev[s - j]), end(dp_prev[s - j]), begin(tmp1));
                 for (int h=0; h < j;++h) {
                     HSS_Mul(tmp2, b, pk, Ix[i - 1], tmp1, prf_key);
@@ -173,4 +171,9 @@ void HSS_Evaluate_P_d2(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const H
         HSS_AddMemory(y_b_res, pk, y_b_res, dp_prev[s]); 
     }
 
+}
+
+void HSS_Dec(ZZ &z, const HSS_MV &Mx0, const HSS_MV &Mx1)
+{
+    sub(z, Mx1[0], Mx0[0]);
 }

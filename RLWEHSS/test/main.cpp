@@ -2,17 +2,15 @@
 
 int main(int, char **)
 {   
-    Vec<ZZ> x;
-    x.SetLength(5);
-    x[0] = conv<ZZ>(1);
-    x[1] = conv<ZZ>(2);
-    x[2] = conv<ZZ>(3);
-    x[3] = conv<ZZ>(4);
-    x[4] = conv<ZZ>(5);
-    int d =5;  // 指数最大和
-
-    ZZ result = P_d2(x, d);
-    cout << result << endl;
+    int msg_num = 5;
+    int cyctimes = 5;
+    vector<int> degree_f = {5,10,15};
+   
+    for (int i = 0; i < degree_f.size(); ++i)
+    {    
+        cout << "degree_f: " << degree_f[i] << endl;
+        HSS_TIME_TEST(msg_num, degree_f[i] ,cyctimes);
+    }
 
     return 0;
 }

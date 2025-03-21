@@ -7,14 +7,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "degree_f: " << degree_f << "        msg_num: " << msg_num << "        cyctimes: " << cyctimes << std::endl;
     PVHSSPara param;
-    PVHSS_EK ek0, ek1;
-    PVHSS_SK sk;
-    param.skLen = 256;
-    param.vkLen = 256;
-    param.msg_bits = 32;
-    param.degree_f = degree_f;
-    param.msg_num = msg_num;
-    ZZ n_out = ZZ(10);
+    vec_ZZ_pX pkePk;
 
     PROOF pi0, pi1;
 
@@ -25,16 +18,12 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < cyctimes; i++)
     {
         PVHSSPara param00;
-        PVHSS_EK ek000, ek100;
-        PVHSS_SK sk000;
+        vec_ZZ_pX pkePk00;
+        PVHSS_SK sk00;
         time = GetTime();
-        param00.skLen = 256;
-        param00.vkLen = 256;
-        param00.msg_bits = 32;
-        param00.degree_f = degree_f;
-        param00.msg_num = msg_num;
-        Setup(param00, ek000, ek100, sk000);
-        KeyGen(param00, sk000);
+        Setup(param00, pkePk00, msg_num, degree_f);
+        ZZ_pXModulus modulus00(param00.pkePara.xN);
+        KeyGen(param00, sk00, modulus00, pkePk00);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
@@ -42,15 +31,16 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     cout << "Setup algorithm time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
     std::cout << "-------------------------------------------------------" << std::endl;
     // Key Generation Phase
-    Setup(param, ek0, ek1, sk);
-    KeyGen(param, sk);
+    Setup(param, pkePk, msg_num, degree_f);
+    ZZ_pXModulus modulus(param.pkePara.xN);
+    KeyGen(param, param.f_sk, modulus, pkePk);
 
     // Input Generation Phase
     Vec<ZZ> X;
     X.SetLength(msg_num);
     for (int i = 0; i < msg_num; ++i)
     {
-        RandomBits(X[i], param.msg_bits);
+        RandomBits(X[i], param.pkePara.msg_bit);
     }
 
     // Input Processing Phase
@@ -58,7 +48,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();
-        ProbGen(Ix, param, X);
+        ProbGen(Ix, param, X, modulus, pkePk);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
@@ -69,11 +59,19 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     vector<vector<int>> F_TEST;
     Random_Func(F_TEST, msg_num, degree_f);
 
+    PVHSS_CT C1;
+    PVHSS_MV M1, M2, M3, M4;
+    VHSS_Enc(C1, param.pkePara, modulus, pkePk, ZZ(1));
+    HSS_ConvertInput(M1, param.pkePara, modulus, param.vhssPara.vhssEk_1, C1);
+    HSS_ConvertInput(M2, param.pkePara, modulus, param.vhssPara.vhssEk_2, C1);
+    HSS_ConvertInput(M3, param.pkePara, modulus, param.vhssPara.vhssEk_3, C1);
+    HSS_ConvertInput(M4, param.pkePara, modulus, param.vhssPara.vhssEk_4, C1);
+
     // Evaluation Phase for Server 0
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();
-        Compute(pi0, 0, param, ek0, Ix, F_TEST);
+        Compute(pi0, 0, param, param.vhssPara.vhssEk_1, param.vhssPara.vhssEk_3, Ix, modulus, M1, M3, F_TEST);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
@@ -84,7 +82,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < 1; i++)
     {
         time = GetTime();
-        Compute(pi1, 1, param, ek1, Ix, F_TEST);
+        Compute(pi1, 1, param, param.vhssPara.vhssEk_2, param.vhssPara.vhssEk_4, Ix, modulus, M2, M4, F_TEST);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, 1);
@@ -117,7 +115,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();
-        Decode(y, pi0, pi1, sk);
+        Decode(y, pi0, pi1, param.f_sk);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);

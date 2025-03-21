@@ -2,13 +2,14 @@
 
 int main(int, char **)
 { 
-    int degree_f = 16;
     int msg_num = 5;
     int cyctimes = 5;
-    HSS_TIME_TEST(msg_num, 5,1);
-    for (int deg = 1; deg < degree_f; deg++)
+    vector<int> degree_f = {5,10,15};
+   
+    for (int i = 0; i < degree_f.size(); ++i)
     {    
-        //PVHSS_TIME_TEST(msg_num, deg, cyctimes);
+        cout << "degree_f: " << degree_f[i] << endl;
+        HSS_TIME_TEST(msg_num, degree_f[i] ,cyctimes);
     }
     
     return 0;

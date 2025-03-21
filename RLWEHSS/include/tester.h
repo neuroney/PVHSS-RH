@@ -10,3 +10,5 @@ void Time_Enc(int msg_num, int degree_f,  int cyctimes);
 void Time_Eval_Subalgo(int msg_num, int degree_f,  int cyctimes);
 
 void Time_Eval(int msg_num, int degree_f, int cyctimes);
+
+void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes);
