@@ -48,9 +48,7 @@ void Prove(PROOF &pi, int b, const PVHSS_MV &y_b, const PVHSS_MV &Y_b, const PVH
     ZZ_p yb, Yb;
     eval(yb, y_b[0], conv<ZZ_p>(param.sk_alpha));
     eval(Yb, Y_b[0], conv<ZZ_p>(param.sk_alpha));
-    bn_null(pi.y);
-    bn_new(pi.y);
-    ZZ2bn(pi.y, conv<ZZ>(yb) % param.ck.g1_order_ZZ);
+    pi.y= conv<ZZ>(yb) % param.ck.g1_order_ZZ;
 
     bn_t delta;
     Ped_Com(pi.D, delta, param.ck, conv<ZZ>(Yb) % param.ck.g1_order_ZZ);
@@ -106,7 +104,7 @@ bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
     // Compute e(g, g)^{Ay}
     bn_t y_bn;
     bn_new(y_bn);
-    bn_sub(y_bn, pi1.y, pi0.y);
+    ZZ2bn(y_bn, (pi1.y-pi0.y) % ck.g1_order_ZZ);
     ep_mul(eptmp, ck.g1, y_bn);
     pp_map_oatep_k12(righthand, eptmp, ck.g2_A);
     fp12_mul(righthand, righthand, pi1.e);
@@ -115,11 +113,8 @@ bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
     return (fp12_cmp(lefthand, righthand) == RLC_EQ);
 }
 
-void Decode(bn_t y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk)
+void Decode(ZZ& y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk)
 {
-    bn_new(y);
-    bn_add(y, pi1.y, pi0.y);
-    bn_t sk_bn;
-    ZZ2bn(sk_bn, sk);
-    bn_sub(y, y, sk_bn);
+    add(y, pi0.y, pi1.y);
+    sub(y, y, sk);
 }

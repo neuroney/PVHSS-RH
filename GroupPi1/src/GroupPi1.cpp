@@ -61,7 +61,7 @@ bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
     // Compute e(g, g)^{Ay}
     bn_t y_bn;
     bn_new(y_bn);
-    bn_sub(y_bn,pi1.y,pi0.y);
+    ZZ2bn(y_bn, (pi1.y - pi0.y) % ck.g1_order_ZZ);
     ep_mul(eptmp, ck.g1, y_bn);
     pp_map_oatep_k12(righthand, eptmp, ck.g2_A);
     fp12_mul(righthand, righthand, pi1.e);
@@ -70,13 +70,10 @@ bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
     return (fp12_cmp(lefthand, righthand) == RLC_EQ);
 }
 
-void Decode(bn_t y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk)
+void Decode(ZZ& y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk)
 {
-    bn_new(y);
-    bn_sub(y, pi1.y, pi0.y);
-    bn_t sk_bn;
-    ZZ2bn(sk_bn, sk);
-    bn_sub(y, y, sk_bn);
+    sub(y, pi1.y, pi0.y);
+    sub(y, y, sk);
 }
 
 void PVHSS_ACC_TEST(int msg_num, int degree_f)
@@ -139,10 +136,7 @@ void PVHSS_ACC_TEST(int msg_num, int degree_f)
     }
 
     ZZ y_native, y_eval;
-    bn_t y_eval_bn;
-    bn_new(y_eval_bn);
-    Decode(y_eval_bn, pi0, pi1, sk);
-    bn2ZZ(y_eval, y_eval_bn);
+    Decode(y_eval, pi0, pi1, sk);
     y_eval = y_eval % param.ck.g1_order_ZZ;
     y_native = P_d(X, degree_f) % param.ck.g1_order_ZZ;
     // NativeEval(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);

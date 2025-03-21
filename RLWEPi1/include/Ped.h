@@ -14,7 +14,7 @@ typedef struct
 
 typedef struct
 {
-    bn_t y;
+    ZZ y;
     ep_t D;
     fp12_t e;  
 } PROOF;

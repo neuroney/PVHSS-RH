@@ -5,7 +5,7 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     HSS_PK pk;
     HSS_EK ek0, ek1;
     int msg_bits = 256;
-    int skLen = 256;
+    int skLen = 1024;
 
     auto *Time = new double[cyctimes];
     double time, mean, stdev;

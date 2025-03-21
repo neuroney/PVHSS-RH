@@ -68,9 +68,7 @@ bool Ped_OpenVer(const CK &ck, const ep_t C, const ZZ &x_ZZ, bn_t rho)
 
 void Ped_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const CK &ck, int &prf_key)
 {
-    bn_null(pi.y);
-    bn_new(pi.y);
-    ZZ2bn(pi.y, yb % ck.g1_order_ZZ);
+    pi.y = yb % ck.g1_order_ZZ;
 
     bn_t delta;
     Ped_Com(pi.D, delta, ck, Yb);

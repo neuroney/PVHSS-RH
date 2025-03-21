@@ -9,7 +9,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     PVHSSPara param;
     PVHSS_EK ek0, ek1;
     PVHSS_SK sk;
-    param.skLen = 256;
+    param.skLen = 1024;
     param.vkLen = 256;
     param.msg_bits = 32;
     param.degree_f = degree_f;
@@ -112,7 +112,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     // }
 
     // Decryption Phase
-    bn_t y;
+    ZZ y;
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();

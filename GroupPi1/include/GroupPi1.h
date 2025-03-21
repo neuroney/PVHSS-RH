@@ -26,6 +26,6 @@ void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ &x);
 
 void Compute(PROOF &proof, int b, const PVHSSPara &param, const PVHSS_EK &ekb, vector<PVHSS_CT> &Ix, vector<vector<int>> F_TEST);
 bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck);
-void Decode(bn_t y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk);
+void Decode(ZZ& y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk);
 
 void PVHSS_ACC_TEST(int msg_num, int degree_f);
