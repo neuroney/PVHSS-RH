@@ -36,7 +36,7 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const PVHSS_EK &ekb, v
     HSS_MV y_b_res; 
     //HSS_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
     HSS_Evaluate_P_d2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
-   
+    
     HSS_MV sk_b;
     HSS_ConvertInput(sk_b, b, param.pk, ekb, param.pk_f, prf_key);
     y_b_res[0] = y_b_res[0] + sk_b[0];

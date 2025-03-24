@@ -2,7 +2,9 @@
 
 void Setup(PVHSSPara &param, PVHSS_EK &ek0, PVHSS_EK &ek1, PVHSS_SK &sk)
 {
+    double time =GetTime();
     HSS_Gen(param.pk, ek0, ek1, param.skLen, param.vkLen);
+    cout << "VHSS Setup algorithm time: " << (GetTime() - time) * 1000 << " ms\n";
     BGN_ComGen(param.ck, sk);
 
     bn_t A;
@@ -10,6 +12,7 @@ void Setup(PVHSSPara &param, PVHSS_EK &ek0, PVHSS_EK &ek1, PVHSS_SK &sk)
     ep2_new(param.vk);
     ZZ2bn(A, (ek1[1] - ek0[1]) % param.pk.N);
     ep2_mul_gen(param.vk, A); // g_2^A
+    
 }
 
 void KeyGen(PVHSSPara &param, PVHSS_SK &sk)
@@ -35,7 +38,9 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const PVHSS_EK &ekb, v
     HSS_MV y_b_res;
     //HSS_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
     HSS_Evaluate_P_d2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
+    double time =GetTime();
     Prove(proof, b, y_b_res[0], y_b_res[2], param);
+    cout << "Prove algorithm time: " << (GetTime() - time) * 1000 << " ms\n";
 }
 
 bool Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSPara &param)

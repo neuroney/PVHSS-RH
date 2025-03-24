@@ -3,6 +3,7 @@
 void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
            int msg_num, int degree_f)
 {
+    double time = GetTime();
     param.pkePara.msg_bit = 32;
     param.pkePara.num_data = msg_num;
     param.pkePara.d = degree_f;
@@ -12,6 +13,8 @@ void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     PKE_Gen(param.pkePara, pkePk, pkeSk);
     ZZ_pXModulus modulus(param.pkePara.xN);
     VHSS_Gen(param.vhssPara, param.pkePara, modulus, pkeSk);
+    cout << "VHSS Setup algorithm time: " << (GetTime() - time) * 1000 << " ms\n";
+    
     BGN_ComGen(param.ck, param.f_sk);
 
     RandomBits(param.sk_alpha, 32);
@@ -23,6 +26,7 @@ void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     ep2_new(param.ck.g2_A);
     ZZ2bn(A, conv<ZZ>(A_ZZ) % param.ck.g1_order_ZZ);
     ep2_mul_gen(param.vk, A); // g_2^A
+    
 }
 
 void KeyGen(PVHSSPara &param, PVHSS_SK &sk, ZZ_pXModulus modulus, vec_ZZ_pX pkePk)
@@ -92,8 +96,9 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, 
         HSS_Evaluate_P_d2(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_2, prf_key, param.pkePara.d, M1);
         HSS_Evaluate_P_d2(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_4, prf_key, param.pkePara.d, M2);
     }
-
+    double time = time = GetTime();
     Prove(proof, b, y_b_res, Y_b_res, param);
+    cout << "Prove algorithm time: " << (GetTime() - time) * 1000 << " ms\n";
 }
 
 bool Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSPara &param)

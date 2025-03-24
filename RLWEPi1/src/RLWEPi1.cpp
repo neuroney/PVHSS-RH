@@ -3,6 +3,7 @@
 void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     int msg_num, int degree_f)
 {
+    double time = GetTime();
     param.pkePara.msg_bit = 32;
     param.pkePara.num_data = msg_num;
     param.pkePara.d = degree_f;
@@ -12,8 +13,8 @@ void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     PKE_Gen(param.pkePara, pkePk, pkeSk);
     ZZ_pXModulus modulus(param.pkePara.xN);
     VHSS_Gen(param.vhssPara, param.pkePara, modulus, pkeSk);
+    cout << "VHSS Setup algorithm time: " << (GetTime() - time) * 1000 << " ms\n";
     Ped_ComGen(param.ck);
-
     RandomBits(param.sk_alpha, 32);
     ZZ_p A_ZZ;
     eval(A_ZZ, param.vhssPara.alpha, conv<ZZ_p>(param.sk_alpha));
@@ -71,21 +72,27 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, 
     {
         HSS_Evaluate_P_d2(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_1, prf_key, param.pkePara.d, M1);
         HSS_Evaluate_P_d2(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_3, prf_key, param.pkePara.d, M2);
-        HSS_ConvertInput(sk_b, param.pkePara, modulus, param.vhssPara.vhssEk_1, param.pk_f);
-        HSS_ConvertInput(SK_b, param.pkePara, modulus, param.vhssPara.vhssEk_3, param.pk_f);
+        
     }
     else
     {
         HSS_Evaluate_P_d2(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_2, prf_key, param.pkePara.d, M1);
         HSS_Evaluate_P_d2(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_4, prf_key, param.pkePara.d, M2);
+        
+    }
+    double time = time = GetTime();
+    if (b==0)
+    {
+        HSS_ConvertInput(sk_b, param.pkePara, modulus, param.vhssPara.vhssEk_1, param.pk_f);
+        HSS_ConvertInput(SK_b, param.pkePara, modulus, param.vhssPara.vhssEk_3, param.pk_f);
+    } else {
         HSS_ConvertInput(sk_b, param.pkePara, modulus, param.vhssPara.vhssEk_2, param.pk_f);
         HSS_ConvertInput(SK_b, param.pkePara, modulus, param.vhssPara.vhssEk_4, param.pk_f);
     }
-
     HSS_AddMemory(y_b_res, y_b_res, sk_b);
     HSS_AddMemory(Y_b_res, Y_b_res, SK_b);
-
     Prove(proof, b, y_b_res, Y_b_res, param);
+    cout << "Prove algorithm time: " << (GetTime() - time) * 1000 << " ms\n";
 }
 
 bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)

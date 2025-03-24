@@ -27,7 +27,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
         PVHSS_EK ek000, ek100;
         PVHSS_SK sk000;
         time = GetTime();
-        param00.skLen = 256;
+        param00.skLen = 1024;
         param00.vkLen = 256;
         param00.msg_bits = 32;
         param00.degree_f = degree_f;

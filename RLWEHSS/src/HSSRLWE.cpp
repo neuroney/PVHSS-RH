@@ -134,29 +134,9 @@ void PKE_DDec(vec_ZZ_pX &db, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_Z
 void SetPara(PKE_Para &pkePara)
 {
 
-    switch (pkePara.d)
-    {
-    case 5:
-        pkePara.N = 32768;
-        pkePara.p_bit = 319;
-        pkePara.q_bit = 662;
-        break;
-        break;
-    case 10:
-        pkePara.N = 65536;
-        pkePara.p_bit = 576;
-        pkePara.q_bit = 1177;
-        break;
-        break;
-    case 15:
-        pkePara.N = 65536;
-        pkePara.p_bit = 576;
-        pkePara.q_bit = 1177;
-        break;
-    default:
-        printf("error\n");
-        break;
-    }
+    pkePara.N = 32768;
+    pkePara.p_bit = 319;
+    pkePara.q_bit = 662;
 }
 
 void HSS_Gen(vec_ZZ_pX &hssEk_1, vec_ZZ_pX &hssEk_2,
