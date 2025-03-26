@@ -55,15 +55,33 @@ void Eval_Poly(int deg, int num_data)
     time = GetTime() - time;
     cout << "running time Server 2: " << time * 1000 << "ms\n";
 
+    ZZ_pX y_ZZ_pX;
+    y_ZZ_pX = t1y + t2y;
+        cout << 1 << endl;
+    y_ZZ_pX = t1y + t2y;
+    cout << 2 << endl;
+
+
     cout << "******************** Client Verifying ********************" << "\n";
     time = GetTime();
     PVHSS_ver(t1y, t2y, g1T1, g2T2, pvhssPara);
     time = GetTime() - time;
-    cout << "running time Client: " << time * 1000 << "ms\n";
+    cout << "running time Verification: " << time * 1000 << "ms\n";
+
+    cout << "******************** Client Decoding ********************" << "\n";
+
+    ZZ res;
+    time = GetTime();
+    PVHSS_Dec(res, pvhssPara, pkePara, t1y, t2y);
+    time = GetTime() - time;
+    cout << "running time Decoding: " << time * 1000 << "ms\n";
+
+
+
 
     ZZ y_native;
     NativeEval(y_native, pkePara.d, pkePara.num_data, data.X_decimal, pvhssPara.g1_order_ZZ, data.F_TEST);
-    cout << "native computing y =" << y_native<< "\n";
+    cout << "native computing y =" << y_native << "\n";
 }
 
 void Run_Gen(int msg_bit)

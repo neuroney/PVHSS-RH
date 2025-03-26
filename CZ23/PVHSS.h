@@ -254,7 +254,24 @@ void PVHSS_Eval(ZZ_pX &tby, ep_t g1T1, ep2_t g2T2, int b, PVHSS_Para pvhssPara, 
     }
 }
 
-void PVHSS_ver(ZZ_pX &y1, ZZ_pX &y2, ep_t g1T1, ep2_t g2T2, PVHSS_Para pvhssPara)
+void PVHSS_Dec(ZZ &y_ZZ, PVHSS_Para pvhssPara, const PKE_Para pkePara, const ZZ_pX &y1, const ZZ_pX &y2)
+{
+
+    ZZ_p::init(pvhssPara.g1_order_ZZ);
+    ZZ_pXModulus modulus(pkePara.xN);
+    ZZ_p y_ZZ_p;
+    ZZX y_ZZX;
+    ZZ_pX y_ZZ_pXX;
+    add(y_ZZ_pXX, y1, y2);
+    conv(y_ZZX, y_ZZ_pXX);
+    ZZ_p two_ZZ_p(2);
+    conv(y_ZZ_pXX, y_ZZX);
+    eval(y_ZZ_p, y_ZZ_pXX, two_ZZ_p);
+
+    conv(y_ZZ, y_ZZ_p);
+}
+
+void PVHSS_ver(const ZZ_pX& y1, const ZZ_pX& y2, ep_t g1T1, ep2_t g2T2, PVHSS_Para pvhssPara)
 {
     fp12_t gtT1;
     fp12_t gtT2;
@@ -270,6 +287,7 @@ void PVHSS_ver(ZZ_pX &y1, ZZ_pX &y2, ep_t g1T1, ep2_t g2T2, PVHSS_Para pvhssPara
     ZZ_p y_ZZ_p;
     ZZX y_ZZX;
     ZZ_pX y_ZZ_pX;
+
     y_ZZ_pX = y1 + y2;
     conv(y_ZZX, y_ZZ_pX);
 

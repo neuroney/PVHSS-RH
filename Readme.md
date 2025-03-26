@@ -35,6 +35,11 @@ The PVHSS-RH implementation requires the following libraries:
     ```bash
     ./GroupPi1/GroupPi1
     ./GroupPi2/GroupPi2
+    ./RLWEPi1/RLWEPi1
+    ./RLWEPi2/RLWEPi2
+    ./RLWEHSS/RLWEHSS
+    ./GroupHSS/GroupHSS
+    ./CZ23/CZ23
     ```
 
 ## Project Structure
