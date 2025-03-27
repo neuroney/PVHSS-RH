@@ -1,14 +1,14 @@
 #include "tester.h"
 
-void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
+void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
     std::cout << "*******************************************************" << std::endl;
-    std::cout << "        Performance Test Results for PVHSS_time        " << std::endl;
+    std::cout << "        Performance Test Results for PVHSSElg1 time        " << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "degree_f: " << degree_f << "        msg_num: " << msg_num << "        cyctimes: " << cyctimes << std::endl;
-    PVHSSPara param;
-    PVHSS_EK ek0, ek1;
-    PVHSS_SK sk;
+    PVHSSElg1_Para param;
+    PVHSSElg1_EK ek0, ek1;
+    PVHSSElg1_SK sk;
     param.skLen = 1024;
     param.vkLen = 256;
     param.msg_bits = 32;
@@ -23,17 +23,17 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     // Setup Phase
     for (int i = 0; i < cyctimes; i++)
     {
-        PVHSSPara param00;
-        PVHSS_EK ek000, ek100;
-        PVHSS_SK sk000;
+        PVHSSElg1_Para param00;
+        PVHSSElg1_EK ek000, ek100;
+        PVHSSElg1_SK sk000;
         time = GetTime();
         param00.skLen = 1024;
         param00.vkLen = 256;
         param00.msg_bits = 32;
         param00.degree_f = degree_f;
         param00.msg_num = msg_num;
-        Setup(param00, ek000, ek100);
-        KeyGen(param00, sk000);
+        PVHSSElg1_Setup(param00, ek000, ek100);
+        PVHSSElg1_KeyGen(param00, sk000);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
@@ -41,8 +41,8 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     cout << "Setup algorithm time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
     std::cout << "-------------------------------------------------------" << std::endl;
     // Key Generation Phase
-    Setup(param, ek0, ek1);
-    KeyGen(param, sk);
+    PVHSSElg1_Setup(param, ek0, ek1);
+    PVHSSElg1_KeyGen(param, sk);
 
     // Input Generation Phase
     Vec<ZZ> X;
@@ -53,11 +53,11 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     }
 
     // Input Processing Phase
-    vector<PVHSS_CT> Ix;
+    vector<PVHSSElg1_CT> Ix;
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();
-        ProbGen(Ix, param, X);
+        PVHSSElg1_ProbGen(Ix, param, X);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
@@ -72,7 +72,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();
-        Compute(pi0, 0, param, ek0, Ix, F_TEST);
+        PVHSSElg1_Compute(pi0, 0, param, ek0, Ix, F_TEST);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
@@ -83,7 +83,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < 1; i++)
     {
         time = GetTime();
-        Compute(pi1, 1, param, ek1, Ix, F_TEST);
+        PVHSSElg1_Compute(pi1, 1, param, ek1, Ix, F_TEST);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, 1);
@@ -95,7 +95,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();
-        acc = Verify(pi0, pi1, param.ck);
+        acc = PVHSSElg1_Verify(pi0, pi1, param.ck);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
@@ -116,7 +116,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();
-        Decode(y, pi0, pi1,sk);
+        PVHSSElg1_Decode(y, pi0, pi1,sk);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);

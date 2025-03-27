@@ -2,16 +2,16 @@
 #include "BGN.h"
 #include "VHSSElg.h"
 
-typedef HSS_EK PVHSS_EK;
-typedef HSS_CT PVHSS_CT;
-typedef bgn_t PVHSS_SK;
-typedef g2_t PVHSS_VK;
+typedef VHSSElg_EK PVHSSElg2_EK;
+typedef VHSSElg_CT PVHSSElg2_CT;
+typedef bgn_t PVHSSElg2_SK;
+typedef g2_t PVHSSElg2_VK;
 typedef struct
 {
-    HSS_PK pk;
+    VHSSElg_PK pk;
     CK ck;
-    PVHSS_VK vk;
-    PVHSS_SK sk;
+    PVHSSElg2_VK vk;
+    PVHSSElg2_SK sk;
 
     int skLen;
     int vkLen;
@@ -19,19 +19,19 @@ typedef struct
     int msg_bits;
     int degree_f;
     int msg_num;
-    HSS_CT pk_f; 
+    VHSSElg_CT pk_f; 
     ZZ n_out;
-} PVHSSPara;
+} PVHSSElg2_Para;
 
-void Setup(PVHSSPara &param, PVHSS_EK &ek0, PVHSS_EK &ek1, PVHSS_SK &sk);
-void KeyGen(PVHSSPara &param, PVHSS_SK &sk);
-void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ &x);
+void PVHSSElg2_Setup(PVHSSElg2_Para &param, PVHSSElg2_EK &ek0, PVHSSElg2_EK &ek1, PVHSSElg2_SK &sk);
+void PVHSSElg2_KeyGen(PVHSSElg2_Para &param, PVHSSElg2_SK &sk);
+void PVHSSElg2_ProbGen(vector<PVHSSElg2_CT> &Ix, const PVHSSElg2_Para &param, const vec_ZZ &x);
 
-void Compute(PROOF &proof, int b, const PVHSSPara &param, const PVHSS_EK &ekb, vector<PVHSS_CT> &Ix, vector<vector<int>> F_TEST);
-bool Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSPara &param);
-void Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk);
+void PVHSSElg2_Compute(PROOF &proof, int b, const PVHSSElg2_Para &param, const PVHSSElg2_EK &ekb, vector<PVHSSElg2_CT> &Ix, vector<vector<int>> F_TEST);
+bool PVHSSElg2_Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSElg2_Para &param);
+void PVHSSElg2_Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSSElg2_SK sk);
 
 
-void Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const PVHSSPara &param);
+void PVHSSElg2_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const PVHSSElg2_Para &param);
 
-void PVHSS_ACC_TEST(int msg_num, int degree_f);
+void PVHSSElg2_ACC_TEST(int msg_num, int degree_f);

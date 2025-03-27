@@ -161,6 +161,12 @@ ZZ PRF_ZZ(int prfkey, ZZ mmod)
     return res;
 }
 
+void PRF_ZZ(ZZ& res, int prfkey, const ZZ& mmod)
+{
+    SetSeed(ZZ(prfkey));
+    RandomBnd(res, mmod);
+}
+
 void PRF_bn(bn_t res, int prfkey, ZZ mmod)
 {
     ZZ tmp;

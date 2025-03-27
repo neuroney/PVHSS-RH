@@ -73,6 +73,7 @@ void DataProcess(double &mean, double &stdev, double *Time, int cyctimes);
 void NativeEval(ZZ &y, int d, int num_data, vec_ZZ X, ZZ mmod, vector<vector<int>> F_TEST);
 
 ZZ PRF_ZZ(int prfkey, ZZ mmod);
+void PRF_ZZ(ZZ& res, int prfkey, const ZZ& mmod);
 
 void PRF_bn(bn_t res, int prfkey, ZZ mmod);
 

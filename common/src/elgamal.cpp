@@ -1,0 +1,55 @@
+#include "elgamal.h"
+
+void Elgamal_Gen(Elgamal_PK &pk, Elgamal_SK &d, int skLen)
+{
+    ZZ p, q;
+
+    // GenGermainPrime(p, 1536); // safe prime
+    p = conv<ZZ>("2410312426921032588580116606028314112912093247945688951359675039065257391591803200669085024107346049663448766280888004787862416978794958324969612987890774651455213339381625224770782077917681499676845543137387820057597345857904599109461387122099507964997815641342300677629473355281617428411794163967785870370368969109221591943054232011562758450080579587850900993714892283476646631181515063804873375182260506246992837898705971012525843324401232986857004760339321639");
+    // GenGermainPrime(q, 1536);
+    q = conv<ZZ>("2410312426921032588580116606028314112912093247945688951359675039065257391591803200669085024107346049663448766280888004787862416978794958324969612987890774651455213339381625224770782077917681499676845543137387820057597345857904599109461387122099507964997815641342300677629473355281617428411794163967785870370368969109221591943054232011562758450080579587850900993714892283476646631181515063804873375182260506246992837898705971012525843324401232986857004760339319223");
+
+    mul(pk.N, p, q);        // N = p * q
+    mul(pk.N2, pk.N, pk.N); // N^2
+
+    RandomBnd(pk.g, pk.N2);
+    while (Jacobi(pk.g, pk.N) != 1)
+    {
+        RandomBnd(pk.g, pk.N2);
+    }
+
+    add(pk.f, pk.N, 1);
+
+    RandomBits(d, skLen);
+    PowerMod(pk.h, pk.g, d, pk.N2);
+}
+
+void Elgamal_Enc(Elgamal_CT &ct, const Elgamal_PK &pk, const ZZ &x)
+{
+    ZZ r;
+    RandomBnd(r, pk.N);
+
+    PowerMod(ct[0], pk.g, r, pk.N2);
+    PowerMod(ct[1], pk.h, r, pk.N2);
+    MulMod(ct[1], ct[1], 1 + pk.N * x, pk.N2);
+}
+
+void Elgamal_skEnc(Elgamal_CT &ct, const Elgamal_PK &pk, const ZZ &x)
+{
+    ZZ r;
+    RandomBnd(r, pk.N);
+
+    PowerMod(ct[0], pk.g, r, pk.N2);
+    MulMod(ct[0], ct[0], 1 - pk.N * x, pk.N2);
+    PowerMod(ct[1], pk.h, r, pk.N2);
+}
+
+void Elgamal_Dec(ZZ &x, const Elgamal_PK &pk, const Elgamal_SK &sk, const Elgamal_CT &ct)
+{
+    ZZ temp;
+    PowerMod(temp, ct[0], -sk, pk.N2);
+    MulMod(temp, ct[1], temp, pk.N2);
+
+    sub(temp, temp, 1);
+    div(x, temp, pk.N);
+}

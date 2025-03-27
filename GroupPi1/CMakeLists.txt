@@ -1,10 +1,7 @@
-file(GLOB SOURCES 
-    "src/*.cpp"
-    "src/*.c"
-)
-
 add_executable(GroupPi1
-    ${SOURCES}
+    src/GroupPi1.cpp
+    src/Ped.cpp
+    src/tester.cpp
     test/main.cpp
 )
 

@@ -1,9 +1,9 @@
 #include "GroupPi2.h"
 
-void Setup(PVHSSPara &param, PVHSS_EK &ek0, PVHSS_EK &ek1, PVHSS_SK &sk)
+void PVHSSElg2_Setup(PVHSSElg2_Para &param, PVHSSElg2_EK &ek0, PVHSSElg2_EK &ek1, PVHSSElg2_SK &sk)
 {
     double time =GetTime();
-    HSS_Gen(param.pk, ek0, ek1, param.skLen, param.vkLen);
+    VHSSElg_Gen(param.pk, ek0, ek1, param.skLen, param.vkLen);
     cout << "VHSS Setup algorithm time: " << (GetTime() - time) * 1000 << " ms\n";
     BGN_ComGen(param.ck, sk);
 
@@ -15,35 +15,35 @@ void Setup(PVHSSPara &param, PVHSS_EK &ek0, PVHSS_EK &ek1, PVHSS_SK &sk)
     
 }
 
-void KeyGen(PVHSSPara &param, PVHSS_SK &sk)
+void PVHSSElg2_KeyGen(PVHSSElg2_Para &param, PVHSSElg2_SK &sk)
 {
     return;
 }
 
-void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ &x)
+void PVHSSElg2_ProbGen(vector<PVHSSElg2_CT> &Ix, const PVHSSElg2_Para &param, const vec_ZZ &x)
 {
     Ix.clear();
     int i;
-    HSS_CT CTtmp;
+    VHSSElg_CT CTtmp;
     for (i = 0; i < x.length(); ++i)
     {
-        HSS_Input(CTtmp, param.pk, x[i]);
+        VHSSElg_Input(CTtmp, param.pk, x[i]);
         Ix.push_back(CTtmp);
     }
 }
 
-void Compute(PROOF &proof, int b, const PVHSSPara &param, const PVHSS_EK &ekb, vector<PVHSS_CT> &Ix, vector<vector<int>> F_TEST)
+void PVHSSElg2_Compute(PROOF &proof, int b, const PVHSSElg2_Para &param, const PVHSSElg2_EK &ekb, vector<PVHSSElg2_CT> &Ix, vector<vector<int>> F_TEST)
 {
     int prf_key = 0;
-    HSS_MV y_b_res;
-    //HSS_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
-    HSS_Evaluate_P_d2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
+    VHSSElg_MV y_b_res;
+    //VHSSElg_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
+    VHSSElg_Evaluate_P_d2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
     double time =GetTime();
-    Prove(proof, b, y_b_res[0], y_b_res[2], param);
+    PVHSSElg2_Prove(proof, b, y_b_res[0], y_b_res[2], param);
     cout << "Prove algorithm time: " << (GetTime() - time) * 1000 << " ms\n";
 }
 
-bool Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSPara &param)
+bool PVHSSElg2_Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSElg2_Para &param)
 {
     fp12_t lefthand,righthand;
     fp12_new(lefthand);
@@ -69,7 +69,7 @@ bool Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSPara &param)
     return (fp12_cmp(lefthand, righthand) == RLC_EQ);
 }
 
-void Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk)
+void PVHSSElg2_Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSSElg2_SK sk)
 {
     g1_t in[2];
     g1_new(in[0]);
@@ -80,7 +80,7 @@ void Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk)
     cp_bgn_dec1(y, in, sk);
 }
 
-void Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const PVHSSPara &param)
+void PVHSSElg2_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const PVHSSElg2_Para &param)
 {
     bn_t u, v;
     fp12_t mu, delta;
@@ -118,19 +118,19 @@ void Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const PVHSSPara &param)
     }
 }
 
-void PVHSS_ACC_TEST(int msg_num, int degree_f)
+void PVHSSElg2_ACC_TEST(int msg_num, int degree_f)
 {
-    PVHSSPara param;
-    PVHSS_EK ek0, ek1;
-    PVHSS_SK sk;
+    PVHSSElg2_Para param;
+    PVHSSElg2_EK ek0, ek1;
+    PVHSSElg2_SK sk;
     param.skLen = 1024;
     param.vkLen = 256;
     param.msg_bits = 1;
     param.degree_f = degree_f;
     param.msg_num = msg_num;
     double time = GetTime();
-    Setup(param, ek0, ek1, sk);
-    KeyGen(param, sk);
+    PVHSSElg2_Setup(param, ek0, ek1, sk);
+    PVHSSElg2_KeyGen(param, sk);
     time = GetTime() - time;
     cout << "KeyGen algo time: " << time * 1000 << " ms\n";
 
@@ -141,9 +141,9 @@ void PVHSS_ACC_TEST(int msg_num, int degree_f)
         RandomBits(X[i], param.msg_bits);
     }
 
-    vector<PVHSS_CT> Ix;
+    vector<PVHSSElg2_CT> Ix;
     time = GetTime();
-    ProbGen(Ix, param, X);
+    PVHSSElg2_ProbGen(Ix, param, X);
     time = GetTime() - time;
     cout << "ProbGen algo time: " << time * 1000 << " ms\n";
 
@@ -152,18 +152,18 @@ void PVHSS_ACC_TEST(int msg_num, int degree_f)
 
     PROOF pi0, pi1;
     time = GetTime();
-    Compute(pi0, 0, param, ek0, Ix, F_TEST);
+    PVHSSElg2_Compute(pi0, 0, param, ek0, Ix, F_TEST);
     time = GetTime() - time;
     cout << "Eval0 algo time: " << time * 1000 << " ms\n";
 
     time = GetTime();
-    Compute(pi1, 1, param, ek1, Ix, F_TEST);
+    PVHSSElg2_Compute(pi1, 1, param, ek1, Ix, F_TEST);
     time = GetTime() - time;
     cout << "Eval1 algo time: " << time * 1000 << " ms\n";
 
     bool res_acc;
     time = GetTime();
-    res_acc = Verify(pi0, pi1, param);
+    res_acc = PVHSSElg2_Verify(pi0, pi1, param);
     time = GetTime() - time;
     cout << "Veri algo time: " << time * 1000 << " ms\n";
     if (res_acc)
@@ -177,7 +177,7 @@ void PVHSS_ACC_TEST(int msg_num, int degree_f)
 
     ZZ y_native, y_eval;
     dig_t y_dig;
-    Decode(y_dig, pi0, pi1, sk);
+    PVHSSElg2_Decode(y_dig, pi0, pi1, sk);
     
     
     // NativeEval(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);
