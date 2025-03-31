@@ -2,9 +2,7 @@
 
 void PVHSSElg2_Setup(PVHSSElg2_Para &param, PVHSSElg2_EK &ek0, PVHSSElg2_EK &ek1, PVHSSElg2_SK &sk)
 {
-    double time =GetTime();
     VHSSElg_Gen(param.pk, ek0, ek1, param.skLen, param.vkLen);
-    cout << "VHSS Setup algorithm time: " << (GetTime() - time) * 1000 << " ms\n";
     BGN_ComGen(param.ck, sk);
 
     bn_t A;

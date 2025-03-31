@@ -30,46 +30,46 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     DataProcess(mean, stdev, Time, cyctimes);
     cout << "HSS_Input algo time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
 
-    HSS_MV X_Memory;
-    HSS_Input(X_Input, pk, X_single);
+    // HSS_MV X_Memory;
+    // HSS_Input(X_Input, pk, X_single);
     int prf_key = 0;
-    for (int i = 0; i < cyctimes; i++)
-    {
-        time = GetTime();
-        HSS_ConvertInput(X_Memory, 0, pk, ek0, X_Input, prf_key);
-        Time[i] = GetTime() - time;
-    }
-    DataProcess(mean, stdev, Time, cyctimes);
-    cout << "HSS_ConvertInput algo time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
+    // for (int i = 0; i < cyctimes; i++)
+    // {
+    //     time = GetTime();
+    //     HSS_ConvertInput(X_Memory, 0, pk, ek0, X_Input, prf_key);
+    //     Time[i] = GetTime() - time;
+    // }
+    // DataProcess(mean, stdev, Time, cyctimes);
+    // cout << "HSS_ConvertInput algo time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
 
     ZZ Y_single;
-    RandomBits(Y_single, msg_bits);
-    HSS_CT Y_Input;
-    HSS_Input(Y_Input, pk, Y_single);
-    prf_key = 0;
-    HSS_ConvertInput(X_Memory, 0, pk, ek0, X_Input, prf_key);
-    HSS_MV Y_Memory;
-    prf_key = 0;
-    HSS_ConvertInput(Y_Memory, 0, pk, ek0, Y_Input, prf_key);
-    for (int i = 0; i < cyctimes; i++)
-    {
-        HSS_MV Z_Memory;
-        time = GetTime();
-        HSS_AddMemory(Z_Memory, pk, X_Memory, Y_Memory);
-        Time[i] = GetTime() - time;
-    }
-    DataProcess(mean, stdev, Time, cyctimes);
-    cout << "HSS_AddMemory algo time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
+    // RandomBits(Y_single, msg_bits);
+    // HSS_CT Y_Input;
+    // HSS_Input(Y_Input, pk, Y_single);
+    // prf_key = 0;
+    // HSS_ConvertInput(X_Memory, 0, pk, ek0, X_Input, prf_key);
+    // HSS_MV Y_Memory;
+    // prf_key = 0;
+    // HSS_ConvertInput(Y_Memory, 0, pk, ek0, Y_Input, prf_key);
+    // for (int i = 0; i < cyctimes; i++)
+    // {
+    //     HSS_MV Z_Memory;
+    //     time = GetTime();
+    //     HSS_AddMemory(Z_Memory, pk, X_Memory, Y_Memory);
+    //     Time[i] = GetTime() - time;
+    // }
+    // DataProcess(mean, stdev, Time, cyctimes);
+    // cout << "HSS_AddMemory algo time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
 
-    for (int i = 0; i < cyctimes; i++)
-    {
-        HSS_MV Z_Memory;
-        time = GetTime();
-        HSS_Mul(Z_Memory, 0, pk, X_Input, Y_Memory, prf_key);
-        Time[i] = GetTime() - time;
-    }
-    DataProcess(mean, stdev, Time, cyctimes);
-    cout << "HSS_Mul algo time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
+    // for (int i = 0; i < cyctimes; i++)
+    // {
+    //     HSS_MV Z_Memory;
+    //     time = GetTime();
+    //     HSS_Mul(Z_Memory, 0, pk, X_Input, Y_Memory, prf_key);
+    //     Time[i] = GetTime() - time;
+    // }
+    // DataProcess(mean, stdev, Time, cyctimes);
+    // cout << "HSS_Mul algo time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
 
     vector<vector<int>> F_TEST;
     Random_Func(F_TEST, msg_num, degree_f);

@@ -241,7 +241,6 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     Time_Gen(msg_num, degree_f, cyctimes);
     Time_Enc(msg_num, degree_f, cyctimes);
     Time_Dec(msg_num, degree_f, cyctimes);
-    //Time_Eval_Subalgo(msg_num, degree_f, cyctimes);
     Time_Eval(msg_num, degree_f, cyctimes);
 
 }

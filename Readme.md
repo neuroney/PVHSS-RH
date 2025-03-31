@@ -46,4 +46,9 @@ The PVHSS-RH implementation requires the following libraries:
 - `common/` - Shared utilities and functions
 - `GroupPi1/` - Implementation for Group-based $\Pi_1$
 - `GroupPi2/` - Implementation for Group-based $\Pi_2$
+- `RLWEPi1/` - Implementation for RLWE-based $\Pi_1$
+- `RLWEPi2/` - Implementation for RLWE-based $\Pi_2$
+- `GroupHSS/` - Implementation for Group-based HSS
+- `RLWEHSS/` - Implementation for RLWE-based HSS
+- `CZ23/` - Implementation for RLWE-based $\Pi_{\text{CZ}}$
 - `cmake/` - CMake configuration files

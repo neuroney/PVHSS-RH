@@ -3,7 +3,6 @@
 void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     int msg_num, int degree_f)
 {
-    double time = GetTime();
     param.pkePara.msg_bit = 32;
     param.pkePara.num_data = msg_num;
     param.pkePara.d = degree_f;
@@ -13,7 +12,6 @@ void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     PKE_Gen(param.pkePara, pkePk, pkeSk);
     ZZ_pXModulus modulus(param.pkePara.xN);
     VHSS_Gen(param.vhssPara, param.pkePara, modulus, pkeSk);
-    cout << "VHSS Setup algorithm time: " << (GetTime() - time) * 1000 << " ms\n";
     Ped_ComGen(param.ck);
     RandomBits(param.sk_alpha, 32);
     ZZ_p A_ZZ;
