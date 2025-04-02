@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <array>
 #include <cstdlib>
 #include <algorithm>
 #include <ctime>
