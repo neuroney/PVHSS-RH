@@ -33,22 +33,22 @@ The PVHSS-RH implementation requires the following libraries:
     ```
 4. To run an example:
     ```bash
-    ./GroupPi1/GroupPi1
-    ./GroupPi2/GroupPi2
-    ./RLWEPi1/RLWEPi1
-    ./RLWEPi2/RLWEPi2
-    ./RLWEHSS/RLWEHSS
-    ./GroupHSS/GroupHSS
-    ./CZ23/CZ23
+    ./PiOTRHGroup/PiOTRHGroup
+    ./PiRERHGroup/PiRERHGroup
+    ./PiOTRHRLWE/PiOTRHRLWE
+    ./PiRERHRLWE/PiRERHRLWE
+    ./PiHSSRLWE/PiHSSRLWE
+    ./PiHSSGroup/PiHSSGroup
+    ./PiCZ/PiCZ
     ```
 
 ## Project Structure
 - `common/` - Shared utilities and functions
-- `GroupPi1/` - Implementation for Group-based $\Pi_1$
-- `GroupPi2/` - Implementation for Group-based $\Pi_2$
-- `RLWEPi1/` - Implementation for RLWE-based $\Pi_1$
-- `RLWEPi2/` - Implementation for RLWE-based $\Pi_2$
-- `GroupHSS/` - Implementation for Group-based HSS
-- `RLWEHSS/` - Implementation for RLWE-based HSS
-- `CZ23/` - Implementation for RLWE-based $\Pi_{\text{CZ}}$
+- `PiOTRHGroup/` - Implementation for Group-based $\Pi_1$
+- `PiRERHGroup/` - Implementation for Group-based $\Pi_2$
+- `PiOTRHRLWE/` - Implementation for RLWE-based $\Pi_1$
+- `PiRERHRLWE/` - Implementation for RLWE-based $\Pi_2$
+- `PiHSSGroup/` - Implementation for Group-based HSS
+- `PiHSSRLWE/` - Implementation for RLWE-based HSS
+- `PiCZ/` - Implementation for RLWE-based $\Pi_{\text{CZ}}$
 - `cmake/` - CMake configuration files
