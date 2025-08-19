@@ -1,7 +1,7 @@
 # PVHSS-RH
 
 ## Project Overview
-This repository contains the implementation for \emph{Publicly Verifiable Homomorphic Secret Sharing with Context Hiding and Result Hiding} as described in our paper. 
+This repository contains the implementation for *Publicly Verifiable Homomorphic Secret Sharing with Context Hiding and Result Hiding* as described in our paper. 
 
 
 ### Features
