@@ -23,6 +23,9 @@ add_subdirectory(PiHSSRLWE)
 add_subdirectory(PiOTRHRLWE)
 add_subdirectory(PiRERHRLWE)
 add_subdirectory(PiCZ)
+add_subdirectory(PiVHSSGroup)
+add_subdirectory(PiVHSSRLWE)
+
 
 
 

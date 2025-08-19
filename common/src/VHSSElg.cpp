@@ -19,6 +19,23 @@ void VHSSElg_Gen(VHSSElg_PK &pk, VHSSElg_EK &ek0, VHSSElg_EK &ek1, int skLen, in
     add(ek1[2], ek0[2], (s * VK) % pk.N);
 }
 
+void VHSSElg_Gen(VHSSElg_PK &pk, VHSSElg_VK &vk, VHSSElg_EK &ek0, VHSSElg_EK &ek1, int skLen, int vkLen)
+{
+    Elgamal_SK s;
+    Elgamal_Gen(pk, s, skLen);
+
+    RandomBits(vk, vkLen);
+
+    RandomBits(ek0[0], skLen);
+    add(ek1[0], ek0[0], s);
+
+    RandomBits(ek0[1], vkLen);
+    add(ek1[1], ek0[1], vk);
+
+    RandomBits(ek0[2], vkLen + skLen);
+
+    add(ek1[2], ek0[2], (s * vk) % pk.N);
+}
 
 void VHSSElg_Input(VHSSElg_CT &I, const VHSSElg_PK &pk, const ZZ &x)
 {
@@ -202,4 +219,13 @@ void VHSSElg_Evaluate_P_d2(VHSSElg_MV &y_b_res, int b, const vector<VHSSElg_CT> 
         VHSSElg_AddMemory(y_b_res, pk, y_b_res, dp_prev[s]); 
     }
 
+}
+
+bool VHSSElg_Verify(const VHSSElg_MV &y_0_res, const VHSSElg_MV &y_1_res, const VHSSElg_VK &vk)
+{
+    // Verification logic goes here
+    if (y_1_res[2] - y_0_res[2] == ((y_1_res[0] - y_0_res[0]) * vk)) {
+        return true; // If both results are zero, verification fails
+    }
+    return false;
 }

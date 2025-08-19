@@ -1,7 +1,7 @@
 # PVHSS-RH
 
 ## Project Overview
-This repository contains the implementation for Publicly Verifiable Homomorphic Secret Sharing with Result Hiding (PVHSS-RH) as described in our paper. 
+This repository contains the implementation for \emph{Publicly Verifiable Homomorphic Secret Sharing with Context Hiding and Result Hiding} as described in our paper. 
 
 
 ### Features
@@ -34,21 +34,25 @@ The PVHSS-RH implementation requires the following libraries:
 4. To run an example:
     ```bash
     ./PiOTRHGroup/PiOTRHGroup
-    ./PiRERHGroup/PiRERHGroup
     ./PiOTRHRLWE/PiOTRHRLWE
+    ./PiRERHGroup/PiRERHGroup
     ./PiRERHRLWE/PiRERHRLWE
-    ./PiHSSRLWE/PiHSSRLWE
+    ./PiVHSSRLWE/PiVHSSGroup
+    ./PiVHSSRLWE/PiVHSSRLWE
     ./PiHSSGroup/PiHSSGroup
+    ./PiHSSRLWE/PiHSSRLWE
     ./PiCZ/PiCZ
     ```
 
 ## Project Structure
 - `common/` - Shared utilities and functions
-- `PiOTRHGroup/` - Implementation for Group-based $\Pi_1$
-- `PiRERHGroup/` - Implementation for Group-based $\Pi_2$
-- `PiOTRHRLWE/` - Implementation for RLWE-based $\Pi_1$
-- `PiRERHRLWE/` - Implementation for RLWE-based $\Pi_2$
-- `PiHSSGroup/` - Implementation for Group-based HSS
-- `PiHSSRLWE/` - Implementation for RLWE-based HSS
-- `PiCZ/` - Implementation for RLWE-based $\Pi_{\text{CZ}}$
+- `PiOTRHGroup/` - Implementation for $\Pi_{\mathrm{OTRH},G}$
+- `PiRERHGroup/` - Implementation for $\Pi_{\mathrm{RERH},G}$
+- `PiOTRHRLWE/` - Implementation for  $\Pi_{\mathrm{OTRH},R}$
+- `PiRERHRLWE/` - Implementation for  $\Pi_{\mathrm{RERH},R}$
+- `PiVHSSGroup/` - Implementation for   $\Pi_{\mathrm{VHSS},G}$
+- `PiVHSSRLWE/` - Implementation for  $\Pi_{\mathrm{VHSS},R}$
+- `PiHSSGroup/` - Implementation for   $\Pi_{\mathrm{HSS},G}$
+- `PiHSSRLWE/` - Implementation for  $\Pi_{\mathrm{HSS},R}$
+- `PiCZ/` - Implementation for $\Pi_{\mathrm{CZ}}$
 - `cmake/` - CMake configuration files

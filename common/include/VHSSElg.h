@@ -6,8 +6,9 @@ typedef Elgamal_PK VHSSElg_PK;
 typedef array<ZZ, 3> VHSSElg_EK;
 typedef array<Elgamal_CT, 2> VHSSElg_CT;
 typedef array<ZZ, 4> VHSSElg_MV;
+typedef ZZ VHSSElg_VK;
 
-
+void VHSSElg_Gen(VHSSElg_PK &pk, VHSSElg_VK &vk, VHSSElg_EK &ek0, VHSSElg_EK &ek1, int skLen, int vkLen);
 void VHSSElg_Gen(VHSSElg_PK &pk, VHSSElg_EK &ek0, VHSSElg_EK &ek1, int skLen, int vkLen);
 void VHSSElg_Input(VHSSElg_CT &I, const VHSSElg_PK &pk, const ZZ &x);
 void VHSSElg_ConvertInput(VHSSElg_MV &Mx, int idx, const VHSSElg_PK &pk, const VHSSElg_EK &ek, const VHSSElg_CT &Ix, int &prf_key);
@@ -17,3 +18,5 @@ void VHSSElg_AddMemory(VHSSElg_MV &Mz, const VHSSElg_PK &pk, const VHSSElg_MV &M
 void VHSSElg_Evaluate(VHSSElg_MV &y_b_res, int b, const vector<VHSSElg_CT> &Ix, const VHSSElg_PK &pk, const VHSSElg_EK &ekb, int &prf_key, vector<vector<int>> F_TEST);
 void VHSSElg_Evaluate_P_d(VHSSElg_MV &y_b_res, int b, const vector<VHSSElg_CT> &Ix, const VHSSElg_PK &pk, const VHSSElg_EK &ekb, int &prf_key, int degree_f);
 void VHSSElg_Evaluate_P_d2(VHSSElg_MV &y_b_res, int b, const vector<VHSSElg_CT> &Ix, const VHSSElg_PK &pk, const VHSSElg_EK &ekb, int &prf_key, int degree_f);
+
+bool VHSSElg_Verify(const VHSSElg_MV &y_0_res, const VHSSElg_MV &y_1_res, const VHSSElg_VK &vk);
