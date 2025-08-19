@@ -47,8 +47,8 @@ The PVHSS-RH implementation requires the following libraries:
 ## Project Structure
 - `common/` - Shared utilities and functions
 - `PiOTRHGroup/` - Implementation for $\Pi_{\mathrm{OTRH},G}$
-- `PiRERHGroup/` - Implementation for $\Pi_{\mathrm{RERH},G}$
 - `PiOTRHRLWE/` - Implementation for  $\Pi_{\mathrm{OTRH},R}$
+- `PiRERHGroup/` - Implementation for $\Pi_{\mathrm{RERH},G}$
 - `PiRERHRLWE/` - Implementation for  $\Pi_{\mathrm{RERH},R}$
 - `PiVHSSGroup/` - Implementation for   $\Pi_{\mathrm{VHSS},G}$
 - `PiVHSSRLWE/` - Implementation for  $\Pi_{\mathrm{VHSS},R}$
