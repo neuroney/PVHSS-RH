@@ -13,7 +13,7 @@ void DecPed_ComGen(CK &ck, bgn_t &sk)
 	bgn_null(sk);
 	bgn_new(ck.pub);
 	bgn_new(sk);
-    cp_bgn_gen(ck.pub, sk);
+    cp_decped_gen(ck.pub, sk);
 
     bn_null(ck.g1_order);
     bn_new(ck.g1_order);
@@ -35,5 +35,5 @@ void DecPed_Com(g1_t C[2], bn_t rho, const CK &ck, const ZZ &x_ZZ)
 	g1_null(C[1]);
     g1_new(C[0]);
     g1_new(C[1]);
-    cp_bgn_enc3(C, rho, x, ck.pub);
+    cp_decped_enc3(C, rho, x, ck.pub);
 }

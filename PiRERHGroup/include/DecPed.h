@@ -1,6 +1,6 @@
 #pragma once
 #include "helper.h"
-#include "relic_cp_bgn.h"
+#include "relic_cp_decped.h"
 
 typedef struct
 {

@@ -21,23 +21,13 @@
  * or <https://www.apache.org/licenses/>.
  */
 
-/**
- * @file
- *
- * Implementation of Freeman's prime-order version of the Boneh-Goh-Nissim
- * cryptosystem.
- *
- * @version $Id$
- * @ingroup cp
- */
-
- #include "relic_cp_bgn.h"
+ #include "relic_cp_decped.h"
  
  /*============================================================================*/
  /* Public definitions                                                         */
  /*============================================================================*/
  
- int cp_bgn_gen(bgn_t pub, bgn_t prv) {
+ int cp_decped_gen(bgn_t pub, bgn_t prv) {
      bn_t n;
      int result = RLC_OK;
  
@@ -70,7 +60,7 @@
      return result;
  }
  
- int cp_bgn_enc3(g1_t out[2], bn_t r, bn_t in, const bgn_t pub) {
+ int cp_decped_enc3(g1_t out[2], bn_t r, bn_t in, const bgn_t pub) {
     bn_t n;
     g1_t t;
     int result = RLC_OK;
@@ -112,7 +102,7 @@
     return result;
 }
 
- int cp_bgn_enc1(g1_t out[2], const dig_t in, const bgn_t pub) {
+ int cp_decped_enc1(g1_t out[2], const dig_t in, const bgn_t pub) {
      bn_t r, n;
      g1_t t;
      int result = RLC_OK;
@@ -154,7 +144,7 @@
      return result;
  }
  
- int cp_bgn_dec1(dig_t& out, const g1_t in[2], const bgn_t prv) {
+ int cp_decped_dec1(dig_t& out, const g1_t in[2], const bgn_t prv) {
      bn_t r, n;
      g1_t s, t, u;
      int i, result = RLC_ERR;
@@ -212,7 +202,7 @@
      return result;
  }
  
- int cp_bgn_enc2(g2_t out[2], const dig_t in, const bgn_t pub) {
+ int cp_decped_enc2(g2_t out[2], const dig_t in, const bgn_t pub) {
      bn_t r, n;
      g2_t t;
      int result = RLC_OK;
@@ -253,7 +243,7 @@
      return result;
  }
  
- int cp_bgn_dec2(dig_t *out, const g2_t in[2], const bgn_t prv) {
+ int cp_decped_dec2(dig_t *out, const g2_t in[2], const bgn_t prv) {
      bn_t r, n;
      g2_t s, t, u;
      int i, result = RLC_ERR;
@@ -311,14 +301,14 @@
      return result;
  }
  
- int cp_bgn_add(gt_t e[4], const gt_t c[4], const gt_t d[4]) {
+ int cp_decped_add(gt_t e[4], const gt_t c[4], const gt_t d[4]) {
      for (int i = 0; i < 4; i++) {
          gt_mul(e[i], c[i], d[i]);
      }
      return RLC_OK;
  }
  
- int cp_bgn_mul(gt_t e[4], const g1_t c[2], const g2_t d[2]) {
+ int cp_decped_mul(gt_t e[4], const g1_t c[2], const g2_t d[2]) {
      for (int i = 0; i < 2; i++) {
          for (int j = 0; j < 2; j++) {
              pc_map(e[2*i + j], c[i], d[j]);
@@ -327,7 +317,7 @@
      return RLC_OK;
  }
  
- int cp_bgn_dec(dig_t *out, const gt_t in[4], const bgn_t prv) {
+ int cp_decped_dec(dig_t *out, const gt_t in[4], const bgn_t prv) {
      int i, result = RLC_ERR;
      g1_t g;
      g2_t h;

@@ -75,7 +75,7 @@ void PVHSSElg2_Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSSE
     g1_sub(in[0], pi1.C[0], pi0.C[0]);
     g1_sub(in[1], pi1.C[1], pi0.C[1]);
 
-    cp_bgn_dec1(y, in, sk);
+    cp_decped_dec1(y, in, sk);
 }
 
 void PVHSSElg2_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const PVHSSElg2_Para &param)
