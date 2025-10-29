@@ -24,10 +24,26 @@ void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     ep2_mul_gen(param.ck.g2_A, A); // g_2^A
 }
 
-void KeyGen(PVHSSPara &param, PVHSS_SK &sk, ZZ_pXModulus modulus, vec_ZZ_pX pkePk)
+void KeyGen(PVHSSPara &param, PVHSS_SK &sk, ZZ_pXModulus modulus, vec_ZZ_pX pkePk,  bn_t ekp0, bn_t ekp1)
 {
     RandomBnd(sk, param.ck.g1_order_ZZ);
     VHSS_Enc(param.pk_f, param.pkePara, modulus, pkePk, sk);
+
+     bn_rand_mod(ekp0, param.ck.g1_order); // u_0
+    bn_rand_mod(ekp1, param.ck.g1_order); // u_1
+
+    bn_t u;
+    bn_new(u);
+    bn_sub(u, ekp0, ekp1);
+    g1_t hu;
+    g1_new(hu);
+    g1_mul(hu, param.ck.h, u);
+    fp12_new(param.ck.aux);
+
+    g2_t g2;
+    g2_new(g2);
+    g2_get_gen(g2);
+    pp_map_oatep_k12(param.ck.aux, hu, g2); // e(hu, vk)
 }
 
 void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ &x, ZZ_pXModulus modulus, vec_ZZ_pX pkePk)
@@ -42,25 +58,17 @@ void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ &x, ZZ_p
     }
 }
 
-void Prove(PROOF &pi, int b, const PVHSS_MV &y_b, const PVHSS_MV &Y_b, const PVHSSPara &param)
+void Prove(PROOF &pi, int b, const PVHSS_MV &y_b, const PVHSS_MV &Y_b, const PVHSSPara &param, bn_t ekpb)
 {
     ZZ_p yb, Yb;
     eval(yb, y_b[0], conv<ZZ_p>(param.sk_alpha));
     eval(Yb, Y_b[0], conv<ZZ_p>(param.sk_alpha));
     pi.y= conv<ZZ>(yb) % param.ck.g1_order_ZZ;
 
-    bn_t delta;
-    Ped_Com(pi.D, delta, param.ck, conv<ZZ>(Yb) % param.ck.g1_order_ZZ);
-
-    ep_t h_delta;
-    ep_new(h_delta);
-    ep_mul(h_delta, param.ck.h, delta);
-
-    fp12_new(pi.e);
-    pp_map_oatep_k12(pi.e, h_delta, param.ck.g2);
+    Ped_Com(pi.D, ekpb, param.ck, conv<ZZ>(Yb) % param.ck.g1_order_ZZ);
 }
 
-void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, const vec_ZZ_pX &ek2, vector<PVHSS_CT> &Ix, ZZ_pXModulus modulus, const vec_ZZ_pX &M1, vec_ZZ_pX &M2, vector<vector<int>> F_TEST)
+void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, const vec_ZZ_pX &ek2, vector<PVHSS_CT> &Ix, ZZ_pXModulus modulus, const vec_ZZ_pX &M1, vec_ZZ_pX &M2, vector<vector<int>> F_TEST, bn_t ekpb)
 {
     int prf_key = 0;
     PVHSS_MV y_b_res, Y_b_res, sk_b, SK_b;
@@ -89,13 +97,13 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, 
     }
     HSS_AddMemory(y_b_res, y_b_res, sk_b);
     HSS_AddMemory(Y_b_res, Y_b_res, SK_b);
-    Prove(proof, b, y_b_res, Y_b_res, param);
+    Prove(proof, b, y_b_res, Y_b_res, param, ekpb);
     cout << "Prove algorithm time: " << (GetTime() - time) * 1000 << " ms\n";
 }
 
 bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
 {
-    fp12_t righthand, lefthand;
+   fp12_t righthand, lefthand;
     fp12_new(righthand);
     fp12_new(lefthand);
 
@@ -104,7 +112,7 @@ bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
     ep_new(eptmp);
     ep_sub(eptmp, pi1.D, pi0.D);
     pp_map_oatep_k12(lefthand, eptmp, ck.g2);
-    fp12_mul(lefthand, lefthand, pi0.e);
+    fp12_mul(lefthand, lefthand, ck.aux);
 
     // Compute e(g, g)^{Ay}
     bn_t y_bn;
@@ -112,7 +120,6 @@ bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
     ZZ2bn(y_bn, (pi1.y-pi0.y) % ck.g1_order_ZZ);
     ep_mul(eptmp, ck.g1, y_bn);
     pp_map_oatep_k12(righthand, eptmp, ck.g2_A);
-    fp12_mul(righthand, righthand, pi1.e);
 
     // Compare lefthand and righthand
     return (fp12_cmp(lefthand, righthand) == RLC_EQ);

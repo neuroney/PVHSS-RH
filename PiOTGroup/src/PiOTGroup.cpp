@@ -8,14 +8,30 @@ void PVHSSElg1_Setup(PVHSSElg1_Para &param, PVHSSElg1_EK &ek0, PVHSSElg1_EK &ek1
     bn_t A;
     bn_new(A);
     ep2_new(param.ck.g2_A);
-    ZZ2bn(A, (ek1[1]-ek0[1]) % param.pk.N);
+    ZZ2bn(A, (ek1[1] - ek0[1]) % param.pk.N);
     ep2_mul_gen(param.ck.g2_A, A); // g_2^A
 }
 
-void PVHSSElg1_KeyGen(PVHSSElg1_Para &param, PVHSSElg1_SK &sk)
+void PVHSSElg1_KeyGen(PVHSSElg1_Para &param, PVHSSElg1_SK &sk, bn_t ekp0, bn_t ekp1)
 {
     RandomBnd(sk, param.ck.g1_order_ZZ);
     VHSSElg_Input(param.pk_f, param.pk, sk);
+
+    bn_rand_mod(ekp0, param.ck.g1_order); // u_0
+    bn_rand_mod(ekp1, param.ck.g1_order); // u_1
+
+    bn_t u;
+    bn_new(u);
+    bn_sub(u, ekp0, ekp1);
+    g1_t hu;
+    g1_new(hu);
+    g1_mul(hu, param.ck.h, u);
+    fp12_new(param.ck.aux);
+
+    g2_t g2;
+    g2_new(g2);
+    g2_get_gen(g2);
+    pp_map_oatep_k12(param.ck.aux, hu, g2); // e(hu, vk)
 }
 
 void PVHSSElg1_ProbGen(vector<PVHSSElg1_CT> &Ix, const PVHSSElg1_Para &param, const vec_ZZ &x)
@@ -30,19 +46,19 @@ void PVHSSElg1_ProbGen(vector<PVHSSElg1_CT> &Ix, const PVHSSElg1_Para &param, co
     }
 }
 
-void PVHSSElg1_Compute(PROOF &proof, int b, const PVHSSElg1_Para &param, const PVHSSElg1_EK &ekb, vector<PVHSSElg1_CT> &Ix, vector<vector<int>> F_TEST)
+void PVHSSElg1_Compute(PROOF &proof, int b, const PVHSSElg1_Para &param, const PVHSSElg1_EK &ekb, vector<PVHSSElg1_CT> &Ix, vector<vector<int>> F_TEST, bn_t ekpb)
 {
     int prf_key = 0;
-    VHSSElg_MV y_b_res; 
-    //VHSSElg_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
+    VHSSElg_MV y_b_res;
+    // VHSSElg_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
     VHSSElg_Evaluate_P_d2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
-    
+
     VHSSElg_MV sk_b;
     VHSSElg_ConvertInput(sk_b, b, param.pk, ekb, param.pk_f, prf_key);
     y_b_res[0] = y_b_res[0] + sk_b[0];
     y_b_res[2] = y_b_res[2] + sk_b[2];
-    
-    Ped_Prove(proof, b, y_b_res[0], y_b_res[2], param.ck, prf_key);
+
+    Ped_Prove(proof, b, y_b_res[0], y_b_res[2], param.ck, prf_key, ekpb);
 }
 
 bool PVHSSElg1_Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
@@ -56,7 +72,7 @@ bool PVHSSElg1_Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
     ep_new(eptmp);
     ep_sub(eptmp, pi1.D, pi0.D);
     pp_map_oatep_k12(lefthand, eptmp, ck.g2);
-    fp12_mul(lefthand, lefthand, pi0.e);
+    fp12_mul(lefthand, lefthand, ck.aux);
 
     // Compute e(g, g)^{Ay}
     bn_t y_bn;
@@ -64,19 +80,18 @@ bool PVHSSElg1_Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
     ZZ2bn(y_bn, (pi1.y - pi0.y) % ck.g1_order_ZZ);
     ep_mul(eptmp, ck.g1, y_bn);
     pp_map_oatep_k12(righthand, eptmp, ck.g2_A);
-    fp12_mul(righthand, righthand, pi1.e);
-    
+
     // Compare lefthand and righthand
     return (fp12_cmp(lefthand, righthand) == RLC_EQ);
 }
 
-void PVHSSElg1_Decode(ZZ& y, const PROOF &pi0, const PROOF &pi1, const PVHSSElg1_SK sk)
+void PVHSSElg1_Decode(ZZ &y, const PROOF &pi0, const PROOF &pi1, const PVHSSElg1_SK sk)
 {
     sub(y, pi1.y, pi0.y);
     sub(y, y, sk);
 }
 
-void PVHSSElg1_PVHSSElg1_ACC_TEST(int msg_num, int degree_f)
+void PVHSSElg1_ACC_TEST(int msg_num, int degree_f)
 {
     PVHSSElg1_Para param;
     PVHSSElg1_EK ek0, ek1;
@@ -86,10 +101,15 @@ void PVHSSElg1_PVHSSElg1_ACC_TEST(int msg_num, int degree_f)
     param.msg_bits = 32;
     param.degree_f = degree_f;
     param.msg_num = msg_num;
+    bn_t ekp0, ekp1;
 
     double time = GetTime();
     PVHSSElg1_Setup(param, ek0, ek1);
-    PVHSSElg1_KeyGen(param, sk);
+
+    time = GetTime() - time;
+    cout << "KeyGen algo time: " << time * 1000 << " ms\n";
+    time = GetTime();
+    PVHSSElg1_KeyGen(param, sk, ekp0, ekp1);
     time = GetTime() - time;
     cout << "KeyGen algo time: " << time * 1000 << " ms\n";
 
@@ -98,10 +118,10 @@ void PVHSSElg1_PVHSSElg1_ACC_TEST(int msg_num, int degree_f)
     for (int i = 0; i < msg_num; ++i)
     {
         RandomBits(X[i], param.msg_bits);
-        //X[i] = i+1;
+        // X[i] = i+1;
     }
 
-    vector<PVHSSElg1_CT>  Ix;
+    vector<PVHSSElg1_CT> Ix;
     time = GetTime();
     PVHSSElg1_ProbGen(Ix, param, X);
     time = GetTime() - time;
@@ -112,12 +132,12 @@ void PVHSSElg1_PVHSSElg1_ACC_TEST(int msg_num, int degree_f)
 
     PROOF pi0, pi1;
     time = GetTime();
-    PVHSSElg1_Compute(pi0, 0, param, ek0, Ix, F_TEST);
+    PVHSSElg1_Compute(pi0, 0, param, ek0, Ix, F_TEST, ekp0);
     time = GetTime() - time;
     cout << "Eval0 algo time: " << time * 1000 << " ms\n";
 
     time = GetTime();
-    PVHSSElg1_Compute(pi1, 1, param, ek1, Ix, F_TEST);
+    PVHSSElg1_Compute(pi1, 1, param, ek1, Ix, F_TEST, ekp1);
     time = GetTime() - time;
     cout << "Eval1 algo time: " << time * 1000 << " ms\n";
 

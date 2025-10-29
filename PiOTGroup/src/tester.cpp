@@ -14,6 +14,7 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     param.msg_bits = 32;
     param.degree_f = degree_f;
     param.msg_num = msg_num;
+    bn_t ekp0, ekp1;
 
     PROOF pi0, pi1;
 
@@ -33,7 +34,6 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
         param00.degree_f = degree_f;
         param00.msg_num = msg_num;
         PVHSSElg1_Setup(param00, ek000, ek100);
-        PVHSSElg1_KeyGen(param00, sk000);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
@@ -41,8 +41,29 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     cout << "Setup algorithm time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
     std::cout << "-------------------------------------------------------" << std::endl;
     // Key Generation Phase
+    for (int i = 0; i < cyctimes; i++)
+    {
+        PVHSSElg1_Para param00;
+        PVHSSElg1_EK ek000, ek100;
+        PVHSSElg1_SK sk000;
+        param00.skLen = 1024;
+        param00.vkLen = 256;
+        param00.msg_bits = 32;
+        param00.degree_f = degree_f;
+        param00.msg_num = msg_num;
+        PVHSSElg1_Setup(param00, ek000, ek100);
+        bn_t ekp000, ekp100;
+        time = GetTime();
+        PVHSSElg1_KeyGen(param00, sk000, ekp000, ekp1);
+        Time[i] = GetTime() - time;
+    }
+    DataProcess(mean, stdev, Time, cyctimes);
+
+    cout << "KeyGen algorithm time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
+    std::cout << "-------------------------------------------------------" << std::endl;
+
     PVHSSElg1_Setup(param, ek0, ek1);
-    PVHSSElg1_KeyGen(param, sk);
+    PVHSSElg1_KeyGen(param, sk, ekp0, ekp1);
 
     // Input Generation Phase
     Vec<ZZ> X;
@@ -72,7 +93,7 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();
-        PVHSSElg1_Compute(pi0, 0, param, ek0, Ix, F_TEST);
+        PVHSSElg1_Compute(pi0, 0, param, ek0, Ix, F_TEST, ekp0);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
@@ -83,7 +104,7 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < 1; i++)
     {
         time = GetTime();
-        PVHSSElg1_Compute(pi1, 1, param, ek1, Ix, F_TEST);
+        PVHSSElg1_Compute(pi1, 1, param, ek1, Ix, F_TEST, ekp1);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, 1);
@@ -116,12 +137,10 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     for (int i = 0; i < cyctimes; i++)
     {
         time = GetTime();
-        PVHSSElg1_Decode(y, pi0, pi1,sk);
+        PVHSSElg1_Decode(y, pi0, pi1, sk);
         Time[i] = GetTime() - time;
     }
     DataProcess(mean, stdev, Time, cyctimes);
     cout << "Decryption algorithm time: " << mean * 1000 << " ms  RSD: " << stdev * 100 << "%\n";
     std::cout << "-------------------------------------------------------" << std::endl;
-
 }
-

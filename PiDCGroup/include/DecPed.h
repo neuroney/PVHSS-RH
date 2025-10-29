@@ -13,7 +13,6 @@ typedef struct
 {
     ep_t C[2];
     ep_t D[2];
-    fp12_t e;  
 } PROOF;
 
 void DecPed_ComGen(CK &ck, bgn_t &sk);

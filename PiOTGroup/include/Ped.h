@@ -10,17 +10,17 @@ typedef struct
     ep_t h; 
     ep_t g1;
     ep2_t g2;
+    fp12_t aux;
 } CK;
 
 typedef struct
 {
     ZZ y;
     ep_t D;
-    fp12_t e;  
 } PROOF;
 
 void Ped_ComGen(CK &ck);
 void Ped_Com(ep_t C, bn_t rho, const CK &ck, const ZZ &x_ZZ);
 bool Ped_OpenVer(const CK &ck, const ep_t C, const ZZ &x_ZZ, bn_t rho);
-void Ped_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const CK &ck, int &prf_key);
+void Ped_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const CK &ck, int &prf_key, bn_t rho);
 

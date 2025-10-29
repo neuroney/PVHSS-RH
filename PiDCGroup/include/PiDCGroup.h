@@ -21,17 +21,19 @@ typedef struct
     int msg_num;
     VHSSElg_CT pk_f; 
     ZZ n_out;
+    fp12_t aux0;
+    fp12_t aux1;
 } PVHSSElg2_Para;
 
 void PVHSSElg2_Setup(PVHSSElg2_Para &param, PVHSSElg2_EK &ek0, PVHSSElg2_EK &ek1, PVHSSElg2_SK &sk);
-void PVHSSElg2_KeyGen(PVHSSElg2_Para &param, PVHSSElg2_SK &sk);
+void PVHSSElg2_KeyGen(PVHSSElg2_Para &param, PVHSSElg2_SK &sk, bn_t ekp0[2], bn_t ekp1[2]);
 void PVHSSElg2_ProbGen(vector<PVHSSElg2_CT> &Ix, const PVHSSElg2_Para &param, const vec_ZZ &x);
 
-void PVHSSElg2_Compute(PROOF &proof, int b, const PVHSSElg2_Para &param, const PVHSSElg2_EK &ekb, vector<PVHSSElg2_CT> &Ix, vector<vector<int>> F_TEST);
+void PVHSSElg2_Compute(PROOF &proof, int b, const PVHSSElg2_Para &param, const PVHSSElg2_EK &ekb, bn_t ekpb[2], vector<PVHSSElg2_CT> &Ix, vector<vector<int>> F_TEST);
 bool PVHSSElg2_Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSElg2_Para &param);
 void PVHSSElg2_Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSSElg2_SK sk);
 
 
-void PVHSSElg2_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const PVHSSElg2_Para &param);
+void PVHSSElg2_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const PVHSSElg2_Para &param, bn_t ekpb[2]);
 
 void PVHSSElg2_ACC_TEST(int msg_num, int degree_f);

@@ -66,16 +66,13 @@
     int result = RLC_OK;
 
     bn_null(n);
-    bn_null(r);
     g1_null(t);
 
     RLC_TRY {
         bn_new(n);
-        bn_new(r);
         g1_new(t);
 
         pc_get_ord(n);
-        bn_rand_mod(r, n);
 
         /* Compute c0 = (ym + r)G. */
         g1_mul(out[0], pub->gy, in);
@@ -95,7 +92,6 @@
     }
     RLC_FINALLY {
         bn_free(n);
-        bn_free(r);
         g1_free(t);
     }
 

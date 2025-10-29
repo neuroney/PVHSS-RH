@@ -27,14 +27,9 @@ void Ped_ComGen(CK &ck)
 
 void Ped_Com(ep_t C, bn_t rho, const CK &ck, const ZZ &x_ZZ)
 {
-    bn_null(rho);
-    bn_new(rho);
-
     bn_t x;
     bn_new(x);
     ZZ2bn(x, x_ZZ % ck.g1_order_ZZ);
-
-    bn_rand_mod(rho, ck.g1_order);
 
     ep_null(C);
     ep_new(C);
@@ -66,17 +61,8 @@ bool Ped_OpenVer(const CK &ck, const ep_t C, const ZZ &x_ZZ, bn_t rho)
     return (ep_cmp(C, cc) == RLC_EQ); //&& Ped_ComVer(C, ck));
 }
 
-void Ped_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const CK &ck, int &prf_key)
+void Ped_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const CK &ck, int &prf_key, bn_t rho)
 {
     pi.y = yb % ck.g1_order_ZZ;
-
-    bn_t delta;
-    Ped_Com(pi.D, delta, ck, Yb);
-
-    ep_t h_delta;
-    ep_new(h_delta);
-    ep_mul(h_delta, ck.h, delta);
-
-    fp12_new(pi.e);
-    pp_map_oatep_k12(pi.e, h_delta, ck.g2);
+    Ped_Com(pi.D, rho, ck, Yb);
 }
