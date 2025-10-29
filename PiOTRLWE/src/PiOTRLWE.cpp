@@ -1,4 +1,4 @@
-#include "PiOTRHRLWE.h"
+#include "PiOTRLWE.h"
 
 void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     int msg_num, int degree_f)

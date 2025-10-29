@@ -33,10 +33,10 @@ The PVHSS-RH implementation requires the following libraries:
     ```
 4. To run an example:
     ```bash
-    ./PiOTRHGroup/PiOTRHGroup
-    ./PiOTRHRLWE/PiOTRHRLWE
-    ./PiRERHGroup/PiRERHGroup
-    ./PiRERHRLWE/PiRERHRLWE
+    ./PiOTGroup/PiOTGroup
+    ./PiOTRLWE/PiOTRLWE
+    ./PiDCGroup/PiDCGroup
+    ./PiDCRLWE/PiDCRLWE
     ./PiVHSSRLWE/PiVHSSGroup
     ./PiVHSSRLWE/PiVHSSRLWE
     ./PiHSSGroup/PiHSSGroup
@@ -46,10 +46,10 @@ The PVHSS-RH implementation requires the following libraries:
 
 ## Project Structure
 - `common/` - Shared utilities and functions
-- `PiOTRHGroup/` - Implementation for $\Pi_{\mathrm{OTRH},G}$
-- `PiOTRHRLWE/` - Implementation for  $\Pi_{\mathrm{OTRH},R}$
-- `PiRERHGroup/` - Implementation for $\Pi_{\mathrm{RERH},G}$
-- `PiRERHRLWE/` - Implementation for  $\Pi_{\mathrm{RERH},R}$
+- `PiOTGroup/` - Implementation for $\Pi_{\mathrm{OT},G}$
+- `PiOTRLWE/` - Implementation for  $\Pi_{\mathrm{OT},R}$
+- `PiDCGroup/` - Implementation for $\Pi_{\mathrm{DC},G}$
+- `PiDCRLWE/` - Implementation for  $\Pi_{\mathrm{DC},R}$
 - `PiVHSSGroup/` - Implementation for   $\Pi_{\mathrm{VHSS},G}$
 - `PiVHSSRLWE/` - Implementation for  $\Pi_{\mathrm{VHSS},R}$
 - `PiHSSGroup/` - Implementation for   $\Pi_{\mathrm{HSS},G}$

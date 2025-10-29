@@ -1,4 +1,4 @@
-#include "PiRERHGroup.h"
+#include "PiDCGroup.h"
 
 void PVHSSElg2_Setup(PVHSSElg2_Para &param, PVHSSElg2_EK &ek0, PVHSSElg2_EK &ek1, PVHSSElg2_SK &sk)
 {

@@ -3,17 +3,17 @@ file(GLOB SOURCES
     "src/*.c"
 )
 
-add_executable(PiRERHRLWE
+add_executable(PiOTRLWE
     ${SOURCES}
     test/main.cpp
 )
 
-target_include_directories(PiRERHRLWE PRIVATE
+target_include_directories(PiOTRLWE PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 
-target_link_libraries(PiRERHRLWE
+target_link_libraries(PiOTRLWE
     PRIVATE
         common
         ${NTL_LIBRARIES}

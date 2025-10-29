@@ -1,4 +1,4 @@
-#include "PiOTRHGroup.h"
+#include "PiOTGroup.h"
 
 void PVHSSElg1_Setup(PVHSSElg1_Para &param, PVHSSElg1_EK &ek0, PVHSSElg1_EK &ek1)
 {

@@ -1,19 +1,16 @@
-file(GLOB SOURCES 
-    "src/*.cpp"
-    "src/*.c"
-)
-
-add_executable(PiRERHGroup
-    ${SOURCES}
+add_executable(PiOTGroup
+    src/PiOTGroup.cpp
+    src/Ped.cpp
+    src/tester.cpp
     test/main.cpp
 )
 
-target_include_directories(PiRERHGroup PRIVATE
+target_include_directories(PiOTGroup PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 
-target_link_libraries(PiRERHGroup
+target_link_libraries(PiOTGroup
     PRIVATE
         common
         ${NTL_LIBRARIES}

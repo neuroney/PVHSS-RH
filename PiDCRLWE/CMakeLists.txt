@@ -1,16 +1,19 @@
-add_executable(PiOTRHGroup
-    src/PiOTRHGroup.cpp
-    src/Ped.cpp
-    src/tester.cpp
+file(GLOB SOURCES 
+    "src/*.cpp"
+    "src/*.c"
+)
+
+add_executable(PiDCRLWE
+    ${SOURCES}
     test/main.cpp
 )
 
-target_include_directories(PiOTRHGroup PRIVATE
+target_include_directories(PiDCRLWE PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 
-target_link_libraries(PiOTRHGroup
+target_link_libraries(PiDCRLWE
     PRIVATE
         common
         ${NTL_LIBRARIES}

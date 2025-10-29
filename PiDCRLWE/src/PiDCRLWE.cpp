@@ -1,4 +1,4 @@
-#include "PiRERHRLWE.h"
+#include "PiDCRLWE.h"
 
 void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
            int msg_num, int degree_f)

@@ -1,4 +1,4 @@
 #pragma once
-#include "PiOTRHGroup.h"
+#include "PiOTGroup.h"
 
 void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes);
