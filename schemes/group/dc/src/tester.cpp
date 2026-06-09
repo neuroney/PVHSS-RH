@@ -8,7 +8,7 @@ namespace pvhss { namespace group { namespace dc {
 void PVHSSElg2_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
     std::cout << "*******************************************************" << std::endl;
-    std::cout << "        Performance Test Results for PVHSSElg2_time        " << std::endl;
+    std::cout << "        Performance Test Results for PVHSSElg2          " << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "degree_f: " << degree_f << "        msg_num: " << msg_num << "        cyctimes: " << cyctimes << std::endl;
     PVHSSElg2_Para param;

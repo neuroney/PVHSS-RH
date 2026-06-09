@@ -11,6 +11,6 @@ int main() {
     int num_data = 5;
     for (size_t i = 0; i < deg_list.size(); i++) {
         std::cout << "Degree: " << deg_list[i] << "\n";
-        EvalPoly(deg_list[i], num_data);
+        EvalPoly(deg_list[i], num_data, 1);
     }
 }

@@ -6,8 +6,11 @@
 #include <algorithm>
 #include <stdlib.h>
 
-inline void EvalPoly(int deg, int num_data) {
-    std::cout << "******************** Setup ********************\n";
+inline void EvalPoly(int deg, int num_data, int cyctimes) {
+    std::cout << "*******************************************************" << std::endl;
+    std::cout << "        Performance Test Results for PVHSS_CZ           " << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "degree_f: " << deg << "        msg_num: " << num_data << "        cyctimes: " << cyctimes << std::endl;
 
     PkeParams params;
     PvhssParams pvhss_params;
@@ -26,8 +29,9 @@ inline void EvalPoly(int deg, int num_data) {
         PkeGen(params, pk, sk, 1);
         NTL::build(modulus, params.xN);
         PvhssGen(hss_ek1, hss_ek2, C_alpha, pvhss_params, params, modulus, pk, sk);
-    }, 1);
-    PrintTimeMs("running time Setup", timing);
+    }, cyctimes);
+    PrintTimeMs("Setup algorithm time", timing);
+    std::cout << "-------------------------------------------------------" << std::endl;
 
     // Data generation
     EncodedData data;
@@ -39,54 +43,45 @@ inline void EvalPoly(int deg, int num_data) {
         GenerateData(data, params, modulus, pk);
         ep_new(g1T1);
         ep2_new(g2T2);
-    }, 1);
-    PrintTimeMs("Enc time Setup", timing);
+    }, cyctimes);
+    PrintTimeMs("Input algorithm time", timing);
+    std::cout << "-------------------------------------------------------" << std::endl;
 
-    // Evaluation
-    std::cout << "******************** Server 1 Evaluating ********************\n";
+    // Evaluation Server 1
     timing = MeasureTimeMs([&]() {
         PvhssEval(t1y, g1T1, g2T2, 1, pvhss_params, params,
                   modulus, hss_ek1, C_alpha, data.C_X, data.PRF,
                   data.F_TEST, params.d, data.C_1);
-    }, 1);
-    PrintTimeMs("running time Server 1", timing);
+    }, cyctimes);
+    PrintTimeMs("Evaluation 0 algorithm time", timing);
+    std::cout << "-------------------------------------------------------" << std::endl;
 
-    std::cout << "******************** Server 2 Evaluating ********************\n";
+    // Evaluation Server 2
     timing = MeasureTimeMs([&]() {
         PvhssEval(t2y, g1T1, g2T2, 2, pvhss_params, params,
                   modulus, hss_ek2, C_alpha, data.C_X, data.PRF,
                   data.F_TEST, params.d, data.C_1);
-    }, 1);
-    PrintTimeMs("running time Server 2", timing);
+    }, cyctimes);
+    PrintTimeMs("Evaluation 1 algorithm time", timing);
+    std::cout << "-------------------------------------------------------" << std::endl;
 
-    NTL::ZZ_pX y_zz_px;
-    y_zz_px = t1y + t2y;
-    std::cout << 1 << "\n";
-    y_zz_px = t1y + t2y;
-    std::cout << 2 << "\n";
-
-    std::cout << "******************** Client Verifying ********************\n";
-    // PvhssVerify changes ZZ_p modulus — save/restore inside lambda
-    // because MeasureTimeMsAdaptive may call it multiple times
+    // Verification
     NTL::ZZ saved_mod = NTL::ZZ_p::modulus();
     timing = MeasureTimeMsAdaptive([&]() {
         PvhssVerify(t1y, t2y, g1T1, g2T2, pvhss_params);
         NTL::ZZ_p::init(saved_mod);
-    }, 1);
-    PrintTimeMs("running time Verification", timing);
+    }, cyctimes);
+    PrintTimeMs("Verification algorithm time", timing);
+    std::cout << "-------------------------------------------------------" << std::endl;
 
-    std::cout << "******************** Client Decoding ********************\n";
+    // Decoding
     NTL::ZZ res;
     timing = MeasureTimeMsAdaptive([&]() {
         PvhssDecode(res, pvhss_params, params, t1y, t2y);
         NTL::ZZ_p::init(saved_mod);
-    }, 1);
-    PrintTimeMs("running time Decoding", timing);
-
-    NTL::ZZ y_native;
-    NativeEvaluate(y_native, params.d, params.num_data, data.X_decimal,
-                   pvhss_params.g1_order_ZZ, data.F_TEST);
-    std::cout << "native computing y =" << y_native << "\n";
+    }, cyctimes);
+    PrintTimeMs("Decoding algorithm time", timing);
+    std::cout << "-------------------------------------------------------" << std::endl;
 }
 
 inline void RunGen(int msg_bit) {

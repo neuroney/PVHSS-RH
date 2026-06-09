@@ -7,6 +7,10 @@ namespace pvhss { namespace group { namespace hss {
 
 void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
+    std::cout << "*******************************************************" << std::endl;
+    std::cout << "        Performance Test Results for HSSElg            " << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "degree_f: " << degree_f << "        msg_num: " << msg_num << "        cyctimes: " << cyctimes << std::endl;
     HssPublicKey pk;
     HssEvalKey ek0, ek1;
     int msg_bits = 256;

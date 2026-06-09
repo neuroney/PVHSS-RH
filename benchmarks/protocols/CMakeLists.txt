@@ -124,7 +124,7 @@ add_custom_target(protocol_benchmarks_p5
         --build-dir ${CMAKE_BINARY_DIR}
         --out-dir ${CMAKE_SOURCE_DIR}/benchmarks/results/protocols
         --degrees 5
-        --samples 1
+        --cyctimes 1
     DEPENDS ${PVHSS_PROTOCOL_BENCH_TARGETS} protocol_benchmark_runner
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
@@ -134,7 +134,7 @@ add_custom_target(protocol_benchmarks
         --build-dir ${CMAKE_BINARY_DIR}
         --out-dir ${CMAKE_SOURCE_DIR}/benchmarks/results/protocols
         --degrees 5,10,15
-        --samples 1
+        --cyctimes 1
     DEPENDS ${PVHSS_PROTOCOL_BENCH_TARGETS} protocol_benchmark_runner
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )

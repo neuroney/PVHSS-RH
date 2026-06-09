@@ -30,7 +30,7 @@ static vector<int> ParseDegrees(const string &value)
 
 static void PrintUsage(const char *program)
 {
-    cerr << "Usage: " << program << " [--msg-num N] [--samples N] [--degrees 5,10,15]\n";
+    cerr << "Usage: " << program << " [--msg-num N] [--cyctimes N] [--degrees 5,10,15]\n";
 }
 
 int main(int argc, char **argv)
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     setbuf(stdout, NULL);
 
     int msg_num = 5;
-    int samples = 1;
+    int cyctimes = 3;
     vector<int> degrees;
     degrees.push_back(5);
 
@@ -50,9 +50,14 @@ int main(int argc, char **argv)
         {
             msg_num = atoi(argv[++i]);
         }
+        else if (arg == "--cyctimes" && i + 1 < argc)
+        {
+            cyctimes = atoi(argv[++i]);
+        }
         else if (arg == "--samples" && i + 1 < argc)
         {
-            samples = atoi(argv[++i]);
+            // backward compat: --samples is alias for --cyctimes
+            cyctimes = atoi(argv[++i]);
         }
         else if (arg == "--degrees" && i + 1 < argc)
         {
@@ -74,21 +79,21 @@ int main(int argc, char **argv)
     {
         msg_num = 1;
     }
-    if (samples < 1)
+    if (cyctimes < 1)
     {
-        samples = 1;
+        cyctimes = 1;
     }
 
     cout << "protocol_benchmark"
          << ",backend=" << PVHSS_PROTOCOL_BACKEND
          << ",scheme=" << PVHSS_PROTOCOL_SCHEME
          << ",msg_num=" << msg_num
-         << ",samples=" << samples << "\n";
+         << ",cyctimes=" << cyctimes << "\n";
 
     for (size_t i = 0; i < degrees.size(); ++i)
     {
         cout << "degree_f: " << degrees[i] << "\n";
-        PVHSS_PROTOCOL_TIME_TEST(msg_num, degrees[i], samples);
+        PVHSS_PROTOCOL_TIME_TEST(msg_num, degrees[i], cyctimes);
     }
 
     return 0;

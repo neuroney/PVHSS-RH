@@ -7,6 +7,10 @@ namespace pvhss { namespace rlwe { namespace hss {
 
 void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
+    std::cout << "*******************************************************" << std::endl;
+    std::cout << "        Performance Test Results for HSSRLWE           " << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "degree_f: " << degree_f << "        msg_num: " << msg_num << "        cyctimes: " << cyctimes << std::endl;
     PKE_Para pkePara;
     vec_ZZ_pX pkePk, pkeSk, hssEk_1, hssEk_2;
     pkePk.SetLength(2);

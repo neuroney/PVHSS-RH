@@ -8,7 +8,7 @@ namespace pvhss { namespace rlwe { namespace ot {
 void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
     std::cout << "*******************************************************" << std::endl;
-    std::cout << "        Performance Test Results for PVHSS_time        " << std::endl;
+    std::cout << "        Performance Test Results for PVHSSRLWE_OT       " << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "degree_f: " << degree_f << "        msg_num: " << msg_num << "        cyctimes: " << cyctimes << std::endl;
     PVHSSPara param;

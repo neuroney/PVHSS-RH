@@ -604,7 +604,7 @@ static void write_timing_csv(const string &path, const vector<ComponentRow> &row
 static void print_usage(const char *program)
 {
     cerr << "Usage: " << program
-         << " [--build-dir DIR] [--out-dir DIR] [--degrees LIST] [--samples N]"
+         << " [--build-dir DIR] [--out-dir DIR] [--degrees LIST] [--cyctimes N]"
          << " [--msg-num N] [--targets NAME...]\n";
 }
 
@@ -615,7 +615,7 @@ int main(int argc, char **argv)
         string build_dir = "build";
         string out_dir = "benchmarks/results/protocols";
         string degrees = "5,10,15";
-        int samples = 1;
+        int cyctimes = 3;
         int msg_num = 5;
         bool list_only = false;
         bool dry_run = false;
@@ -636,9 +636,14 @@ int main(int argc, char **argv)
             {
                 degrees = argv[++i];
             }
+            else if (arg == "--cyctimes" && i + 1 < argc)
+            {
+                cyctimes = max(1, atoi(argv[++i]));
+            }
             else if (arg == "--samples" && i + 1 < argc)
             {
-                samples = max(1, atoi(argv[++i]));
+                // backward compat
+                cyctimes = max(1, atoi(argv[++i]));
             }
             else if (arg == "--msg-num" && i + 1 < argc)
             {
@@ -713,8 +718,8 @@ int main(int argc, char **argv)
             command.push_back(binary);
             command.push_back("--msg-num");
             command.push_back(to_string(msg_num));
-            command.push_back("--samples");
-            command.push_back(to_string(samples));
+            command.push_back("--cyctimes");
+            command.push_back(to_string(cyctimes));
             command.push_back("--degrees");
             command.push_back(degrees);
 
@@ -743,7 +748,7 @@ int main(int argc, char **argv)
                 throw runtime_error("benchmark failed: " + binary + " exit " + to_string(completed.first));
             }
 
-            const vector<ComponentRow> parsed = parse_log(completed.second, *target, samples, log_path);
+            const vector<ComponentRow> parsed = parse_log(completed.second, *target, cyctimes, log_path);
             rows.insert(rows.end(), parsed.begin(), parsed.end());
         }
 
