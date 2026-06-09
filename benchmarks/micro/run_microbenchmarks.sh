@@ -31,7 +31,7 @@ if [[ ! -x "$MICROBENCH" ]]; then
 fi
 
 mkdir -p "$OUT_DIR"
-"$MICROBENCH" --compact "${ARGS[@]}" > "$OUT_FILE"
+"$MICROBENCH" --compact ${ARGS[@]+"${ARGS[@]}"} > "$OUT_FILE"
 
 rows=$(($(wc -l < "$OUT_FILE") - 1))
 echo "Wrote $rows micro timing rows to $OUT_FILE"

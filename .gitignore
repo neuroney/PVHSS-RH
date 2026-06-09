@@ -10,3 +10,4 @@ Testing/
 /PVHSS-RH.code-workspace
 benchmarks/results/
 .DS_Store
+runall.log

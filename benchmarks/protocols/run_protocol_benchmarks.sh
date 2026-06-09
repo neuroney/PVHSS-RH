@@ -29,4 +29,4 @@ if [[ ! -x "$RUNNER" ]]; then
     exit 1
 fi
 
-"$RUNNER" --build-dir "$BUILD_DIR" --out-dir "$OUT_DIR" "${ARGS[@]}"
+"$RUNNER" --build-dir "$BUILD_DIR" --out-dir "$OUT_DIR" ${ARGS[@]+"${ARGS[@]}"}
