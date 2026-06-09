@@ -1,51 +1,12 @@
 #include "tester.h"
-#include <vector>
-#include <cstdlib>
-#include <cstdio>
-#include <chrono>
-#include <functional>
-#include <string>
+
+using namespace NTL;
+using namespace std;
 
 namespace pvhss { namespace rlwe { namespace hss {
 
-using Clock = std::chrono::steady_clock;
-
-static double MeasureMs(const std::function<void()>& fn, int iters)
-{
-    auto start = Clock::now();
-    for (int i = 0; i < iters; ++i) fn();
-    auto end = Clock::now();
-    return std::chrono::duration<double, std::milli>(end - start).count() / iters;
-}
-
-static void PrintMs(const std::string& label, double ms)
-{
-    printf("  %-16s %10.3f ms\n", label.c_str(), ms);
-}
-
 void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
-    printf("===== HSS-RLWE (NTL) =====\n");
-    printf("  msg_num=%d  degree_f=%d  cyctimes=%d\n", msg_num, degree_f, cyctimes);
-
-    // --- Gen ---
-    double t_gen = MeasureMs([&]() {
-        PKE_Para pkePara;
-        vec_ZZ_pX pkePk, pkeSk, hssEk_1, hssEk_2;
-        pkePk.SetLength(2);
-        pkeSk.SetLength(2);
-        hssEk_1.SetLength(2);
-        hssEk_2.SetLength(2);
-        pkePara.msg_bit = 32;
-        pkePara.d = degree_f;
-        pkePara.num_data = msg_num;
-        PKE_Gen(pkePara, pkePk, pkeSk);
-        ZZ_pXModulus modulus(pkePara.xN);
-        HssGen(hssEk_1, hssEk_2, pkePara, pkeSk);
-    }, cyctimes);
-    PrintMs("Setup", t_gen);
-
-    // --- Pre-setup ---
     PKE_Para pkePara;
     vec_ZZ_pX pkePk, pkeSk, hssEk_1, hssEk_2;
     pkePk.SetLength(2);
@@ -55,39 +16,75 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     pkePara.msg_bit = 32;
     pkePara.num_data = msg_num;
     pkePara.d = degree_f;
+
+    int msg_bit = pkePara.msg_bit;
+
+    TimingResult timing;
+
+    // Setup Phase
+    timing = MeasureTimeMs([&]() {
+        PKE_Para pkePara00;
+        vec_ZZ_pX pkePk00, pkeSk00, hssEk00_1, hssEk00_2;
+        pkePk00.SetLength(2);
+        pkeSk00.SetLength(2);
+        hssEk00_1.SetLength(2);
+        hssEk00_2.SetLength(2);
+        pkePara00.msg_bit = 32;
+        pkePara00.num_data = msg_num;
+        pkePara00.d = degree_f;
+        PKE_Gen(pkePara00, pkePk00, pkeSk00);
+        ZZ_pXModulus modulus(pkePara00.xN);
+        HssGen(hssEk00_1, hssEk00_2, pkePara00, pkeSk00);
+    }, cyctimes);
+    PrintTimeMs("Setup algorithm time", timing);
+
+    // Pre-setup for other phases
     PKE_Gen(pkePara, pkePk, pkeSk);
     ZZ_pXModulus modulus(pkePara.xN);
     HssGen(hssEk_1, hssEk_2, pkePara, pkeSk);
 
-    // --- Enc ---
-    vec_ZZ_pX ct;
-    double t_enc = MeasureMs([&]() {
-        ZZ x;
-        RandomBits(x, pkePara.msg_bit);
-        HSS_Enc(ct, pkePara, modulus, pkePk, x);
-    }, cyctimes);
-    PrintMs("Encrypt", t_enc);
+    // Input Generation Phase
+    Vec<ZZ> X;
+    X.SetLength(msg_num);
+    for (int i = 0; i < msg_num; ++i)
+    {
+        NTL::RandomBits(X[i], msg_bit);
+    }
 
-    // --- Load (HSS_Mult) ---
-    HSS_Enc(ct, pkePara, modulus, pkePk, ZZ(12345));
-    vec_ZZ_pX mem_out;
-    double t_load = MeasureMs([&]() {
-        HSS_Mult(mem_out, pkePara, modulus, hssEk_1, ct);
+    // Input Processing Phase
+    Vec<vec_ZZ_pX> Ix;
+    timing = MeasureTimeMs([&]() {
+        Ix.SetLength(0);
+        vec_ZZ_pX CTtmp;
+        for (int j = 0; j < X.length(); ++j)
+        {
+            HSS_Enc(CTtmp, pkePara, modulus, pkePk, X[j]);
+            Ix.append(CTtmp);
+        }
     }, cyctimes);
-    PrintMs("Load(Mult)", t_load);
+    PrintTimeMs("Input algorithm time", timing);
 
-    // --- Eval ---
-    Data data;
-    GenerateData(data, pkePara, pkePk);
+    // Evaluation Phase for Server 0
     vec_ZZ_pX M1;
-    HssConvertInput(M1, pkePara, modulus, hssEk_1, data.C_X[0]);
+    HssConvertInput(M1, pkePara, modulus, hssEk_1, Ix[0]);
 
-    double t_eval = MeasureMs([&]() {
-        vec_ZZ_pX y_out;
-        int prf_key = 0;
-        HssEvaluatePolyD2(y_out, 1, data.C_X, pkePara, modulus, hssEk_1, prf_key, degree_f, M1);
+    vec_ZZ_pX y0, y1;
+    int prf_key = 0;
+    timing = MeasureTimeMs([&]() {
+        prf_key = 0;
+        HssEvaluatePolyD2(y0, 0, Ix, pkePara, modulus, hssEk_1, prf_key, degree_f, M1);
     }, cyctimes);
-    PrintMs("Eval", t_eval);
+    PrintTimeMs("Evaluation 0 algorithm time", timing);
+
+    // Evaluation Phase for Server 1
+    vec_ZZ_pX M1b;
+    HssConvertInput(M1b, pkePara, modulus, hssEk_2, Ix[0]);
+
+    timing = MeasureTimeMs([&]() {
+        prf_key = 0;
+        HssEvaluatePolyD2(y1, 1, Ix, pkePara, modulus, hssEk_2, prf_key, degree_f, M1b);
+    }, cyctimes);
+    PrintTimeMs("Evaluation 1 algorithm time", timing);
 }
 
 }}} // namespace pvhss::rlwe::hss

@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
@@ -34,6 +35,9 @@ static void PrintUsage(const char *program)
 
 int main(int argc, char **argv)
 {
+    // Disable stdout buffering so logs appear in real time
+    setbuf(stdout, NULL);
+
     int msg_num = 5;
     int samples = 1;
     vector<int> degrees;
