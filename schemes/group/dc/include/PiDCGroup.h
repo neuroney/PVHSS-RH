@@ -2,13 +2,13 @@
 #include "DecPed.h"
 #include "VHSSElg.h"
 
-typedef VHSSElg_EK PVHSSElg2_EK;
-typedef VHSSElg_CT PVHSSElg2_CT;
+typedef VhssElgamalEk PVHSSElg2_EK;
+typedef VhssElgamalCt PVHSSElg2_CT;
 typedef bgn_t PVHSSElg2_SK;
 typedef g2_t PVHSSElg2_VK;
 typedef struct
 {
-    VHSSElg_PK pk;
+    VhssElgamalPk pk;
     CK ck;
     PVHSSElg2_VK vk;
     PVHSSElg2_SK sk;
@@ -19,7 +19,7 @@ typedef struct
     int msg_bits;
     int degree_f;
     int msg_num;
-    VHSSElg_CT pk_f;
+    VhssElgamalCt pk_f;
     ZZ n_out;
     fp12_t aux0;
     fp12_t aux1;

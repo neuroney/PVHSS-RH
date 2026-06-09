@@ -53,9 +53,17 @@ add_protocol_benchmark_target(protocol_group_dc_bench group dc
 add_protocol_benchmark_target(protocol_rlwe_hss_bench rlwe hss
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/hss/include
     HSS_TIME_TEST
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/hss/src/HSSRLWE.cpp
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/hss/src/tester.cpp
 )
+
+# Link lhss-based HSS library
+target_link_libraries(protocol_rlwe_hss_bench PRIVATE PiHSSRLWE)
+
+# Find gmpxx for lhss linkage
+find_library(GMPXX_LIB NAMES gmpxx)
+if(GMPXX_LIB)
+    target_link_libraries(protocol_rlwe_hss_bench PRIVATE ${GMPXX_LIB})
+endif()
 
 add_protocol_benchmark_target(protocol_rlwe_vhss_bench rlwe vhss
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/vhss/include

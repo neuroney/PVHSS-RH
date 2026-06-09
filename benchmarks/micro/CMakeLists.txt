@@ -1,7 +1,6 @@
 add_executable(microbench
     microbench.cpp
     ${CMAKE_SOURCE_DIR}/schemes/group/hss/src/HSSElg.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/hss/src/HSSRLWE.cpp
 )
 
 target_include_directories(microbench PRIVATE
@@ -12,7 +11,14 @@ target_include_directories(microbench PRIVATE
 target_link_libraries(microbench
     PRIVATE
         common
+        PiHSSRLWE
 )
+
+# Find gmpxx for lhss linkage
+find_library(GMPXX_LIB NAMES gmpxx)
+if(GMPXX_LIB)
+    target_link_libraries(microbench PRIVATE ${GMPXX_LIB})
+endif()
 
 add_executable(microbench_vhss_rlwe
     microbench_vhss_rlwe.cpp

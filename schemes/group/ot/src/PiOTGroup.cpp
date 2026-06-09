@@ -1,21 +1,24 @@
 #include "PiOTGroup.h"
 
+using namespace NTL;
+using namespace std;
+
 void PVHSSElg1_Setup(PVHSSElg1_Para &param, PVHSSElg1_EK &ek0, PVHSSElg1_EK &ek1)
 {
-    VHSSElg_Gen(param.pk, ek0, ek1, param.skLen, param.vkLen);
+    VhssElgamalGen(param.pk, ek0, ek1, param.skLen, param.vkLen);
     Ped_ComGen(param.ck);
 
     bn_t A;
     bn_new(A);
     ep2_new(param.ck.g2_A);
-    ZZ2bn(A, (ek1[1] - ek0[1]) % param.pk.N);
+    ZZtoBn(A, (ek1[1] - ek0[1]) % param.pk.N);
     ep2_mul_gen(param.ck.g2_A, A); // g_2^A
 }
 
 void PVHSSElg1_KeyGen(PVHSSElg1_Para &param, PVHSSElg1_SK &sk, bn_t ekp0, bn_t ekp1)
 {
-    RandomBnd(sk, param.ck.g1_order_ZZ);
-    VHSSElg_Input(param.pk_f, param.pk, sk);
+    NTL::RandomBnd(sk, param.ck.g1_order_ZZ);
+    VhssElgamalInput(param.pk_f, param.pk, sk);
 
     bn_rand_mod(ekp0, param.ck.g1_order); // u_0
     bn_rand_mod(ekp1, param.ck.g1_order); // u_1
@@ -38,10 +41,10 @@ void PVHSSElg1_ProbGen(vector<PVHSSElg1_CT> &Ix, const PVHSSElg1_Para &param, co
 {
     Ix.clear();
     int i;
-    VHSSElg_CT CTtmp;
+    VhssElgamalCt CTtmp;
     for (i = 0; i < x.length(); ++i)
     {
-        VHSSElg_Input(CTtmp, param.pk, x[i]);
+        VhssElgamalInput(CTtmp, param.pk, x[i]);
         Ix.push_back(CTtmp);
     }
 }
@@ -49,12 +52,12 @@ void PVHSSElg1_ProbGen(vector<PVHSSElg1_CT> &Ix, const PVHSSElg1_Para &param, co
 void PVHSSElg1_Compute(PROOF &proof, int b, const PVHSSElg1_Para &param, const PVHSSElg1_EK &ekb, vector<PVHSSElg1_CT> &Ix, vector<vector<int>> F_TEST, bn_t ekpb)
 {
     int prf_key = 0;
-    VHSSElg_MV y_b_res;
-    // VHSSElg_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
-    VHSSElg_Evaluate_P_d2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
+    VhssElgamalMv y_b_res;
+    // VhssElgamalEvaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
+    VhssElgamalEvaluatePD2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
 
-    VHSSElg_MV sk_b;
-    VHSSElg_ConvertInput(sk_b, b, param.pk, ekb, param.pk_f, prf_key);
+    VhssElgamalMv sk_b;
+    VhssElgamalConvertInput(sk_b, b, param.pk, ekb, param.pk_f, prf_key);
     y_b_res[0] = y_b_res[0] + sk_b[0];
     y_b_res[2] = y_b_res[2] + sk_b[2];
 
@@ -77,7 +80,7 @@ bool PVHSSElg1_Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
     // Compute e(g, g)^{Ay}
     bn_t y_bn;
     bn_new(y_bn);
-    ZZ2bn(y_bn, (pi1.y - pi0.y) % ck.g1_order_ZZ);
+    ZZtoBn(y_bn, (pi1.y - pi0.y) % ck.g1_order_ZZ);
     ep_mul(eptmp, ck.g1, y_bn);
     pp_map_oatep_k12(righthand, eptmp, ck.g2_A);
 
@@ -116,7 +119,7 @@ bool PVHSSElg1_ACC_TEST(int msg_num, int degree_f)
     X.SetLength(msg_num);
     for (int i = 0; i < msg_num; ++i)
     {
-        RandomBits(X[i], param.msg_bits);
+        NTL::RandomBits(X[i], param.msg_bits);
         // X[i] = i+1;
     }
 
@@ -127,7 +130,7 @@ bool PVHSSElg1_ACC_TEST(int msg_num, int degree_f)
     PrintTimeMs("ProbGen algo time", timing);
 
     vector<vector<int>> F_TEST;
-    Random_Func(F_TEST, msg_num, degree_f);
+    GenerateRandomFunc(F_TEST, msg_num, degree_f);
 
     PROOF pi0, pi1;
     timing = MeasureTimeMs([&]() {
@@ -157,8 +160,8 @@ bool PVHSSElg1_ACC_TEST(int msg_num, int degree_f)
     ZZ y_native, y_eval;
     PVHSSElg1_Decode(y_eval, pi0, pi1, sk);
     y_eval = y_eval % param.ck.g1_order_ZZ;
-    y_native = P_d(X, degree_f) % param.ck.g1_order_ZZ;
-    // NativeEval(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);
+    y_native = PolyD(X, degree_f) % param.ck.g1_order_ZZ;
+    // NativeEvaluate(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);
     cout << "True result: " << y_native << endl;
     cout << "Eval result: " << y_eval << endl;
     const bool result_matches = (y_native == y_eval);

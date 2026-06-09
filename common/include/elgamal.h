@@ -1,19 +1,20 @@
 #pragma once
 #include "helper.h"
 
-typedef struct
-{
-    ZZ f;
-    ZZ g;
-    ZZ h;
-    ZZ N;
-    ZZ N2;
-} Elgamal_PK;
+// Elgamal cryptosystem types (Paillier-Elgamal hybrid over Z_{N^2}).
+struct ElgamalPublicKey {
+    NTL::ZZ f;
+    NTL::ZZ g;
+    NTL::ZZ h;
+    NTL::ZZ N;
+    NTL::ZZ N2;
+};
 
-typedef array<ZZ, 2> Elgamal_CT;
-typedef ZZ Elgamal_SK;
+using ElgamalCiphertext = std::array<NTL::ZZ, 2>;
+using ElgamalSecretKey = NTL::ZZ;
 
-void Elgamal_Gen(Elgamal_PK &pk, Elgamal_SK &d, int skLen);
-void Elgamal_Enc(Elgamal_CT &ct, const Elgamal_PK &pk, const ZZ &x);
-void Elgamal_skEnc(Elgamal_CT &ct, const Elgamal_PK &pk, const ZZ &x);
-void Elgamal_Dec(ZZ &x, const Elgamal_PK &pk, const Elgamal_SK &sk, const Elgamal_CT &ct);
+void ElgamalGen(ElgamalPublicKey &pk, ElgamalSecretKey &sk, int sk_len);
+void ElgamalEnc(ElgamalCiphertext &ct, const ElgamalPublicKey &pk, const NTL::ZZ &x);
+void ElgamalSkEnc(ElgamalCiphertext &ct, const ElgamalPublicKey &pk, const NTL::ZZ &x);
+void ElgamalDec(NTL::ZZ &x, const ElgamalPublicKey &pk, const ElgamalSecretKey &sk,
+                const ElgamalCiphertext &ct);

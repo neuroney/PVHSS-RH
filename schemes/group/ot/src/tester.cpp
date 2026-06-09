@@ -1,5 +1,8 @@
 #include "tester.h"
 
+using namespace NTL;
+using namespace std;
+
 void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
     std::cout << "*******************************************************" << std::endl;
@@ -22,9 +25,9 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 
     // Setup Phase: VHSS base plus OT-specific public verification state.
     timing = MeasureTimeMs([&]() {
-        VHSSElg_PK pk00;
+        VhssElgamalPk pk00;
         PVHSSElg1_EK ek000, ek100;
-        VHSSElg_Gen(pk00, ek000, ek100, 1024, 256);
+        VhssElgamalGen(pk00, ek000, ek100, 1024, 256);
     }, cyctimes);
     PrintTimeMs("Setup base VHSS algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
@@ -36,13 +39,13 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     setup_param.msg_bits = 32;
     setup_param.degree_f = degree_f;
     setup_param.msg_num = msg_num;
-    VHSSElg_Gen(setup_param.pk, setup_ek0, setup_ek1, setup_param.skLen, setup_param.vkLen);
+    VhssElgamalGen(setup_param.pk, setup_ek0, setup_ek1, setup_param.skLen, setup_param.vkLen);
     timing = MeasureTimeMs([&]() {
         Ped_ComGen(setup_param.ck);
         bn_t A;
         bn_new(A);
         ep2_new(setup_param.ck.g2_A);
-        ZZ2bn(A, (setup_ek1[1] - setup_ek0[1]) % setup_param.pk.N);
+        ZZtoBn(A, (setup_ek1[1] - setup_ek0[1]) % setup_param.pk.N);
         ep2_mul_gen(setup_param.ck.g2_A, A);
     }, cyctimes);
     PrintTimeMs("Setup incremental OT algorithm time", timing);
@@ -74,7 +77,7 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     X.SetLength(msg_num);
     for (int i = 0; i < msg_num; ++i)
     {
-        RandomBits(X[i], param.msg_bits);
+        NTL::RandomBits(X[i], param.msg_bits);
     }
 
     // Input Processing Phase
@@ -87,24 +90,24 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 
     // Polynomial Generation Phase
     vector<vector<int>> F_TEST;
-    Random_Func(F_TEST, msg_num, degree_f);
+    GenerateRandomFunc(F_TEST, msg_num, degree_f);
 
     // Evaluation Phase for Server 0: VHSS base computation plus OT result-hiding proof.
-    VHSSElg_MV y0_base, y1_base;
+    VhssElgamalMv y0_base, y1_base;
     int prf_key0 = 0;
     int prf_key1 = 0;
     timing = MeasureTimeMs([&]() {
         prf_key0 = 0;
-        VHSSElg_Evaluate_P_d2(y0_base, 0, Ix, param.pk, ek0, prf_key0, param.degree_f);
+        VhssElgamalEvaluatePD2(y0_base, 0, Ix, param.pk, ek0, prf_key0, param.degree_f);
     }, cyctimes);
     PrintTimeMs("Evaluation base 0 algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
     timing = MeasureTimeMs([&]() {
-        VHSSElg_MV y_tmp = y0_base;
-        VHSSElg_MV sk_b;
+        VhssElgamalMv y_tmp = y0_base;
+        VhssElgamalMv sk_b;
         int proof_prf_key = prf_key0;
-        VHSSElg_ConvertInput(sk_b, 0, param.pk, ek0, param.pk_f, proof_prf_key);
+        VhssElgamalConvertInput(sk_b, 0, param.pk, ek0, param.pk_f, proof_prf_key);
         y_tmp[0] = y_tmp[0] + sk_b[0];
         y_tmp[2] = y_tmp[2] + sk_b[2];
         Ped_Prove(pi0, 0, y_tmp[0], y_tmp[2], param.ck, proof_prf_key, ekp0);
@@ -115,16 +118,16 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     // Evaluation Phase for Server 1.
     timing = MeasureTimeMs([&]() {
         prf_key1 = 0;
-        VHSSElg_Evaluate_P_d2(y1_base, 1, Ix, param.pk, ek1, prf_key1, param.degree_f);
+        VhssElgamalEvaluatePD2(y1_base, 1, Ix, param.pk, ek1, prf_key1, param.degree_f);
     }, 1);
     PrintTimeMs("Evaluation base 1 algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
     timing = MeasureTimeMs([&]() {
-        VHSSElg_MV y_tmp = y1_base;
-        VHSSElg_MV sk_b;
+        VhssElgamalMv y_tmp = y1_base;
+        VhssElgamalMv sk_b;
         int proof_prf_key = prf_key1;
-        VHSSElg_ConvertInput(sk_b, 1, param.pk, ek1, param.pk_f, proof_prf_key);
+        VhssElgamalConvertInput(sk_b, 1, param.pk, ek1, param.pk_f, proof_prf_key);
         y_tmp[0] = y_tmp[0] + sk_b[0];
         y_tmp[2] = y_tmp[2] + sk_b[2];
         Ped_Prove(pi1, 1, y_tmp[0], y_tmp[2], param.ck, proof_prf_key, ekp1);
@@ -140,10 +143,6 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     PrintTimeMs("Verification algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
-    // if (acc)
-    // {
-    //     cout << "Verification Passed\n";
-    // }
     // else
     // {
     //     cout << "Verification Failed\n";

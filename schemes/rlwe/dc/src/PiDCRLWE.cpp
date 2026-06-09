@@ -1,9 +1,12 @@
 #include "PiDCRLWE.h"
 
+using namespace NTL;
+using namespace std;
+
 void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
            int msg_num, int degree_f)
 {
-    param.pkePara.msg_bit = 32;
+    param.pkePara.msg_bit = 1;
     param.pkePara.num_data = msg_num;
     param.pkePara.d = degree_f;
     vec_ZZ_pX pkeSk;
@@ -15,14 +18,13 @@ void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
 
     DecPed_ComGen(param.ck, param.f_sk);
 
-    RandomBits(param.sk_alpha, 32);
-    ZZ_p A_ZZ;
-    eval(A_ZZ, param.vhssPara.alpha, conv<ZZ_p>(param.sk_alpha));
+    NTL::RandomBits(param.sk_alpha, 32);
+    ZZ A_ZZ = HssOutputCoeff(param.vhssPara.alpha[0], param.pkePara, param.ck.g1_order_ZZ);
 
     bn_t A;
     bn_new(A);
-    ep2_new(param.ck.g2_A);
-    ZZ2bn(A, conv<ZZ>(A_ZZ) % param.ck.g1_order_ZZ);
+    ep2_new(param.vk);
+    ZZtoBn(A, A_ZZ);
     ep2_mul_gen(param.vk, A); // g_2^A
 
 }
@@ -86,12 +88,12 @@ void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ &x, ZZ_p
 
 void Prove(PROOF &pi, int b, const PVHSS_MV &y_b, const PVHSS_MV &Y_b, const PVHSSPara &param, bn_t ekpb[2])
 {
-    ZZ_p yb, Yb;
-    eval(yb, y_b[0], conv<ZZ_p>(param.sk_alpha));
-    eval(Yb, Y_b[0], conv<ZZ_p>(param.sk_alpha));
+    (void)b;
+    const ZZ yb_zz = HssOutputCoeff(y_b[0][0], param.pkePara, param.ck.g1_order_ZZ);
+    const ZZ Yb_zz = HssOutputCoeff(Y_b[0][0], param.pkePara, param.ck.g1_order_ZZ);
 
-    DecPed_Com(pi.C, ekpb[0], param.ck, conv<ZZ>(yb) % param.ck.g1_order_ZZ);
-    DecPed_Com(pi.D, ekpb[1], param.ck, conv<ZZ>(Yb) % param.ck.g1_order_ZZ);
+    DecPed_Com(pi.C, ekpb[0], param.ck, yb_zz);
+    DecPed_Com(pi.D, ekpb[1], param.ck, Yb_zz);
 }
 
 void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, const vec_ZZ_pX &ek2, vector<PVHSS_CT> &Ix, ZZ_pXModulus modulus, const vec_ZZ_pX &M1, vec_ZZ_pX &M2, vector<vector<int>> F_TEST, bn_t ekpb[2])
@@ -101,13 +103,13 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, 
 
     if (b == 0)
     {
-        HSS_Evaluate_P_d2(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_1, prf_key, param.pkePara.d, M1);
-        HSS_Evaluate_P_d2(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_3, prf_key, param.pkePara.d, M2);
+        HssEvaluatePolyD2(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_1, prf_key, param.pkePara.d, M1);
+        HssEvaluatePolyD2(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_3, prf_key, param.pkePara.d, M2);
     }
     else
     {
-        HSS_Evaluate_P_d2(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_2, prf_key, param.pkePara.d, M1);
-        HSS_Evaluate_P_d2(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_4, prf_key, param.pkePara.d, M2);
+        HssEvaluatePolyD2(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_2, prf_key, param.pkePara.d, M1);
+        HssEvaluatePolyD2(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_4, prf_key, param.pkePara.d, M2);
     }
     TimingResult timing = MeasureTimeMs([&]() {
         Prove(proof, b, y_b_res, Y_b_res, param, ekpb);
@@ -161,4 +163,80 @@ void Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk)
     g1_sub(in[1], pi1.C[1], pi0.C[1]);
 
     cp_decped_dec1(y, in, sk);
+}
+
+bool PVHSS_ACC_TEST(int msg_num, int degree_f)
+{
+    PVHSSPara param;
+    vec_ZZ_pX pkePk;
+    PVHSS_SK sk;
+    bn_t ekp0[2], ekp1[2];
+
+    TimingResult timing = MeasureTimeMs([&]() {
+        Setup(param, pkePk, msg_num, degree_f);
+    }, 1);
+    PrintTimeMs("Setup algo time", timing);
+
+    ZZ_pXModulus modulus(param.pkePara.xN);
+    timing = MeasureTimeMs([&]() {
+        KeyGen(param, sk, modulus, pkePk, ekp0, ekp1);
+    }, 1);
+    PrintTimeMs("KeyGen algo time", timing);
+
+    vec_ZZ X;
+    X.SetLength(msg_num);
+    for (int i = 0; i < msg_num; ++i)
+    {
+        NTL::RandomBits(X[i], param.pkePara.msg_bit);
+    }
+
+    vector<PVHSS_CT> Ix;
+    timing = MeasureTimeMs([&]() {
+        ProbGen(Ix, param, X, modulus, pkePk);
+    }, 1);
+    PrintTimeMs("ProbGen algo time", timing);
+
+    vector<vector<int>> F_TEST;
+    GenerateRandomFunc(F_TEST, msg_num, degree_f);
+
+    // M1-M4: encrypt constant "1" and convert
+    PVHSS_CT C1;
+    PVHSS_MV M1, M2, M3, M4;
+    VHSS_Enc(C1, param.pkePara, modulus, pkePk, ZZ(1));
+    HssConvertInput(M1, param.pkePara, modulus, param.vhssPara.vhssEk_1, C1);
+    HssConvertInput(M2, param.pkePara, modulus, param.vhssPara.vhssEk_2, C1);
+    HssConvertInput(M3, param.pkePara, modulus, param.vhssPara.vhssEk_3, C1);
+    HssConvertInput(M4, param.pkePara, modulus, param.vhssPara.vhssEk_4, C1);
+
+    PROOF pi0, pi1;
+    timing = MeasureTimeMs([&]() {
+        Compute(pi0, 0, param, param.vhssPara.vhssEk_1, param.vhssPara.vhssEk_3, Ix, modulus, M1, M3, F_TEST, ekp0);
+    }, 1);
+    PrintTimeMs("Eval0 algo time", timing);
+
+    timing = MeasureTimeMs([&]() {
+        Compute(pi1, 1, param, param.vhssPara.vhssEk_2, param.vhssPara.vhssEk_4, Ix, modulus, M2, M4, F_TEST, ekp1);
+    }, 1);
+    PrintTimeMs("Eval1 algo time", timing);
+
+    bool res_acc;
+    timing = MeasureTimeMsAdaptive([&]() {
+        res_acc = Verify(pi0, pi1, param);
+    }, 1);
+    PrintTimeMs("Veri algo time", timing);
+    
+    if (res_acc)
+        printf("****************** Verification Passed ******************\n");
+    else
+        printf("****************** Verification Failed ********************\n");
+
+    dig_t y_eval_dig;
+    Decode(y_eval_dig, pi0, pi1, param.f_sk);
+    ZZ y_eval = to_ZZ(static_cast<long>(y_eval_dig));
+    ZZ y_native = to_ZZ(PolyD(X, degree_f) % param.ck.g1_order_ZZ);
+    cout << "True result: " << y_native << endl;
+    cout << "Eval result: " << y_eval << endl;
+    
+    core_clean();
+    return res_acc && (y_native == y_eval);
 }

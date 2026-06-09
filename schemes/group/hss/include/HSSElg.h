@@ -1,33 +1,33 @@
 #pragma once
 #include "helper.h"
+#include "elgamal.h"
 
-typedef struct
-{
-    ZZ f;
-    ZZ g;
-    ZZ h;
-    ZZ N;
-    ZZ N2;
-} Elgamal_PK;
+using HssPublicKey = ElgamalPublicKey;
+using HssEvalKey = NTL::ZZ;
+using HssCiphertext = std::array<ElgamalCiphertext, 2>;
+using HssMemoryValue = std::array<NTL::ZZ, 2>;
 
-typedef Elgamal_PK HSS_PK;
-typedef array<ZZ, 2> Elgamal_CT;
-typedef ZZ Elgamal_SK;
-typedef ZZ HSS_EK;
-typedef array<Elgamal_CT, 2> HSS_CT;
-typedef array<ZZ, 2> HSS_MV;
+void ElgamalGen(ElgamalPublicKey &pk, ElgamalSecretKey &sk, int sk_len);
+void ElgamalEnc(ElgamalCiphertext &ct, const ElgamalPublicKey &pk, const NTL::ZZ &x);
+void ElgamalSkEnc(ElgamalCiphertext &ct, const ElgamalPublicKey &pk, const NTL::ZZ &x);
+void ElgamalDec(NTL::ZZ &x, const ElgamalPublicKey &pk, const ElgamalSecretKey &sk,
+                const ElgamalCiphertext &ct);
 
-void Elgamal_Gen(Elgamal_PK &pk, Elgamal_SK &d, int skLen);
-void Elgamal_Enc(Elgamal_CT &ct, const Elgamal_PK &pk, const ZZ &x);
-void Elgamal_skEnc(Elgamal_CT &ct, const Elgamal_PK &pk, const ZZ &x);
-void Elgamal_Dec(ZZ &x, const Elgamal_PK &pk, const Elgamal_SK &sk, const Elgamal_CT &ct);
-
-void HSS_Gen(HSS_PK &pk, HSS_EK &ek0, HSS_EK &ek1, int skLen);
-void HSS_Input(HSS_CT &I, const HSS_PK &pk, const ZZ &x);
-void HSS_ConvertInput(HSS_MV &Mx, int idx, const HSS_PK &pk, const HSS_EK &ek, const HSS_CT &Ix, int &prf_key);
-void HSS_Mul(HSS_MV &Mz, int idx, const HSS_PK &pk, const HSS_CT &Ix, const HSS_MV &My, int &prf_key);
-void HSS_DDLog(ZZ &z, const HSS_PK &pk, const ZZ &g);
-void HSS_AddMemory(HSS_MV &Mz, const HSS_PK &pk, const HSS_MV &Mx, const HSS_MV &My);
-void HSS_Evaluate(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const HSS_PK &pk, const HSS_EK &ekb, int &prf_key, vector<vector<int>> F_TEST);
-void HSS_Evaluate_P_d2(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const HSS_PK &pk, const HSS_EK &ekb, int &prf_key, int degree_f);
-void HSS_Dec(ZZ &z, const HSS_MV &Mx, const HSS_MV &My);
+void HssGen(HssPublicKey &pk, HssEvalKey &ek0, HssEvalKey &ek1, int sk_len);
+void HssInput(HssCiphertext &I, const HssPublicKey &pk, const NTL::ZZ &x);
+void HssConvertInput(HssMemoryValue &Mx, int idx, const HssPublicKey &pk,
+                     const HssEvalKey &ek, const HssCiphertext &Ix, int &prf_key);
+void HssMul(HssMemoryValue &Mz, int idx, const HssPublicKey &pk,
+            const HssCiphertext &Ix, const HssMemoryValue &My, int &prf_key);
+void HssDdlog(NTL::ZZ &z, const HssPublicKey &pk, const NTL::ZZ &g);
+void HssAddMemory(HssMemoryValue &Mz, const HssPublicKey &pk,
+                  const HssMemoryValue &Mx, const HssMemoryValue &My);
+void HssEvaluate(HssMemoryValue &y_b_res, int b,
+                 const std::vector<HssCiphertext> &Ix, const HssPublicKey &pk,
+                 const HssEvalKey &ekb, int &prf_key,
+                 std::vector<std::vector<int>> F_TEST);
+void HssEvaluatePolyD2(HssMemoryValue &y_b_res, int b,
+                       const std::vector<HssCiphertext> &Ix,
+                       const HssPublicKey &pk, const HssEvalKey &ekb,
+                       int &prf_key, int degree_f);
+void HssDec(NTL::ZZ &z, const HssMemoryValue &Mx, const HssMemoryValue &My);

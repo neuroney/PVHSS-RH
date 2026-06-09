@@ -1,5 +1,8 @@
 #include "DecPed.h"
 
+using namespace NTL;
+using namespace std;
+
 void DecPed_ComGen(CK &ck, bgn_t &sk)
 {
     core_init();
@@ -18,7 +21,7 @@ void DecPed_ComGen(CK &ck, bgn_t &sk)
     bn_null(ck.g1_order);
     bn_new(ck.g1_order);
     ep_curve_get_ord(ck.g1_order);
-    bn2ZZ(ck.g1_order_ZZ, ck.g1_order);
+    BnToZZ(ck.g1_order_ZZ, ck.g1_order);
 
 }
 
@@ -26,7 +29,7 @@ void DecPed_Com(g1_t C[2], bn_t rho, const CK &ck, const ZZ &x_ZZ)
 {
     bn_t x;
     bn_new(x);
-    ZZ2bn(x, x_ZZ % ck.g1_order_ZZ);
+    ZZtoBn(x, x_ZZ % ck.g1_order_ZZ);
 
     g1_null(C[0]);
 	g1_null(C[1]);

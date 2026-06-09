@@ -9,7 +9,7 @@ JOBS="${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
 
 if [[ $# -ne 0 ]]; then
     echo "Usage: $0"
-    echo "runall.sh always builds, runs correctness checks, and generates full benchmark tables."
+    echo "runall.sh generates full benchmark tables."
     exit 2
 fi
 

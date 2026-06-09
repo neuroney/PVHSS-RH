@@ -174,7 +174,7 @@
              out = 0;
              result = RLC_OK;
          } else {
-             for (i = 0; i < M_MAX; i++) {
+             for (i = 0; i < PVHSS_M_MAX; i++) {
                  if (g1_cmp(t, u) == RLC_EQ) {
                      out = i + 1;
                      result = RLC_OK;

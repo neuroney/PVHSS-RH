@@ -5,7 +5,7 @@ checks run the degree-5 polynomial on the group-backend OT and DC paths, then
 compare the decoded protocol result against the native computation.
 
 ```sh
-cmake --build build --target p5_ot_acc p5_dc_acc
+cmake --build build --target p5_ot_group_acc p5_dc_group_acc
 ctest --test-dir build -R p5 --output-on-failure
 ctest --test-dir build -L fast --output-on-failure
 ```

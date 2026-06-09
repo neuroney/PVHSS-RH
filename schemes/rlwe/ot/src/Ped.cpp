@@ -1,5 +1,8 @@
 #include "Ped.h"
 
+using namespace NTL;
+using namespace std;
+
 void Ped_ComGen(CK &ck)
 {
     core_init();
@@ -15,7 +18,7 @@ void Ped_ComGen(CK &ck)
 
     bn_new(ck.g1_order);
     ep_curve_get_ord(ck.g1_order);
-    bn2ZZ(ck.g1_order_ZZ, ck.g1_order);
+    BnToZZ(ck.g1_order_ZZ, ck.g1_order);
 
     ep_new(ck.h);
 
@@ -29,9 +32,7 @@ void Ped_Com(ep_t C, bn_t rho, const CK &ck, const ZZ &x_ZZ)
 {
     bn_t x;
     bn_new(x);
-    ZZ2bn(x, x_ZZ % ck.g1_order_ZZ);
-
-    bn_rand_mod(rho, ck.g1_order);
+    ZZtoBn(x, x_ZZ % ck.g1_order_ZZ);
 
     ep_null(C);
     ep_new(C);
@@ -49,7 +50,7 @@ bool Ped_OpenVer(const CK &ck, const ep_t C, const ZZ &x_ZZ, bn_t rho)
 {
     bn_t x;
     bn_new(x);
-    ZZ2bn(x, x_ZZ % ck.g1_order_ZZ);
+    ZZtoBn(x, x_ZZ % ck.g1_order_ZZ);
 
     ep_t t1, t2, cc;
     ep_new(t1);

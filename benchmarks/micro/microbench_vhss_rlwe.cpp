@@ -7,6 +7,9 @@
 #include <iomanip>
 #include <string>
 
+using namespace NTL;
+using namespace std;
+
 using BenchFn = std::function<void()>;
 using Clock = std::chrono::steady_clock;
 
@@ -200,11 +203,11 @@ static void bench_rlwe_vhss(const BenchConfig &cfg)
     mz.SetLength(2);
 
     VHSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
-    HSS_ConvertInput(mx, pke_para, modulus, vhss_para.vhssEk_1, ct);
-    HSS_ConvertInput(my, pke_para, modulus, vhss_para.vhssEk_1, ct);
+    HssConvertInput(mx, pke_para, modulus, vhss_para.vhssEk_1, ct);
+    HssConvertInput(my, pke_para, modulus, vhss_para.vhssEk_1, ct);
 
     print_result(run_bench("vhss-rlwe", "VHSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
-        HSS_AddMemory(mz, mx, my);
+        HssAddMemory(mz, mx, my);
     }));
 
     print_result(run_bench("vhss-rlwe", "VHSS Enc/OKDM", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {

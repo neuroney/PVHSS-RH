@@ -1,14 +1,17 @@
 #include "PiDCGroup.h"
 
+using namespace NTL;
+using namespace std;
+
 void PVHSSElg2_Setup(PVHSSElg2_Para &param, PVHSSElg2_EK &ek0, PVHSSElg2_EK &ek1, PVHSSElg2_SK &sk)
 {
-    VHSSElg_Gen(param.pk, ek0, ek1, param.skLen, param.vkLen);
+    VhssElgamalGen(param.pk, ek0, ek1, param.skLen, param.vkLen);
     DecPed_ComGen(param.ck, sk);
 
     bn_t A;
     bn_new(A);
     ep2_new(param.vk);
-    ZZ2bn(A, (ek1[1] - ek0[1]) % param.pk.N);
+    ZZtoBn(A, (ek1[1] - ek0[1]) % param.pk.N);
     ep2_mul_gen(param.vk, A); // g_2^A
 
 }
@@ -60,10 +63,10 @@ void PVHSSElg2_ProbGen(vector<PVHSSElg2_CT> &Ix, const PVHSSElg2_Para &param, co
 {
     Ix.clear();
     int i;
-    VHSSElg_CT CTtmp;
+    VhssElgamalCt CTtmp;
     for (i = 0; i < x.length(); ++i)
     {
-        VHSSElg_Input(CTtmp, param.pk, x[i]);
+        VhssElgamalInput(CTtmp, param.pk, x[i]);
         Ix.push_back(CTtmp);
     }
 }
@@ -71,9 +74,9 @@ void PVHSSElg2_ProbGen(vector<PVHSSElg2_CT> &Ix, const PVHSSElg2_Para &param, co
 void PVHSSElg2_Compute(PROOF &proof, int b, const PVHSSElg2_Para &param, const PVHSSElg2_EK &ekb,  bn_t ekpb[2], vector<PVHSSElg2_CT> &Ix, vector<vector<int>> F_TEST)
 {
     int prf_key = 0;
-    VHSSElg_MV y_b_res;
-    //VHSSElg_Evaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
-    VHSSElg_Evaluate_P_d2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
+    VhssElgamalMv y_b_res;
+    //VhssElgamalEvaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
+    VhssElgamalEvaluatePD2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
     PVHSSElg2_Prove(proof, b, y_b_res[0], y_b_res[2], param, ekpb);
 }
 
@@ -152,7 +155,7 @@ bool PVHSSElg2_ACC_TEST(int msg_num, int degree_f)
     X.SetLength(msg_num);
     for (int i = 0; i < msg_num; ++i)
     {
-        RandomBits(X[i], param.msg_bits);
+        NTL::RandomBits(X[i], param.msg_bits);
     }
 
     vector<PVHSSElg2_CT> Ix;
@@ -162,7 +165,7 @@ bool PVHSSElg2_ACC_TEST(int msg_num, int degree_f)
     PrintTimeMs("ProbGen algo time", timing);
 
     vector<vector<int>> F_TEST;
-    Random_Func(F_TEST, msg_num, degree_f);
+    GenerateRandomFunc(F_TEST, msg_num, degree_f);
 
     PROOF pi0, pi1;
     timing = MeasureTimeMs([&]() {
@@ -194,8 +197,8 @@ bool PVHSSElg2_ACC_TEST(int msg_num, int degree_f)
     PVHSSElg2_Decode(y_dig, pi0, pi1, sk);
 
 
-    // NativeEval(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);
-    y_native = P_d2(X,degree_f) % param.ck.g1_order_ZZ;
+    // NativeEvaluate(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);
+    y_native = PolyD2(X,degree_f) % param.ck.g1_order_ZZ;
     cout << "True result: " << y_native << endl;
     cout << "Eval result: " << y_dig << endl;
     y_eval = conv<ZZ>(y_dig);

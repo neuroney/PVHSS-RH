@@ -1,5 +1,9 @@
+#pragma once
+
 #include <limits.h>
 #include "helper.h"
+
+using NTL::ZZ;
 
 int cp_decped_gen(bgn_t pub, bgn_t prv);
 int cp_decped_enc1(g1_t out[2], const dig_t in, const bgn_t pub);

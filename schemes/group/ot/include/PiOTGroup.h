@@ -2,13 +2,13 @@
 #include "Ped.h"
 #include "VHSSElg.h"
 
-typedef VHSSElg_EK PVHSSElg1_EK;
-typedef VHSSElg_CT PVHSSElg1_CT;
+typedef VhssElgamalEk PVHSSElg1_EK;
+typedef VhssElgamalCt PVHSSElg1_CT;
 typedef ZZ PVHSSElg1_SK;
 
 typedef struct
 {
-    VHSSElg_PK pk;
+    VhssElgamalPk pk;
     CK ck;
 
     int skLen;
@@ -17,7 +17,7 @@ typedef struct
     int msg_bits;
     int degree_f;
     int msg_num;
-    VHSSElg_CT pk_f;
+    VhssElgamalCt pk_f;
 } PVHSSElg1_Para;
 
 void PVHSSElg1_Setup(PVHSSElg1_Para &param, PVHSSElg1_EK &ek0, PVHSSElg1_EK &ek1);

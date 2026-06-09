@@ -1,76 +1,84 @@
+#pragma once
+
 #include <NTL/ZZ.h>
 #include <NTL/ZZX.h>
 #include <NTL/ZZ_pX.h>
 #include "tool.h"
 
-using namespace std;
-using namespace NTL;
-struct PKE_Para
-{
+// Public-key encryption parameters for the dual-Regev PKE scheme.
+struct PkeParams {
     int N, msg_bit, p_bit, q_bit;
-    ZZ msg, p, q, coeff, twice_p, twice_q, half_p;
-    ZZ_pX xN;
+    NTL::ZZ msg, p, q, coeff, twice_p, twice_q, half_p;
+    NTL::ZZ_pX xN;
     int hsk = 64;
     int d;
     int num_data;
 };
 
-void SetPara(PKE_Para &pkePara, int eval_poly);
-void PKE_Gen(PKE_Para &pkePara, vec_ZZ_pX &pkePk, vec_ZZ_pX &pkeSk, int eval_poly)
-{
-    // initialize the parameters
-    SetPara(pkePara, eval_poly);
-    pkePara.msg_bit = 32;
-    NTL::power(pkePara.p, 2, pkePara.p_bit);
-    NTL::power(pkePara.q, 2, pkePara.q_bit);
-    ZZ_p::init(pkePara.q);
-    SetCoeff(pkePara.xN, 0, 1);
-    SetCoeff(pkePara.xN, pkePara.N, 1);
-    ZZ_pXModulus modulus(pkePara.xN);
-    pkePara.twice_p = 2 * pkePara.p;
-    pkePara.twice_q = 2 * pkePara.q;
-    pkePara.half_p = pkePara.p / 2;
+// Workspace for PkeDualDecrypt to avoid repeated temporary allocations.
+struct PkeWorkspace {
+    NTL::ZZ coeff;
+    NTL::ZZX temp;
+    NTL::ZZ_pX temp1;
+    NTL::ZZ_pX temp2;
+};
 
-    // gen pk sk
-    ZZ_pX hat_s, e;
-    Random_ZZ_pX(pkePk[0], pkePara.N, pkePara.q_bit);
-    SecretKey(hat_s, pkePara.N, pkePara.hsk);
-    GaussRand(e, pkePara.N);
-    MulMod(pkePk[1], pkePk[0], hat_s, modulus);
-    pkePk[1] = pkePk[1] + e;
-    SetCoeff(pkeSk[0], 0, 1);
-    pkeSk[1] = hat_s;
+void SetParams(PkeParams &params, int eval_poly);
+
+inline void PkeGen(PkeParams &params, NTL::vec_ZZ_pX &pk, NTL::vec_ZZ_pX &sk, int eval_poly) {
+    SetParams(params, eval_poly);
+    params.msg_bit = 32;
+    NTL::power(params.p, 2, params.p_bit);
+    NTL::power(params.q, 2, params.q_bit);
+    NTL::ZZ_p::init(params.q);
+    NTL::SetCoeff(params.xN, 0, 1);
+    NTL::SetCoeff(params.xN, params.N, 1);
+    NTL::ZZ_pXModulus modulus(params.xN);
+    params.twice_p = 2 * params.p;
+    params.twice_q = 2 * params.q;
+    params.half_p = params.p / 2;
+
+    NTL::ZZ_pX hat_s, e;
+    RandomZZpx(pk[0], params.N, params.q_bit);
+    MakeSecretKey(hat_s, params.N, params.hsk);
+    GaussRandom(e, params.N);
+    NTL::MulMod(pk[1], pk[0], hat_s, modulus);
+    pk[1] = pk[1] + e;
+    NTL::SetCoeff(sk[0], 0, 1);
+    sk[1] = hat_s;
 }
 
-void PKE_Enc(vec_ZZ_pX &c, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX pkePk, const ZZ_pX x)
-{
-    ZZ_pX v, e1, e2, temp;
-    ZZ q_div_p = pkePara.q / pkePara.p;
-    SecretKey(v, pkePara.N, pkePara.hsk);
-    GaussRand(e1, pkePara.N);
-    GaussRand(e2, pkePara.N);
-    MulMod(c[0], pkePk[1], v, modulus);
+inline void PkeEnc(NTL::vec_ZZ_pX &c, const PkeParams &params,
+                   const NTL::ZZ_pXModulus &modulus, const NTL::vec_ZZ_pX &pk,
+                   const NTL::ZZ_pX x) {
+    NTL::ZZ_pX v, e1, e2, temp;
+    NTL::ZZ q_div_p = params.q / params.p;
+    MakeSecretKey(v, params.N, params.hsk);
+    GaussRandom(e1, params.N);
+    GaussRandom(e2, params.N);
+    NTL::MulMod(c[0], pk[1], v, modulus);
     c[0] = c[0] + e1;
-    ZZ_pX_ScaleMul_ZZ(temp, x, q_div_p);
+    ZZpxScaleMul(temp, x, q_div_p);
     c[0] = c[0] + temp;
-    MulMod(c[1], pkePk[0], v, modulus);
+    NTL::MulMod(c[1], pk[0], v, modulus);
     c[1] = e2 - c[1];
 }
 
-void PKE_OKDM(vec_ZZ_pX &C, const PKE_Para &pkePara, ZZ_pXModulus &modulus, vec_ZZ_pX &pkePk, const ZZ_pX x)
-{
-    ZZ_pX zero;
+inline void PkeOkdm(NTL::vec_ZZ_pX &C, const PkeParams &params,
+                    const NTL::ZZ_pXModulus &modulus, const NTL::vec_ZZ_pX &pk,
+                    const NTL::ZZ_pX x) {
+    NTL::ZZ_pX zero;
     zero = 0;
-    ZZ q_div_p = pkePara.q / pkePara.p;
-    vec_ZZ_pX c_xs1, c_xs2;
-    ZZ_pX temp;
+    NTL::ZZ q_div_p = params.q / params.p;
+    NTL::vec_ZZ_pX c_xs1, c_xs2;
+    NTL::ZZ_pX temp;
     c_xs1.SetLength(2);
     c_xs2.SetLength(2);
 
-    PKE_Enc(c_xs1, pkePara, modulus, pkePk, x);
-    PKE_Enc(c_xs2, pkePara, modulus, pkePk, zero);
+    PkeEnc(c_xs1, params, modulus, pk, x);
+    PkeEnc(c_xs2, params, modulus, pk, zero);
 
-    ZZ_pX_ScaleMul_ZZ(temp, x, q_div_p);
+    ZZpxScaleMul(temp, x, q_div_p);
     c_xs2[1] = c_xs2[1] + temp;
     C[0] = c_xs1[0];
     C[1] = c_xs1[1];
@@ -78,48 +86,43 @@ void PKE_OKDM(vec_ZZ_pX &C, const PKE_Para &pkePara, ZZ_pXModulus &modulus, vec_
     C[3] = c_xs2[1];
 }
 
-void PKE_DDec(vec_ZZ_pX &db, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX pkeSk, vec_ZZ_pX C)
-{
-    ZZ coeff;
-    ZZX temp;
-    ZZ_pX temp1, temp2;
-    MulMod(temp1, pkeSk[0], C[0], modulus);
-    MulMod(temp2, pkeSk[1], C[1], modulus);
-    temp1 = temp1 + temp2;
-    conv(temp, temp1);
-    for (int i = 0; i < pkePara.N; i++)
-    {
-        GetCoeff(coeff, temp, i);
-        coeff = (coeff * pkePara.twice_p + pkePara.q) / (pkePara.twice_q);
-        coeff = coeff % pkePara.p;
-        if (coeff > pkePara.half_p)
-        {
-            coeff -= pkePara.p;
-        }
-        SetCoeff(temp, i, coeff);
+// Round one polynomial from mod q to mod p.
+static inline void RoundQToP(NTL::ZZ_pX &out, const NTL::ZZ_pX &in,
+                             const PkeParams &params, PkeWorkspace &ws) {
+    NTL::conv(ws.temp, in);
+    for (int i = 0; i < params.N; i++) {
+        NTL::GetCoeff(ws.coeff, ws.temp, i);
+        ws.coeff = (ws.coeff * params.twice_p + params.q) / (params.twice_q);
+        ws.coeff = ws.coeff % params.p;
+        if (ws.coeff > params.half_p) ws.coeff -= params.p;
+        NTL::SetCoeff(ws.temp, i, ws.coeff);
     }
-    conv(db[0], temp);
-    MulMod(temp1, pkeSk[0], C[2], modulus);
-    MulMod(temp2, pkeSk[1], C[3], modulus);
-    temp1 = temp1 + temp2;
-    conv(temp, temp1);
-    for (int i = 0; i < pkePara.N; i++)
-    {
-        GetCoeff(coeff, temp, i);
-        coeff = (coeff * pkePara.twice_p + pkePara.q) / (pkePara.twice_q);
-        coeff = coeff % pkePara.p;
-        if (coeff > pkePara.half_p)
-        {
-            coeff -= pkePara.p;
-        }
-        SetCoeff(temp, i, coeff);
-    }
-    conv(db[1], temp);
+    NTL::conv(out, ws.temp);
 }
 
-void SetPara(PKE_Para &pkePara, int eval_poly)
-{
-    pkePara.N = 32768;
-    pkePara.p_bit = 319;
-    pkePara.q_bit = 662;
+// Decrypt and round one half of the dual ciphertext.
+static inline void DDecOneHalf(NTL::ZZ_pX &out,
+                               const NTL::ZZ_pX &sk0, const NTL::ZZ_pX &sk1,
+                               const NTL::ZZ_pX &c0, const NTL::ZZ_pX &c1,
+                               const PkeParams &params,
+                               const NTL::ZZ_pXModulus &modulus,
+                               PkeWorkspace &ws) {
+    NTL::MulMod(ws.temp1, sk0, c0, modulus);
+    NTL::MulMod(ws.temp2, sk1, c1, modulus);
+    ws.temp1 += ws.temp2;
+    RoundQToP(out, ws.temp1, params, ws);
+}
+
+inline void PkeDualDecrypt(NTL::vec_ZZ_pX &db, const PkeParams &params,
+                           const NTL::ZZ_pXModulus &modulus,
+                           const NTL::vec_ZZ_pX &sk, const NTL::vec_ZZ_pX &C) {
+    PkeWorkspace ws;
+    DDecOneHalf(db[0], sk[0], sk[1], C[0], C[1], params, modulus, ws);
+    DDecOneHalf(db[1], sk[0], sk[1], C[2], C[3], params, modulus, ws);
+}
+
+inline void SetParams(PkeParams &params, int eval_poly) {
+    params.N = 32768;
+    params.p_bit = 319;
+    params.q_bit = 662;
 }

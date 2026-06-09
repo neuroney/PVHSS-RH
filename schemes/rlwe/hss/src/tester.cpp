@@ -1,6 +1,9 @@
 #include "tester.h"
 
-void Run_Gen(int msg_num, int degree_f) {
+using namespace NTL;
+using namespace std;
+
+void RunGen(int msg_num, int degree_f) {
     PKE_Para pkePara;
     vec_ZZ_pX pkePk, pkeSk, hssEk_1, hssEk_2;
     pkePk.SetLength(2);
@@ -12,18 +15,18 @@ void Run_Gen(int msg_num, int degree_f) {
     pkePara.num_data = msg_num;
     PKE_Gen(pkePara, pkePk, pkeSk);
     ZZ_pXModulus modulus(pkePara.xN);
-    HSS_Gen(hssEk_1, hssEk_2, pkePara, pkeSk);
+    HssGen(hssEk_1, hssEk_2, pkePara, pkeSk);
 }
 
-void Time_Gen(int msg_num, int degree_f, int cyctimes) {
+void TimeGen(int msg_num, int degree_f, int cyctimes) {
     TimingResult timing = MeasureTimeMs([&]() {
-        Run_Gen(msg_num, degree_f);
+        RunGen(msg_num, degree_f);
     }, cyctimes);
     PrintTimeMs("gen algo time", timing);
 }
 
 
-void Time_Enc(int msg_num, int degree_f,  int cyctimes) {
+void TimeEnc(int msg_num, int degree_f,  int cyctimes) {
     //para
     PKE_Para pkePara;
     vec_ZZ_pX pkePk, pkeSk, hssEk_1, hssEk_2;
@@ -36,13 +39,13 @@ void Time_Enc(int msg_num, int degree_f,  int cyctimes) {
     pkePara.d = degree_f;
     PKE_Gen(pkePara, pkePk, pkeSk);
     ZZ_pXModulus modulus(pkePara.xN);
-    HSS_Gen(hssEk_1, hssEk_2, pkePara, pkeSk);
+    HssGen(hssEk_1, hssEk_2, pkePara, pkeSk);
 
     vec_ZZ_pX C;
     ZZ x;
     C.SetLength(4);
     TimingResult timing = MeasureTimeMs([&]() {
-        x = RandomBits_ZZ(pkePara.msg_bit);
+        x = NTL::RandomBits_ZZ(pkePara.msg_bit);
         HSS_Enc(C, pkePara, modulus, pkePk, x);
     }, cyctimes);
     PrintTimeMs("Enc algo time", timing);
@@ -62,15 +65,15 @@ void Time_Dec(int msg_num, int degree_f, int cyctimes)
     pkePara.d = degree_f;
     PKE_Gen(pkePara, pkePk, pkeSk);
     ZZ_pXModulus modulus(pkePara.xN);
-    HSS_Gen(hssEk_1, hssEk_2, pkePara, pkeSk);
+    HssGen(hssEk_1, hssEk_2, pkePara, pkeSk);
 
     ZZ_pX y_ZZ_pZ,y1,y2;
     ZZ_p y_ZZ_p;
     ZZ y_ZZ;
-    RandomBits(y_ZZ,pkePara.msg_bit);
+    NTL::RandomBits(y_ZZ,pkePara.msg_bit);
     conv(y_ZZ_p,y_ZZ);
     SetCoeff(y_ZZ_pZ,0,y_ZZ_p);
-    Random_ZZ_pX(y1,pkePara.N,pkePara.q_bit);
+    RandomZZpx(y1,pkePara.N,pkePara.q_bit);
     y2=y_ZZ_pZ-y1;
     TimingResult timing = MeasureTimeMsAdaptive([&]() {
         ZZ_pX tmp = y1 + y2;
@@ -79,7 +82,7 @@ void Time_Dec(int msg_num, int degree_f, int cyctimes)
 }
 
 
-void Time_Eval_Subalgo(int msg_num, int degree_f,  int cyctimes) {
+void TimeEvalSubalgo(int msg_num, int degree_f,  int cyctimes) {
     //para
     PKE_Para pkePara;
     vec_ZZ_pX pkePk, pkeSk, hssEk_1, hssEk_2;
@@ -92,10 +95,10 @@ void Time_Eval_Subalgo(int msg_num, int degree_f,  int cyctimes) {
     pkePara.d = degree_f;
     PKE_Gen(pkePara, pkePk, pkeSk);
     ZZ_pXModulus modulus(pkePara.xN);
-    HSS_Gen(hssEk_1, hssEk_2, pkePara, pkeSk);
+    HssGen(hssEk_1, hssEk_2, pkePara, pkeSk);
     //data
     Data data;
-    GenData(data, pkePara, pkePk);
+    GenerateData(data, pkePara, pkePk);
 
     //load
     vec_ZZ_pX db1,db2;
@@ -111,10 +114,10 @@ void Time_Eval_Subalgo(int msg_num, int degree_f,  int cyctimes) {
 
 
     //add1
-    Random_ZZ_pX(db1[0],pkePara.N,pkePara.q_bit);
-    Random_ZZ_pX(db1[1],pkePara.N,pkePara.q_bit);
-    Random_ZZ_pX(db2[0],pkePara.N,pkePara.q_bit);
-    Random_ZZ_pX(db2[1],pkePara.N,pkePara.q_bit);
+    RandomZZpx(db1[0],pkePara.N,pkePara.q_bit);
+    RandomZZpx(db1[1],pkePara.N,pkePara.q_bit);
+    RandomZZpx(db2[0],pkePara.N,pkePara.q_bit);
+    RandomZZpx(db2[1],pkePara.N,pkePara.q_bit);
     int index=rand()%10;
     vec_ZZ_pX add_tmp;
     add_tmp.SetLength(2);
@@ -151,7 +154,7 @@ void Time_Eval_Subalgo(int msg_num, int degree_f,  int cyctimes) {
     ZZX yb_ZZX;
     ZZ coeff;
     ZZ msg_size= power_ZZ(2,pkePara.msg_bit);
-    Random_ZZ_pX(yb_ZZ_pX,pkePara.N,pkePara.q_bit);
+    RandomZZpx(yb_ZZ_pX,pkePara.N,pkePara.q_bit);
     timing = MeasureTimeMsAdaptive([&]() {
         conv(yb_ZZX,yb_ZZ_pX);
         for(int j=0;j<pkePara.N;j++)
@@ -178,23 +181,23 @@ void Time_Eval(int msg_num, int degree_f, int cyctimes) {
     pkePara.num_data = msg_num;
     PKE_Gen(pkePara, pkePk, pkeSk);
     ZZ_pXModulus modulus(pkePara.xN);
-    HSS_Gen(hssEk_1, hssEk_2, pkePara, pkeSk);
+    HssGen(hssEk_1, hssEk_2, pkePara, pkeSk);
     //data
     Data data;
-    GenData(data, pkePara, pkePk);
+    GenerateData(data, pkePara, pkePk);
     vec_ZZ_pX y1, y2;
     int prf_key;
 
     vec_ZZ_pX C1;
     vec_ZZ_pX M1, M2;
     HSS_Enc(C1, pkePara, modulus, pkePk, ZZ(1));
-    HSS_ConvertInput(M1, pkePara, modulus, hssEk_1, C1);
-    HSS_ConvertInput(M2, pkePara, modulus, hssEk_2, C1);
+    HssConvertInput(M1, pkePara, modulus, hssEk_1, C1);
+    HssConvertInput(M2, pkePara, modulus, hssEk_2, C1);
 
     TimingResult timing = MeasureTimeMs([&]() {
         prf_key = 0;
         // HSS_Eval(y1, 1, pkePara, modulus, hssEk_1, data.C_X, data.PRF, prf_key, );
-        HSS_Evaluate_P_d2(y1, 1, data.C_X, pkePara, modulus, hssEk_1, prf_key, degree_f, M1);
+        HssEvaluatePolyD2(y1, 1, data.C_X, pkePara, modulus, hssEk_1, prf_key, degree_f, M1);
     }, cyctimes);
     PrintTimeMs("Eval algo time", timing);
 }
@@ -202,8 +205,8 @@ void Time_Eval(int msg_num, int degree_f, int cyctimes) {
 
 void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
-    Time_Gen(msg_num, degree_f, cyctimes);
-    Time_Enc(msg_num, degree_f, cyctimes);
+    TimeGen(msg_num, degree_f, cyctimes);
+    TimeEnc(msg_num, degree_f, cyctimes);
     Time_Dec(msg_num, degree_f, cyctimes);
     Time_Eval(msg_num, degree_f, cyctimes);
 

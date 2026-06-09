@@ -32,3 +32,4 @@ void Prove(PROOF &proof, int b, const PVHSS_MV& y_b, const PVHSS_MV& Y_b, const 
 void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, const vec_ZZ_pX &ek2, vector<PVHSS_CT> &Ix, ZZ_pXModulus modulus, const vec_ZZ_pX &M1, vec_ZZ_pX &M2, vector<vector<int>> F_TEST, bn_t ekpb[2]);
 bool Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSPara &param);
 void Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk);
+bool PVHSS_ACC_TEST(int msg_num, int degree_f);

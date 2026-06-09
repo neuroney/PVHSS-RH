@@ -84,7 +84,7 @@ int main(int argc, char **argv)
     for (size_t i = 0; i < degrees.size(); ++i)
     {
         cout << "degree_f: " << degrees[i] << "\n";
-        Eval_Poly(degrees[i], msg_num);
+        EvalPoly(degrees[i], msg_num);
     }
 
     return 0;

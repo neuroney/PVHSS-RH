@@ -1,6 +1,8 @@
 #pragma once
 #include "helper.h"
 
+using NTL::ZZ;
+
 typedef struct
 {
     ep2_t g2_A;

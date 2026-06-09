@@ -1,6 +1,15 @@
 #pragma once
 #include "helper.h"
 
+using NTL::Mat;
+using NTL::Vec;
+using NTL::vec_ZZ;
+using NTL::vec_ZZ_pX;
+using NTL::ZZ;
+using NTL::ZZX;
+using NTL::ZZ_pX;
+using NTL::ZZ_pXModulus;
+
 struct PKE_Para
 {
     int N, msg_bit, p_bit, q_bit;
@@ -26,23 +35,36 @@ struct VHSS_Para
     ZZ_pX alpha;
 };
 
-void GenData(Data &data, PKE_Para pkePara, vec_ZZ_pX pkePk);
-void SetPara(PKE_Para &pkePara);
+// Workspace for PKE_DDec to avoid repeated temporary allocations
+struct PKEWorkspace {
+    ZZ coeff;
+    ZZX temp;
+    ZZ_pX temp1;
+    ZZ_pX temp2;
+};
+
+void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk);
+void SetParams(PKE_Para &pkePara);
 void PKE_Gen(PKE_Para &pkePara, vec_ZZ_pX &pkePk, vec_ZZ_pX &pkeSk);
-void PKE_Enc(vec_ZZ_pX &c, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX pkePk, const ZZ &x);
-void PKE_OKDM(vec_ZZ_pX &C, const PKE_Para &pkePara, ZZ_pXModulus &modulus, vec_ZZ_pX &pkePk, const ZZ &x);
-void PKE_DDec(vec_ZZ_pX &db, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX pkeSk, vec_ZZ_pX C);
-void HSS_Gen(vec_ZZ_pX &hssEk_1, vec_ZZ_pX &hssEk_2, PKE_Para pkePara, vec_ZZ_pX pkeSk);
-void VHSS_Enc(vec_ZZ_pX &C, const PKE_Para &pkePara, ZZ_pXModulus &modulus, vec_ZZ_pX &pkePk, const ZZ &x);
-void VHSS_Mult(vec_ZZ_pX &db, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX pkeSk, vec_ZZ_pX C);
-void HSS_AddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX& C_Y);
-void HSS_ConvertInput(vec_ZZ_pX &tb_y, const PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX ek, vec_ZZ_pX C_X);
-void HSS_Eval(ZZ_pX &tb_y, int b, PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX ek, Vec<vec_ZZ_pX> C_X,Vec<vec_ZZ_pX> PRF, int &prfkey);
+void PKE_Enc(vec_ZZ_pX &c, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ &x);
+void PKE_OKDM(vec_ZZ_pX &C, const PKE_Para &pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ &x);
+void PKE_DDec(vec_ZZ_pX &db, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk, const vec_ZZ_pX& C);
+void HssGen(vec_ZZ_pX &hssEk_1, vec_ZZ_pX &hssEk_2, const PKE_Para& pkePara, const vec_ZZ_pX& pkeSk);
+void VHSS_Enc(vec_ZZ_pX &C, const PKE_Para &pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ &x);
+void VHSS_Mult(vec_ZZ_pX &db, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk, const vec_ZZ_pX& C);
+void HssAddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX& C_Y);
+inline void HssAddMemoryInPlace(vec_ZZ_pX& acc, const vec_ZZ_pX& x) {
+    acc[0] += x[0];
+    acc[1] += x[1];
+}
+ZZ HssOutputCoeff(const ZZ_p& coeff, const PKE_Para& pkePara, const ZZ& output_mod);
+void HssConvertInput(vec_ZZ_pX &tb_y, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& ek, const vec_ZZ_pX& C_X);
+void HSS_Eval(ZZ_pX &tb_y, int b, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& ek, const Vec<vec_ZZ_pX>& C_X, const Vec<vec_ZZ_pX>& PRF, int &prfkey);
 void f(vec_ZZ_pX &tb, int b, int d, int num_data, int loop, int beg_ind, int *ind_var,
-       PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX ek, Vec<vec_ZZ_pX> C_X, Vec<vec_ZZ_pX> PRF, int &prfkey);
+       const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& ek, const Vec<vec_ZZ_pX>& C_X, const Vec<vec_ZZ_pX>& PRF, int &prfkey);
 
 
-void HSS_Evaluate_P_d2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, const PKE_Para &pkePara, ZZ_pXModulus modulus, const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f,
+void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, const PKE_Para &pkePara, ZZ_pXModulus modulus, const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f,
     const vec_ZZ_pX & M1);
 
-    void VHSS_Gen(VHSS_Para &vhssPara, PKE_Para pkePara, ZZ_pXModulus modulus, vec_ZZ_pX pkeSk);
+    void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk);

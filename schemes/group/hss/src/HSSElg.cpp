@@ -1,6 +1,9 @@
 #include "HSSElg.h"
 
-void Elgamal_Gen(Elgamal_PK &pk, Elgamal_SK &d, int skLen)
+using namespace NTL;
+using namespace std;
+
+void ElgamalGen(ElgamalPublicKey &pk, ElgamalSecretKey &d, int skLen)
 {
     ZZ p, q;
 
@@ -12,39 +15,39 @@ void Elgamal_Gen(Elgamal_PK &pk, Elgamal_SK &d, int skLen)
     mul(pk.N, p, q);        // N = p * q
     mul(pk.N2, pk.N, pk.N); // N^2
 
-    RandomBnd(pk.g, pk.N2);
+    NTL::RandomBnd(pk.g, pk.N2);
     while (Jacobi(pk.g, pk.N) != 1)
     {
-        RandomBnd(pk.g, pk.N2);
+        NTL::RandomBnd(pk.g, pk.N2);
     }
 
     add(pk.f, pk.N, 1);
 
-    RandomBits(d, skLen);
+    NTL::RandomBits(d, skLen);
     PowerMod(pk.h, pk.g, d, pk.N2);
 }
 
-void Elgamal_Enc(Elgamal_CT &ct, const Elgamal_PK &pk, const ZZ &x)
+void ElgamalEnc(ElgamalCiphertext &ct, const ElgamalPublicKey &pk, const ZZ &x)
 {
     ZZ r;
-    RandomBnd(r, pk.N);
+    NTL::RandomBnd(r, pk.N);
 
     PowerMod(ct[0], pk.g, r, pk.N2);
     PowerMod(ct[1], pk.h, r, pk.N2);
     MulMod(ct[1], ct[1], 1 + pk.N * x, pk.N2);
 }
 
-void Elgamal_skEnc(Elgamal_CT &ct, const Elgamal_PK &pk, const ZZ &x)
+void ElgamalSkEnc(ElgamalCiphertext &ct, const ElgamalPublicKey &pk, const ZZ &x)
 {
     ZZ r;
-    RandomBnd(r, pk.N);
+    NTL::RandomBnd(r, pk.N);
 
     PowerMod(ct[0], pk.g, r, pk.N2);
     MulMod(ct[0], ct[0], 1 - pk.N * x, pk.N2);
     PowerMod(ct[1], pk.h, r, pk.N2);
 }
 
-void Elgamal_Dec(ZZ &x, const Elgamal_PK &pk, const Elgamal_SK &sk, const Elgamal_CT &ct)
+void ElgamalDec(ZZ &x, const ElgamalPublicKey &pk, const ElgamalSecretKey &sk, const ElgamalCiphertext &ct)
 {
     ZZ temp;
     PowerMod(temp, ct[0], -sk, pk.N2);
@@ -54,48 +57,48 @@ void Elgamal_Dec(ZZ &x, const Elgamal_PK &pk, const Elgamal_SK &sk, const Elgama
     div(x, temp, pk.N);
 }
 
-void HSS_Gen(HSS_PK &pk, HSS_EK &ek0, HSS_EK &ek1, int skLen)
+void HssGen(HssPublicKey &pk, HssEvalKey &ek0, HssEvalKey &ek1, int skLen)
 {
-    Elgamal_SK s;
-    Elgamal_Gen(pk, s, skLen);
+    ElgamalSecretKey s;
+    ElgamalGen(pk, s, skLen);
 
-    RandomBits(ek0, skLen);
+    NTL::RandomBits(ek0, skLen);
     add(ek1, ek0, s);
 }
 
 
-void HSS_Input(HSS_CT &I, const HSS_PK &pk, const ZZ &x)
+void HssInput(HssCiphertext &I, const HssPublicKey &pk, const ZZ &x)
 {
-    Elgamal_Enc(I[0], pk, x);
-    Elgamal_skEnc(I[1], pk, x);
+    ElgamalEnc(I[0], pk, x);
+    ElgamalSkEnc(I[1], pk, x);
 }
 
-void HSS_ConvertInput(HSS_MV &Mx, int idx, const HSS_PK &pk, const HSS_EK &ek, const HSS_CT &Ix, int &prf_key)
+void HssConvertInput(HssMemoryValue &Mx, int idx, const HssPublicKey &pk, const HssEvalKey &ek, const HssCiphertext &Ix, int &prf_key)
 {
-    HSS_MV M1;
+    HssMemoryValue M1;
     M1[0] = idx;
     M1[1] = ek;
-    HSS_Mul(Mx, idx, pk, Ix, M1, prf_key);
+    HssMul(Mx, idx, pk, Ix, M1, prf_key);
 }
 
-void HSS_Mul(HSS_MV &Mz, int idx, const HSS_PK &pk, const HSS_CT &Ix, const HSS_MV &My, int &prf_key)
+void HssMul(HssMemoryValue &Mz, int idx, const HssPublicKey &pk, const HssCiphertext &Ix, const HssMemoryValue &My, int &prf_key)
 {
     ZZ temp1, temp2;
     PowerMod(temp1, Ix[0][1], My[0], pk.N2);
     PowerMod(temp2, Ix[0][0], -My[1], pk.N2);
     MulMod(Mz[0], temp1, temp2, pk.N2);
-    HSS_DDLog(Mz[0], pk, Mz[0]);
-    Mz[0] = PRF_ZZ(prf_key++, pk.N) + Mz[0];
+    HssDdlog(Mz[0], pk, Mz[0]);
+    Mz[0] = PrfZZ(prf_key++, pk.N) + Mz[0];
 
     PowerMod(temp1, Ix[1][1], My[0], pk.N2);
     PowerMod(temp2, Ix[1][0], -My[1], pk.N2);
     MulMod(Mz[1], temp1, temp2, pk.N2);
-    HSS_DDLog(Mz[1], pk, Mz[1]);
-    Mz[1] = PRF_ZZ(prf_key++, pk.N) + Mz[1];
+    HssDdlog(Mz[1], pk, Mz[1]);
+    Mz[1] = PrfZZ(prf_key++, pk.N) + Mz[1];
 
 }
 
-void HSS_DDLog(ZZ &z, const HSS_PK &pk, const ZZ &g)
+void HssDdlog(ZZ &z, const HssPublicKey &pk, const ZZ &g)
 {
     ZZ h1, h, temp1;
     DivRem(h1, h, g, pk.N); // h = g % N; h1 = g / N
@@ -103,15 +106,15 @@ void HSS_DDLog(ZZ &z, const HSS_PK &pk, const ZZ &g)
     MulMod(z, h1, temp1, pk.N);
 }
 
-void HSS_AddMemory(HSS_MV &Mz, const HSS_PK &pk, const HSS_MV &Mx, const HSS_MV &My)
+void HssAddMemory(HssMemoryValue &Mz, const HssPublicKey &pk, const HssMemoryValue &Mx, const HssMemoryValue &My)
 {
     add(Mz[0], Mx[0], My[0]);
     add(Mz[1], Mx[1], My[1]);
 }
 
-void HSS_Evaluate(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const HSS_PK &pk, const HSS_EK &ekb, int &prf_key, vector<vector<int>> F_TEST)
+void HssEvaluate(HssMemoryValue &y_b_res, int b, const vector<HssCiphertext> &Ix, const HssPublicKey &pk, const HssEvalKey &ekb, int &prf_key, vector<vector<int>> F_TEST)
 {
-    HSS_MV M1, Monomial, tmp;
+    HssMemoryValue M1, Monomial, tmp;
     M1[0] = b;
     M1[1] = ekb;
 
@@ -126,21 +129,21 @@ void HSS_Evaluate(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const HSS_PK
         {
             for (k = 0; k < F_TEST[i][j]; ++k)
             {
-                HSS_Mul(tmp, b, pk, Ix[j], Monomial, prf_key);
+                HssMul(tmp, b, pk, Ix[j], Monomial, prf_key);
                 copy(begin(tmp), end(tmp), begin(Monomial));
             }
         }
-        HSS_AddMemory(y_b_res, pk, y_b_res, Monomial);
+        HssAddMemory(y_b_res, pk, y_b_res, Monomial);
     }
 }
 
 
-void HSS_Evaluate_P_d2(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const HSS_PK &pk, const HSS_EK &ekb, int &prf_key, int degree_f)
+void HssEvaluatePolyD2(HssMemoryValue &y_b_res, int b, const vector<HssCiphertext> &Ix, const HssPublicKey &pk, const HssEvalKey &ekb, int &prf_key, int degree_f)
 {
-    HSS_MV tmp1, tmp2;
+    HssMemoryValue tmp1, tmp2;
 
     int k = Ix.size();
-    Vec<HSS_MV> dp_prev, dp_curr;
+    Vec<HssMemoryValue> dp_prev, dp_curr;
     dp_prev.SetLength(1+degree_f);
     dp_curr.SetLength(1+degree_f);
 
@@ -152,14 +155,14 @@ void HSS_Evaluate_P_d2(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const H
         for (int s = 0; s <= degree_f; s++) { // 目标和从 0 到 d
             dp_curr[s][0] = 0;
             dp_curr[s][1] = 0;
-            HSS_AddMemory(dp_curr[s], pk, dp_curr[s], dp_prev[s]);
+            HssAddMemory(dp_curr[s], pk, dp_curr[s], dp_prev[s]);
             for (int j = 1; j <= s; j++) {
                 copy(begin(dp_prev[s - j]), end(dp_prev[s - j]), begin(tmp1));
                 for (int h=0; h < j;++h) {
-                    HSS_Mul(tmp2, b, pk, Ix[i - 1], tmp1, prf_key);
+                    HssMul(tmp2, b, pk, Ix[i - 1], tmp1, prf_key);
                     copy(begin(tmp2), end(tmp2), begin(tmp1));
                 }
-                HSS_AddMemory(dp_curr[s], pk, dp_curr[s], tmp1);
+                HssAddMemory(dp_curr[s], pk, dp_curr[s], tmp1);
             }
         }
         dp_prev.swap(dp_curr);
@@ -168,12 +171,12 @@ void HSS_Evaluate_P_d2(HSS_MV &y_b_res, int b, const vector<HSS_CT> &Ix, const H
     y_b_res[0] = 0;
     y_b_res[1] = 0;
     for (int s = 1; s <= degree_f; s++) {
-        HSS_AddMemory(y_b_res, pk, y_b_res, dp_prev[s]);
+        HssAddMemory(y_b_res, pk, y_b_res, dp_prev[s]);
     }
 
 }
 
-void HSS_Dec(ZZ &z, const HSS_MV &Mx0, const HSS_MV &Mx1)
+void HssDec(ZZ &z, const HssMemoryValue &Mx0, const HssMemoryValue &Mx1)
 {
     sub(z, Mx1[0], Mx0[0]);
 }

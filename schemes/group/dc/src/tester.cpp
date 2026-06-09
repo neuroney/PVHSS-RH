@@ -1,5 +1,8 @@
 #include "tester.h"
 
+using namespace NTL;
+using namespace std;
+
 void PVHSSElg2_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
     std::cout << "*******************************************************" << std::endl;
@@ -22,9 +25,9 @@ void PVHSSElg2_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 
     // Setup Phase: VHSS base plus DC-specific decryptable commitment state.
     timing = MeasureTimeMs([&]() {
-        VHSSElg_PK pk00;
+        VhssElgamalPk pk00;
         PVHSSElg2_EK ek000, ek100;
-        VHSSElg_Gen(pk00, ek000, ek100, 1024, 256);
+        VhssElgamalGen(pk00, ek000, ek100, 1024, 256);
     }, cyctimes);
     PrintTimeMs("Setup base VHSS algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
@@ -37,13 +40,13 @@ void PVHSSElg2_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     setup_param.msg_bits = 32;
     setup_param.degree_f = degree_f;
     setup_param.msg_num = msg_num;
-    VHSSElg_Gen(setup_param.pk, setup_ek0, setup_ek1, setup_param.skLen, setup_param.vkLen);
+    VhssElgamalGen(setup_param.pk, setup_ek0, setup_ek1, setup_param.skLen, setup_param.vkLen);
     timing = MeasureTimeMs([&]() {
         DecPed_ComGen(setup_param.ck, setup_sk);
         bn_t A;
         bn_new(A);
         ep2_new(setup_param.vk);
-        ZZ2bn(A, (setup_ek1[1] - setup_ek0[1]) % setup_param.pk.N);
+        ZZtoBn(A, (setup_ek1[1] - setup_ek0[1]) % setup_param.pk.N);
         ep2_mul_gen(setup_param.vk, A);
     }, cyctimes);
     PrintTimeMs("Setup incremental DC algorithm time", timing);
@@ -74,7 +77,7 @@ void PVHSSElg2_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     X.SetLength(msg_num);
     for (int i = 0; i < msg_num; ++i)
     {
-        RandomBits(X[i], param.msg_bits);
+        NTL::RandomBits(X[i], param.msg_bits);
     }
 
     // Input Processing Phase
@@ -87,15 +90,15 @@ void PVHSSElg2_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 
     // Polynomial Generation Phase
     vector<vector<int>> F_TEST;
-    Random_Func(F_TEST, msg_num, degree_f);
+    GenerateRandomFunc(F_TEST, msg_num, degree_f);
 
     // Evaluation Phase for Server 0: VHSS base computation plus DC proof.
-    VHSSElg_MV y0_base, y1_base;
+    VhssElgamalMv y0_base, y1_base;
     int prf_key0 = 0;
     int prf_key1 = 0;
     timing = MeasureTimeMs([&]() {
         prf_key0 = 0;
-        VHSSElg_Evaluate_P_d2(y0_base, 0, Ix, param.pk, ek0, prf_key0, param.degree_f);
+        VhssElgamalEvaluatePD2(y0_base, 0, Ix, param.pk, ek0, prf_key0, param.degree_f);
     }, cyctimes);
     PrintTimeMs("Evaluation base 0 algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
@@ -109,7 +112,7 @@ void PVHSSElg2_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     // Evaluation Phase for Server 1.
     timing = MeasureTimeMs([&]() {
         prf_key1 = 0;
-        VHSSElg_Evaluate_P_d2(y1_base, 1, Ix, param.pk, ek1, prf_key1, param.degree_f);
+        VhssElgamalEvaluatePD2(y1_base, 1, Ix, param.pk, ek1, prf_key1, param.degree_f);
     }, 1);
     PrintTimeMs("Evaluation base 1 algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
@@ -128,10 +131,6 @@ void PVHSSElg2_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     PrintTimeMs("Verification algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
-    // if (acc)
-    // {
-    //     cout << "Verification Passed\n";
-    // }
     // else
     // {
     //     cout << "Verification Failed\n";

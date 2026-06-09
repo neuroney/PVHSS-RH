@@ -1,7 +1,9 @@
 #include "helper.h"
 #include <chrono>
 #include <cmath>
-#include <numeric>
+
+using namespace NTL;
+using namespace std;
 
 namespace
 {
@@ -17,7 +19,7 @@ RandomStream &PRFStream()
     return stream;
 }
 
-void PRFBoundedZZ(ZZ &res, int prfkey, const ZZ &mmod)
+void PRFBoundedZZ(NTL::ZZ &res, int prfkey, const NTL::ZZ &mmod)
 {
     if (mmod <= 1)
     {
@@ -49,54 +51,7 @@ void PRFBoundedZZ(ZZ &res, int prfkey, const ZZ &mmod)
 }
 }
 
-int int2uint8_t(uint8_t *out, int in)
-{
-    const uint32_t value = static_cast<uint32_t>(in);
-    out[0] = static_cast<uint8_t>((value >> 24) & 0xffu);
-    out[1] = static_cast<uint8_t>((value >> 16) & 0xffu);
-    out[2] = static_cast<uint8_t>((value >> 8) & 0xffu);
-    out[3] = static_cast<uint8_t>(value & 0xffu);
-    return 0;
-}
-
-int uint8_t2int(int *out, uint8_t *in)
-{
-    const uint32_t value = (static_cast<uint32_t>(in[0]) << 24) |
-                           (static_cast<uint32_t>(in[1]) << 16) |
-                           (static_cast<uint32_t>(in[2]) << 8) |
-                           static_cast<uint32_t>(in[3]);
-    *out = static_cast<int>(value);
-
-    return 0;
-}
-
-int int2bn(bn_t out, int in)
-{
-    uint8_t temp[4];
-    int2uint8_t(temp, in);
-    bn_read_bin(out, temp, 4);
-
-    return 0;
-}
-
-int bn2int(int *out, bn_t in)
-{
-    uint8_t temp[4];
-    bn_write_bin(temp, 4, in);
-    uint8_t2int(out, temp);
-
-    return 0;
-}
-
-int sint2bn(bn_t out, int in, int size)
-{
-    (void)size;
-    const string str = std::to_string(in);
-    bn_read_str(out, str.c_str(), static_cast<int>(str.size()), 10);
-    return 0;
-}
-
-void ZZ2bn(bn_t out, const ZZ &in)
+void ZZtoBn(bn_t out, const NTL::ZZ &in)
 {
     bn_null(out);
     bn_new(out);
@@ -108,40 +63,18 @@ void ZZ2bn(bn_t out, const ZZ &in)
     {
         std::stringstream buffer;
         buffer << in;
-        const string ss(buffer.str());
+        const std::string ss(buffer.str());
         bn_read_str(out, ss.c_str(), static_cast<int>(ss.length()), 10);
     }
 }
 
-void bn2ZZ(ZZ &out, const bn_t in)
+void BnToZZ(NTL::ZZ &out, const bn_t in)
 {
     int size = bn_size_str(in, 10);
     char *in_char = new char[size];
     bn_write_str(in_char, size, in, 10);
-    out = conv<ZZ>(in_char);
+    out = NTL::conv<NTL::ZZ>(in_char);
     delete[] in_char;
-}
-
-void DataProcess(double &mean, double &stdev, double *Time, int cyctimes)
-{
-    if (cyctimes <= 0 || Time == nullptr)
-    {
-        mean = 0.0;
-        stdev = 0.0;
-        return;
-    }
-
-    const double sum = std::accumulate(Time, Time + cyctimes, 0.0);
-    mean = sum / cyctimes;
-    double temp_sum = 0.0;
-    for (int i = 0; i < cyctimes; i++)
-    {
-        double temp = mean - Time[i];
-        temp *= temp;
-        temp_sum = temp_sum + temp;
-    }
-    stdev = sqrt(temp_sum / cyctimes);
-    stdev = (mean == 0.0) ? 0.0 : stdev / mean;
 }
 
 double SteadyTimeSeconds()
@@ -152,7 +85,7 @@ double SteadyTimeSeconds()
     return std::chrono::duration<double>(now - base).count();
 }
 
-TimingResult MeasureTimeMs(const function<void()> &fn, int samples,
+TimingResult MeasureTimeMs(const std::function<void()> &fn, int samples,
                            int iterations_per_sample,
                            bool adaptive,
                            double min_sample_ms,
@@ -256,84 +189,86 @@ TimingResult MeasureTimeMs(const function<void()> &fn, int samples,
     return result;
 }
 
-TimingResult MeasureTimeMsAdaptive(const function<void()> &fn, int samples,
+TimingResult MeasureTimeMsAdaptive(const std::function<void()> &fn, int samples,
                                    double min_sample_ms,
                                    int max_adaptive_iters)
 {
     return MeasureTimeMs(fn, samples, 1, true, min_sample_ms, max_adaptive_iters);
 }
 
-void PrintTimeMs(const string &label, const TimingResult &result)
+void PrintTimeMs(const std::string &label, const TimingResult &result)
 {
-    cout << label << ": " << result.mean_ms << " ms  RSD: " << result.rsd * 100 << "%";
+    std::cout << label << ": " << result.mean_ms << " ms  RSD: " << result.rsd * 100 << "%";
     if (result.adaptive)
     {
-        cout << "  iters/sample: " << result.iterations_per_sample;
+        std::cout << "  iters/sample: " << result.iterations_per_sample;
     }
-    cout << "\n";
+    std::cout << "\n";
 }
 
 
-void NativeEval(ZZ &y, int d, int num_data, const vec_ZZ &X, const ZZ &mmod, const vector<vector<int>> &F_TEST)
+void NativeEvaluate(NTL::ZZ &y, int d, int num_data, const NTL::vec_ZZ &X,
+                     const NTL::ZZ &mmod, const std::vector<std::vector<int>> &F_TEST)
 {
     (void)d;
     y = 0;
-    for (int i = 0; i < F_TEST.size(); ++i)
+    for (size_t i = 0; i < F_TEST.size(); ++i)
     {
-        ZZ monotmp(1);
+        NTL::ZZ monotmp(1);
         for (int j = 0; j < num_data; ++j)
         {
             if (F_TEST[i][j] == 0)
             {
                 continue;
             }
-            ZZ tmp;
-            PowerMod(tmp, X[j], F_TEST[i][j], mmod);
-            MulMod(monotmp, monotmp, tmp, mmod);
+            NTL::ZZ tmp;
+            NTL::PowerMod(tmp, X[j], F_TEST[i][j], mmod);
+            NTL::MulMod(monotmp, monotmp, tmp, mmod);
         }
-        AddMod(y, y, monotmp, mmod);
+        NTL::AddMod(y, y, monotmp, mmod);
     }
 }
 
-ZZ PRF_ZZ(int prfkey, const ZZ &mmod)
+NTL::ZZ PrfZZ(int prf_key, const NTL::ZZ &mmod)
 {
-    ZZ res;
-    PRFBoundedZZ(res, prfkey, mmod);
+    NTL::ZZ res;
+    PRFBoundedZZ(res, prf_key, mmod);
     return res;
 }
 
-void PRF_ZZ(ZZ& res, int prfkey, const ZZ& mmod)
+void PrfZZ(NTL::ZZ& res, int prf_key, const NTL::ZZ& mmod)
 {
-    PRFBoundedZZ(res, prfkey, mmod);
+    PRFBoundedZZ(res, prf_key, mmod);
 }
 
-void PRF_bn(bn_t res, int prfkey, const ZZ &mmod)
+void PrfBn(bn_t res, int prf_key, const NTL::ZZ &mmod)
 {
-    ZZ tmp;
-    tmp = PRF_ZZ(prfkey, mmod);
+    NTL::ZZ tmp;
+    tmp = PrfZZ(prf_key, mmod);
     bn_null(res);
     bn_new(res);
-    ZZ2bn(res, tmp);
+    ZZtoBn(res, tmp);
 }
 
-void Random_Func(vector<vector<int>> &F_TEST, int msg_num, int degree_f)
+void GenerateRandomFunc(std::vector<std::vector<int>> &F_TEST, int msg_num, int degree_f)
 {
-    vector<vector<int>> Combinations;
-    vector<int> tmp;
+    std::vector<std::vector<int>> Combinations;
+    std::vector<int> tmp;
 
     for (int i = 1; i <= degree_f; ++i)
     {
         Combinations.clear();
         tmp.clear();
         int len = 0;
-        partitions(len, Combinations, i, msg_num, tmp, 0);
-        srand(time(0));
+        GeneratePartitions(len, Combinations, i, msg_num, tmp, 0);
+        srand(static_cast<unsigned>(time(0)));
         tmp = Combinations[rand() % len];
         F_TEST.push_back(tmp);
     }
 }
 
-void partitions(int &cnt, vector<vector<int>> &Res, int sum, int k, vector<int> &lst, int minn)
+void GeneratePartitions(int &cnt, std::vector<std::vector<int>> &Res, int sum, int k,
+                        std::vector<int> &lst, int minn)
 {
     if (k == 0)
     {
@@ -347,47 +282,20 @@ void partitions(int &cnt, vector<vector<int>> &Res, int sum, int k, vector<int> 
     for (int i = minn; i < sum + 1; ++i)
     {
         lst.push_back(i);
-        partitions(cnt, Res, sum - i, k - 1, lst, i);
+        GeneratePartitions(cnt, Res, sum - i, k - 1, lst, i);
         lst.pop_back();
     }
 }
 
-void GENERATE_RANDOM_FUNCTION(int msg_num, int degree_f)
-{
-
-    ofstream fout;  
-    vector<vector<int>> F_TEST;
-    Random_Func(F_TEST, msg_num, degree_f);
-
-    fout.open("function.txt"); // 关联一个文件
-    for (int i = 0; i < F_TEST.size(); ++i)
-    {
-        for (int j = 0; j < F_TEST[i].size(); ++j)
-        {
-            fout << F_TEST[i][j] << " "; // 写入
-        }
-        fout << endl;
-    }
-    fout.close();
-}
-
-ZZ Combine(int n, int m)
-{
-    if (n == m || m == 0)
-        return ZZ(1);
-    return Combine(n, m - 1) * ZZ(n - m + 1) / ZZ(m);
-}
-
-
-void Random_ZZ_pX(ZZ_pX &a, int N, int q_bit) {
+void RandomZZpx(ZZ_pX &a, int N, int q_bit) {
     ZZ_p coeff;
     for (int i = 0; i < N; i++) {
-        conv(coeff, RandomBits_ZZ(q_bit));
+        conv(coeff, NTL::RandomBits_ZZ(q_bit));
         SetCoeff(a, i, coeff);
     }
 }
 
-void RLWESecretKey(ZZ_pX &sk, int N, int hsk) {
+void RlweSecretKey(ZZ_pX &sk, int N, int hsk) {
     int interval = 0;
     interval = N / hsk;
     int index = rand() % interval;
@@ -398,18 +306,18 @@ void RLWESecretKey(ZZ_pX &sk, int N, int hsk) {
 
 }
 
-void GaussRand(ZZ_pX &e, int N) {
+void GaussRandom(ZZ_pX &e, int N) {
     double res_standard;
     int deviation = 8;
     int res;
     for (int i = 0; i < N; i++) {
-        res_standard = sqrt(-2.0 * log(rand() / (RAND_MAX + 1.0))) * sin(2.0 * PI * rand() / (RAND_MAX + 1.0));
+        res_standard = sqrt(-2.0 * log(rand() / (RAND_MAX + 1.0))) * sin(2.0 * PVHSS_PI * rand() / (RAND_MAX + 1.0));
         res = res_standard * deviation;
         SetCoeff(e, i, res);
     }
 }
 
-void ZZ_pX_ScaleMul_ZZ(ZZ_pX &out, const ZZ_pX &in1, const ZZ &in2)
+void ZZpxScaleMul(ZZ_pX &out, const ZZ_pX &in1, const ZZ &in2)
 {
     ZZ_pX a;
     conv(a,in2);
@@ -417,7 +325,7 @@ void ZZ_pX_ScaleMul_ZZ(ZZ_pX &out, const ZZ_pX &in1, const ZZ &in2)
 }
 
 // 计算 P_d(x1, x2, x3, x4, x5) 的动态规划函数
-ZZ P_d(const vec_ZZ& x, int degree_f) {
+ZZ PolyD(const vec_ZZ& x, int degree_f) {
     double start = SteadyTimeSeconds();
     int k = x.length(); // 变量个数
 
@@ -451,7 +359,7 @@ ZZ P_d(const vec_ZZ& x, int degree_f) {
 }
 
 
-ZZ P_d2(const vec_ZZ& x, int degree_f) {
+ZZ PolyD2(const vec_ZZ& x, int degree_f) {
     double start = SteadyTimeSeconds();
     int k = x.length();
 

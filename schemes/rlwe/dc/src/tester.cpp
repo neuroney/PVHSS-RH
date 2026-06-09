@@ -1,5 +1,8 @@
 #include "tester.h"
 
+using namespace NTL;
+using namespace std;
+
 void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
     std::cout << "*******************************************************" << std::endl;
@@ -54,7 +57,7 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     X.SetLength(msg_num);
     for (int i = 0; i < msg_num; ++i)
     {
-        RandomBits(X[i], param.pkePara.msg_bit);
+        NTL::RandomBits(X[i], param.pkePara.msg_bit);
     }
 
     // Input Processing Phase
@@ -67,15 +70,15 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 
     // Polynomial Generation Phase
     vector<vector<int>> F_TEST;
-    Random_Func(F_TEST, msg_num, degree_f);
+    GenerateRandomFunc(F_TEST, msg_num, degree_f);
 
     PVHSS_CT C1;
     PVHSS_MV M1, M2, M3, M4;
     VHSS_Enc(C1, param.pkePara, modulus, pkePk, ZZ(1));
-    HSS_ConvertInput(M1, param.pkePara, modulus, param.vhssPara.vhssEk_1, C1);
-    HSS_ConvertInput(M2, param.pkePara, modulus, param.vhssPara.vhssEk_2, C1);
-    HSS_ConvertInput(M3, param.pkePara, modulus, param.vhssPara.vhssEk_3, C1);
-    HSS_ConvertInput(M4, param.pkePara, modulus, param.vhssPara.vhssEk_4, C1);
+    HssConvertInput(M1, param.pkePara, modulus, param.vhssPara.vhssEk_1, C1);
+    HssConvertInput(M2, param.pkePara, modulus, param.vhssPara.vhssEk_2, C1);
+    HssConvertInput(M3, param.pkePara, modulus, param.vhssPara.vhssEk_3, C1);
+    HssConvertInput(M4, param.pkePara, modulus, param.vhssPara.vhssEk_4, C1);
 
     // Evaluation Phase for Server 0
     timing = MeasureTimeMs([&]() {
@@ -99,10 +102,6 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     PrintTimeMs("Verification algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
-    // if (acc)
-    // {
-    //     cout << "Verification Passed\n";
-    // }
     // else
     // {
     //     cout << "Verification Failed\n";

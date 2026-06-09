@@ -9,18 +9,21 @@
 #include <iomanip>
 #include <string>
 
+using namespace NTL;
+using namespace std;
+
 using BenchFn = std::function<void()>;
 
-using HSSGroup_PK = Elgamal_PK;
+using HSSGroup_PK = ElgamalPublicKey;
 using HSSGroup_EK = ZZ;
-using HSSGroup_CT = array<Elgamal_CT, 2>;
+using HSSGroup_CT = array<ElgamalCiphertext, 2>;
 using HSSGroup_MV = array<ZZ, 2>;
 
-void HSS_Gen(HSSGroup_PK &pk, HSSGroup_EK &ek0, HSSGroup_EK &ek1, int skLen);
-void HSS_Input(HSSGroup_CT &I, const HSSGroup_PK &pk, const ZZ &x);
-void HSS_ConvertInput(HSSGroup_MV &Mx, int idx, const HSSGroup_PK &pk, const HSSGroup_EK &ek, const HSSGroup_CT &Ix, int &prf_key);
-void HSS_Mul(HSSGroup_MV &Mz, int idx, const HSSGroup_PK &pk, const HSSGroup_CT &Ix, const HSSGroup_MV &My, int &prf_key);
-void HSS_AddMemory(HSSGroup_MV &Mz, const HSSGroup_PK &pk, const HSSGroup_MV &Mx, const HSSGroup_MV &My);
+void HssGen(HSSGroup_PK &pk, HSSGroup_EK &ek0, HSSGroup_EK &ek1, int skLen);
+void HssInput(HSSGroup_CT &I, const HSSGroup_PK &pk, const ZZ &x);
+void HssConvertInput(HSSGroup_MV &Mx, int idx, const HSSGroup_PK &pk, const HSSGroup_EK &ek, const HSSGroup_CT &Ix, int &prf_key);
+void HssMul(HSSGroup_MV &Mz, int idx, const HSSGroup_PK &pk, const HSSGroup_CT &Ix, const HSSGroup_MV &My, int &prf_key);
+void HssAddMemory(HSSGroup_MV &Mz, const HSSGroup_PK &pk, const HSSGroup_MV &Mx, const HSSGroup_MV &My);
 
 struct BenchConfig
 {
@@ -354,15 +357,15 @@ static void bench_prf(const BenchConfig &cfg)
     power(modulus, ZZ(2), 256);
     ZZ out;
 
-    print_result(run_bench("prf", "PRF_ZZ", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
-                     PRF_ZZ(out, 7, modulus);
+    print_result(run_bench("prf", "PrfZZ", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+                     PrfZZ(out, 7, modulus);
                  }),
                  cfg.csv);
 
     bn_t out_bn;
     bn_new(out_bn);
-    print_result(run_bench("prf", "PRF_bn", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
-                     PRF_bn(out_bn, 7, modulus);
+    print_result(run_bench("prf", "PrfBn", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+                     PrfBn(out_bn, 7, modulus);
                  }),
                  cfg.csv);
 }
@@ -377,45 +380,45 @@ static void bench_group_hss(const BenchConfig &cfg)
     HSSGroup_MV mz;
     int prf_key = 0;
 
-    HSS_Gen(pk, ek0, ek1, 1024);
-    HSS_Input(ct, pk, ZZ(12345));
-    HSS_ConvertInput(mx, 0, pk, ek0, ct, prf_key);
-    HSS_ConvertInput(my, 0, pk, ek0, ct, prf_key);
+    HssGen(pk, ek0, ek1, 1024);
+    HssInput(ct, pk, ZZ(12345));
+    HssConvertInput(mx, 0, pk, ek0, ct, prf_key);
+    HssConvertInput(my, 0, pk, ek0, ct, prf_key);
 
     print_result(run_bench("hss-group", "HSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
-                     HSS_AddMemory(mz, pk, mx, my);
+                     HssAddMemory(mz, pk, mx, my);
                  }),
                  cfg.csv);
 
     print_result(run_bench("hss-group", "HSS Multiply", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
-                     HSS_Mul(mz, 0, pk, ct, mx, prf_key);
+                     HssMul(mz, 0, pk, ct, mx, prf_key);
                  }),
                  cfg.csv);
 }
 
 static void bench_group_vhss(const BenchConfig &cfg)
 {
-    VHSSElg_PK pk;
-    VHSSElg_EK ek0, ek1;
-    VHSSElg_VK vk;
-    VHSSElg_CT ct;
-    VHSSElg_MV mx;
-    VHSSElg_MV my;
-    VHSSElg_MV mz;
+    VhssElgamalPk pk;
+    VhssElgamalEk ek0, ek1;
+    VhssElgamalVk vk;
+    VhssElgamalCt ct;
+    VhssElgamalMv mx;
+    VhssElgamalMv my;
+    VhssElgamalMv mz;
     int prf_key = 0;
 
-    VHSSElg_Gen(pk, vk, ek0, ek1, 1024, 256);
-    VHSSElg_Input(ct, pk, ZZ(12345));
-    VHSSElg_ConvertInput(mx, 0, pk, ek0, ct, prf_key);
-    VHSSElg_ConvertInput(my, 0, pk, ek0, ct, prf_key);
+    VhssElgamalGen(pk, vk, ek0, ek1, 1024, 256);
+    VhssElgamalInput(ct, pk, ZZ(12345));
+    VhssElgamalConvertInput(mx, 0, pk, ek0, ct, prf_key);
+    VhssElgamalConvertInput(my, 0, pk, ek0, ct, prf_key);
 
     print_result(run_bench("vhss-group", "VHSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
-                     VHSSElg_AddMemory(mz, pk, mx, my);
+                     VhssElgamalAddMemory(mz, pk, mx, my);
                  }),
                  cfg.csv);
 
     print_result(run_bench("vhss-group", "VHSS Multiply", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
-                     VHSSElg_Mul(mz, 0, pk, ct, mx, prf_key);
+                     VhssElgamalMul(mz, 0, pk, ct, mx, prf_key);
                  }),
                  cfg.csv);
 }
@@ -438,7 +441,7 @@ static void bench_rlwe_hss(const BenchConfig &cfg)
 
     PKE_Gen(pke_para, pke_pk, pke_sk);
     ZZ_pXModulus modulus(pke_para.xN);
-    HSS_Gen(hss_ek0, hss_ek1, pke_para, pke_sk);
+    HssGen(hss_ek0, hss_ek1, pke_para, pke_sk);
 
     vec_ZZ_pX ct;
     vec_ZZ_pX mx;
@@ -453,7 +456,7 @@ static void bench_rlwe_hss(const BenchConfig &cfg)
     HSS_Mult(my, pke_para, modulus, hss_ek0, ct);
 
     print_result(run_bench("hss-rlwe", "HSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
-                     HSS_AddMemory(mz, mx, my);
+                     HssAddMemory(mz, mx, my);
                  }),
                  cfg.csv);
 
