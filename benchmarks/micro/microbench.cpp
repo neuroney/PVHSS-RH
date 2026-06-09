@@ -2,7 +2,9 @@
 #include "relic_cp_decped.h"
 #include "elgamal.h"
 #include "VHSSElg.h"
+#include "HSSElg.h"
 #include "HSSRLWE.h"
+#include "VHSSRLWE.h"
 
 #include <chrono>
 #include <cmath>
@@ -18,16 +20,14 @@ using namespace std;
 
 using BenchFn = std::function<void()>;
 
-using HSSGroup_PK = ElgamalPublicKey;
-using HSSGroup_EK = ZZ;
-using HSSGroup_CT = array<ElgamalCiphertext, 2>;
-using HSSGroup_MV = array<ZZ, 2>;
+namespace group_hss = pvhss::group::hss;
+namespace rlwe_hss = pvhss::rlwe::hss;
+namespace rlwe_vhss = pvhss::rlwe::vhss;
 
-void HssGen(HSSGroup_PK &pk, HSSGroup_EK &ek0, HSSGroup_EK &ek1, int skLen);
-void HssInput(HSSGroup_CT &I, const HSSGroup_PK &pk, const ZZ &x);
-void HssConvertInput(HSSGroup_MV &Mx, int idx, const HSSGroup_PK &pk, const HSSGroup_EK &ek, const HSSGroup_CT &Ix, int &prf_key);
-void HssMul(HSSGroup_MV &Mz, int idx, const HSSGroup_PK &pk, const HSSGroup_CT &Ix, const HSSGroup_MV &My, int &prf_key);
-void HssAddMemory(HSSGroup_MV &Mz, const HSSGroup_PK &pk, const HSSGroup_MV &Mx, const HSSGroup_MV &My);
+using HSSGroup_PK = group_hss::HssPublicKey;
+using HSSGroup_EK = group_hss::HssEvalKey;
+using HSSGroup_CT = group_hss::HssCiphertext;
+using HSSGroup_MV = group_hss::HssMemoryValue;
 
 struct BenchConfig
 {
@@ -603,18 +603,18 @@ static void bench_group_hss(const BenchConfig &cfg)
     HSSGroup_MV mz;
     int prf_key = 0;
 
-    HssGen(pk, ek0, ek1, 1024);
-    HssInput(ct, pk, ZZ(12345));
-    HssConvertInput(mx, 0, pk, ek0, ct, prf_key);
-    HssConvertInput(my, 0, pk, ek0, ct, prf_key);
+    group_hss::HssGen(pk, ek0, ek1, 1024);
+    group_hss::HssInput(ct, pk, ZZ(12345));
+    group_hss::HssConvertInput(mx, 0, pk, ek0, ct, prf_key);
+    group_hss::HssConvertInput(my, 0, pk, ek0, ct, prf_key);
 
     print_result(run_bench("hss-group", "HSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
-                     HssAddMemory(mz, pk, mx, my);
+                     group_hss::HssAddMemory(mz, pk, mx, my);
                  }),
                  cfg);
 
     print_result(run_bench("hss-group", "HSS Multiply", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
-                     HssMul(mz, 0, pk, ct, mx, prf_key);
+                     group_hss::HssMul(mz, 0, pk, ct, mx, prf_key);
                  }),
                  cfg);
 }
@@ -648,7 +648,7 @@ static void bench_group_vhss(const BenchConfig &cfg)
 
 static void bench_rlwe_hss(const BenchConfig &cfg)
 {
-    PKE_Para pke_para;
+    rlwe_hss::PKE_Para pke_para;
     pke_para.msg_bit = 32;
     pke_para.num_data = 5;
     pke_para.d = 5;
@@ -662,9 +662,9 @@ static void bench_rlwe_hss(const BenchConfig &cfg)
     hss_ek0.SetLength(2);
     hss_ek1.SetLength(2);
 
-    PKE_Gen(pke_para, pke_pk, pke_sk);
+    rlwe_hss::PKE_Gen(pke_para, pke_pk, pke_sk);
     ZZ_pXModulus modulus(pke_para.xN);
-    HssGen(hss_ek0, hss_ek1, pke_para, pke_sk);
+    rlwe_hss::HssGen(hss_ek0, hss_ek1, pke_para, pke_sk);
 
     vec_ZZ_pX ct;
     vec_ZZ_pX mx;
@@ -674,22 +674,68 @@ static void bench_rlwe_hss(const BenchConfig &cfg)
     my.SetLength(2);
     mz.SetLength(2);
 
-    HSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
-    HSS_Mult(mx, pke_para, modulus, hss_ek0, ct);
-    HSS_Mult(my, pke_para, modulus, hss_ek0, ct);
+    rlwe_hss::HSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
+    rlwe_hss::HSS_Mult(mx, pke_para, modulus, hss_ek0, ct);
+    rlwe_hss::HSS_Mult(my, pke_para, modulus, hss_ek0, ct);
 
     print_result(run_bench("hss-rlwe", "HSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
-                     HssAddMemory(mz, mx, my);
+                     rlwe_hss::HssAddMemory(mz, mx, my);
                  }),
                  cfg);
 
     print_result(run_bench("hss-rlwe", "HSS Enc/OKDM", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
-                     HSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
+                     rlwe_hss::HSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
                  }),
                  cfg);
 
     print_result(run_bench("hss-rlwe", "HSS Multiply/DDec", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
-                     HSS_Mult(mz, pke_para, modulus, hss_ek0, ct);
+                     rlwe_hss::HSS_Mult(mz, pke_para, modulus, hss_ek0, ct);
+                 }),
+                 cfg);
+}
+
+static void bench_rlwe_vhss(const BenchConfig &cfg)
+{
+    rlwe_vhss::PKE_Para pke_para;
+    pke_para.msg_bit = 32;
+    pke_para.num_data = 5;
+    pke_para.d = 5;
+
+    vec_ZZ_pX pke_pk;
+    vec_ZZ_pX pke_sk;
+    pke_pk.SetLength(2);
+    pke_sk.SetLength(2);
+
+    rlwe_vhss::PKE_Gen(pke_para, pke_pk, pke_sk);
+    ZZ_pXModulus modulus(pke_para.xN);
+
+    rlwe_vhss::VHSS_Para vhss_para;
+    rlwe_vhss::VHSS_Gen(vhss_para, pke_para, modulus, pke_sk);
+
+    vec_ZZ_pX ct;
+    vec_ZZ_pX mx;
+    vec_ZZ_pX my;
+    vec_ZZ_pX mz;
+    mx.SetLength(2);
+    my.SetLength(2);
+    mz.SetLength(2);
+
+    rlwe_vhss::VHSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
+    rlwe_vhss::HssConvertInput(mx, pke_para, modulus, vhss_para.vhssEk_1, ct);
+    rlwe_vhss::HssConvertInput(my, pke_para, modulus, vhss_para.vhssEk_1, ct);
+
+    print_result(run_bench("vhss-rlwe", "VHSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+                     rlwe_vhss::HssAddMemory(mz, mx, my);
+                 }),
+                 cfg);
+
+    print_result(run_bench("vhss-rlwe", "VHSS Enc/OKDM", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+                     rlwe_vhss::VHSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
+                 }),
+                 cfg);
+
+    print_result(run_bench("vhss-rlwe", "VHSS Multiply/DDec", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+                     rlwe_vhss::VHSS_Mult(mz, pke_para, modulus, vhss_para.vhssEk_1, ct);
                  }),
                  cfg);
 }
@@ -717,6 +763,7 @@ int main(int argc, char **argv)
     bench_group_hss(cfg);
     bench_group_vhss(cfg);
     bench_rlwe_hss(cfg);
+    bench_rlwe_vhss(cfg);
 
     core_clean();
     return 0;

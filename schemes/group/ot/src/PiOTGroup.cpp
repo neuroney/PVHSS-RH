@@ -3,6 +3,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace group { namespace ot {
+
 void PVHSSElg1_Setup(PVHSSElg1_Para &param, PVHSSElg1_EK &ek0, PVHSSElg1_EK &ek1)
 {
     VhssElgamalGen(param.pk, ek0, ek1, param.skLen, param.vkLen);
@@ -172,3 +174,5 @@ bool PVHSSElg1_ACC_TEST(int msg_num, int degree_f)
     core_clean();
     return res_acc && result_matches;
 }
+
+}}} // namespace pvhss::group::ot

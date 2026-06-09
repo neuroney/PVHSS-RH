@@ -3,6 +3,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace group { namespace vhss {
+
 void VHSSElg_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
     std::cout << "*******************************************************" << std::endl;
@@ -83,3 +85,5 @@ void VHSSElg_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     //     cout << "Verification Failed\n";
     // }
 }
+
+}}} // namespace pvhss::group::vhss

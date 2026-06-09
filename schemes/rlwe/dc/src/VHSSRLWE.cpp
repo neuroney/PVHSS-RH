@@ -4,6 +4,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace rlwe { namespace dc {
+
 void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk)
 {
     data.X.SetLength(pkePara.num_data);
@@ -286,3 +288,5 @@ void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& 
     vhssPara.vhssEk_4[0] = alpha_pkeSk[0] + vhssPara.vhssEk_3[0];
     vhssPara.vhssEk_4[1] = alpha_pkeSk[1] + vhssPara.vhssEk_3[1];
 }
+
+}}} // namespace pvhss::rlwe::dc

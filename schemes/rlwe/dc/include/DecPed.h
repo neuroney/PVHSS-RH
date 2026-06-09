@@ -2,6 +2,8 @@
 #include "helper.h"
 #include "relic_cp_decped.h"
 
+namespace pvhss { namespace rlwe { namespace dc {
+
 typedef struct
 {
     ZZ g1_order_ZZ; // g2_order_ZZ;
@@ -18,3 +20,4 @@ typedef struct
 void DecPed_ComGen(CK &ck, bgn_t &sk);
 void DecPed_Com(g1_t C[2], bn_t rho, const CK &ck, const ZZ &x_ZZ);
 
+}}} // namespace pvhss::rlwe::dc

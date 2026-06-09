@@ -1,6 +1,8 @@
 #pragma once
 #include "helper.h"
 
+namespace pvhss { namespace rlwe { namespace vhss {
+
 struct PKE_Para
 {
     int N, msg_bit, p_bit, q_bit;
@@ -57,3 +59,5 @@ void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, c
     void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk);
 
     bool VHSS_Verify(const vec_ZZ_pX &y_0_res, const vec_ZZ_pX &y_1_res, const vec_ZZ_pX &Y_0_res, const vec_ZZ_pX &Y_1_res, const VHSS_Para &vk);
+
+}}} // namespace pvhss::rlwe::vhss

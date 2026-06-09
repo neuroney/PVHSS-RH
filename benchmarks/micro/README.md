@@ -20,9 +20,9 @@ operations use fixed iteration counts so long RLWE and HSS paths can run once.
 By default, cheap operations use 10 samples and expensive operations use 1
 sample.  The reported `mean_ms` is the average per operation after dividing
 each sample by the number of iterations used for that sample.
-The runner combines `microbench` with the separate `microbench_vhss_rlwe`
-binary, which avoids symbol collisions between the RLWE HSS and VHSS source
-files.
+The runner executes the single `microbench` binary.  Protocol code is namespaced
+so RLWE HSS and VHSS can be linked into the same executable without symbol
+collisions.
 
 Measured primitives include:
 

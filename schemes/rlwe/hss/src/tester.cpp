@@ -3,6 +3,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace rlwe { namespace hss {
+
 void RunGen(int msg_num, int degree_f) {
     PKE_Para pkePara;
     vec_ZZ_pX pkePk, pkeSk, hssEk_1, hssEk_2;
@@ -210,3 +212,5 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     Time_Eval(msg_num, degree_f, cyctimes);
 
 }
+
+}}} // namespace pvhss::rlwe::hss

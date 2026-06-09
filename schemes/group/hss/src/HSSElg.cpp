@@ -3,6 +3,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace group { namespace hss {
+
 void ElgamalGen(ElgamalPublicKey &pk, ElgamalSecretKey &d, int skLen)
 {
     ZZ p, q;
@@ -60,7 +62,7 @@ void ElgamalDec(ZZ &x, const ElgamalPublicKey &pk, const ElgamalSecretKey &sk, c
 void HssGen(HssPublicKey &pk, HssEvalKey &ek0, HssEvalKey &ek1, int skLen)
 {
     ElgamalSecretKey s;
-    ElgamalGen(pk, s, skLen);
+    pvhss::group::hss::ElgamalGen(pk, s, skLen);
 
     NTL::RandomBits(ek0, skLen);
     add(ek1, ek0, s);
@@ -69,8 +71,8 @@ void HssGen(HssPublicKey &pk, HssEvalKey &ek0, HssEvalKey &ek1, int skLen)
 
 void HssInput(HssCiphertext &I, const HssPublicKey &pk, const ZZ &x)
 {
-    ElgamalEnc(I[0], pk, x);
-    ElgamalSkEnc(I[1], pk, x);
+    pvhss::group::hss::ElgamalEnc(I[0], pk, x);
+    pvhss::group::hss::ElgamalSkEnc(I[1], pk, x);
 }
 
 void HssConvertInput(HssMemoryValue &Mx, int idx, const HssPublicKey &pk, const HssEvalKey &ek, const HssCiphertext &Ix, int &prf_key)
@@ -180,3 +182,5 @@ void HssDec(ZZ &z, const HssMemoryValue &Mx0, const HssMemoryValue &Mx1)
 {
     sub(z, Mx1[0], Mx0[0]);
 }
+
+}}} // namespace pvhss::group::hss

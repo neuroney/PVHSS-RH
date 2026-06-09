@@ -3,6 +3,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace rlwe { namespace ot {
+
 void Ped_ComGen(CK &ck)
 {
     core_init();
@@ -69,3 +71,5 @@ void Ped_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const CK &ck, int &
     pi.y= yb % ck.g1_order_ZZ;
     Ped_Com(pi.D, rho, ck, Yb);
 }
+
+}}} // namespace pvhss::rlwe::ot

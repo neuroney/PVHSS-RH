@@ -10,6 +10,8 @@ using NTL::ZZX;
 using NTL::ZZ_pX;
 using NTL::ZZ_pXModulus;
 
+namespace pvhss { namespace rlwe { namespace ot {
+
 struct PKE_Para
 {
     int N, msg_bit, p_bit, q_bit;
@@ -65,3 +67,5 @@ void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, c
     const vec_ZZ_pX & M1);
 
     void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk);
+
+}}} // namespace pvhss::rlwe::ot

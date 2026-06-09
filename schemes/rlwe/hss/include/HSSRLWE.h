@@ -24,6 +24,8 @@ namespace lhss {
   class Evaluator;
 }
 
+namespace pvhss { namespace rlwe { namespace hss {
+
 // --- Same structs as original, extended with internal lhss state ---
 
 struct PKE_Para
@@ -83,3 +85,5 @@ void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk);
 
 // --- Cleanup ---
 void PKE_Cleanup(PKE_Para &pkePara);
+
+}}} // namespace pvhss::rlwe::hss

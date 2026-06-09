@@ -29,6 +29,8 @@ using namespace std;
 
 using namespace lhss;
 
+namespace pvhss { namespace rlwe { namespace hss {
+
 // ============================================================
 // Internal LHSS context
 // ============================================================
@@ -370,3 +372,5 @@ void PKE_Cleanup(PKE_Para &pkePara)
     }
     pkePara.lhss_initialized_ = false;
 }
+
+}}} // namespace pvhss::rlwe::hss

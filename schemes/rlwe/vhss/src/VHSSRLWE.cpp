@@ -4,6 +4,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace rlwe { namespace vhss {
+
 void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk)
 {
     data.X.SetLength(pkePara.num_data);
@@ -264,3 +266,5 @@ bool VHSS_Verify(const vec_ZZ_pX &y_0_res, const vec_ZZ_pX &y_1_res, const vec_Z
     Y = rep(Y_0_res[0][0]) + rep(Y_1_res[0][0]);
     return (y * rep(vk.alpha[0]) == Y);
 }
+
+}}} // namespace pvhss::rlwe::vhss

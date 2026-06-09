@@ -3,6 +3,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace rlwe { namespace ot {
+
 void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     int msg_num, int degree_f)
 {
@@ -216,3 +218,5 @@ bool PVHSS_ACC_TEST(int msg_num, int degree_f)
     core_clean();
     return res_acc && result_matches;
 }
+
+}}} // namespace pvhss::rlwe::ot

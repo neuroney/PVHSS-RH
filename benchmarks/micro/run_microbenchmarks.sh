@@ -23,23 +23,15 @@ while [[ $# -gt 0 ]]; do
 done
 
 MICROBENCH="$BUILD_DIR/benchmarks/micro/microbench"
-VHSS_RLWE_BENCH="$BUILD_DIR/benchmarks/micro/microbench_vhss_rlwe"
 OUT_FILE="$OUT_DIR/micro_timing.csv"
 
 if [[ ! -x "$MICROBENCH" ]]; then
     echo "Missing microbenchmark binary: $MICROBENCH" >&2
     exit 1
 fi
-if [[ ! -x "$VHSS_RLWE_BENCH" ]]; then
-    echo "Missing microbenchmark binary: $VHSS_RLWE_BENCH" >&2
-    exit 1
-fi
 
 mkdir -p "$OUT_DIR"
-{
-    "$MICROBENCH" --compact "${ARGS[@]}"
-    "$VHSS_RLWE_BENCH" --compact --no-header "${ARGS[@]}"
-} > "$OUT_FILE"
+"$MICROBENCH" --compact "${ARGS[@]}" > "$OUT_FILE"
 
 rows=$(($(wc -l < "$OUT_FILE") - 1))
 echo "Wrote $rows micro timing rows to $OUT_FILE"

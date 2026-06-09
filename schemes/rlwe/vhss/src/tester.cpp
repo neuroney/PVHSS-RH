@@ -3,6 +3,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace rlwe { namespace vhss {
+
 void VHSSRLWE_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
     std::cout << "*******************************************************" << std::endl;
@@ -106,3 +108,5 @@ void VHSSRLWE_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     //     cout << "Verification Failed\n";
     // }
 }
+
+}}} // namespace pvhss::rlwe::vhss

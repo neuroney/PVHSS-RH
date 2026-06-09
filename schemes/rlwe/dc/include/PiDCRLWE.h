@@ -2,6 +2,8 @@
 #include "DecPed.h"
 #include "VHSSRLWE.h"
 
+namespace pvhss { namespace rlwe { namespace dc {
+
 typedef vec_ZZ_pX PVHSS_CT;
 typedef vec_ZZ_pX PVHSS_MV;
 typedef g2_t PVHSS_VK;
@@ -33,3 +35,5 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, 
 bool Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSPara &param);
 void Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk);
 bool PVHSS_ACC_TEST(int msg_num, int degree_f);
+
+}}} // namespace pvhss::rlwe::dc

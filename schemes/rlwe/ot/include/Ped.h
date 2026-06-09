@@ -3,6 +3,8 @@
 
 using NTL::ZZ;
 
+namespace pvhss { namespace rlwe { namespace ot {
+
 typedef struct
 {
     ep2_t g2_A;
@@ -26,3 +28,4 @@ void Ped_Com(ep_t C, bn_t rho, const CK &ck, const ZZ &x_ZZ);
 bool Ped_OpenVer(const CK &ck, const ep_t C, const ZZ &x_ZZ, bn_t rho);
 void Ped_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const CK &ck, int &prf_key, bn_t rho);
 
+}}} // namespace pvhss::rlwe::ot

@@ -3,6 +3,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace group { namespace hss {
+
 void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
     HssPublicKey pk;
@@ -65,3 +67,5 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     }, cyctimes);
     PrintTimeMs("Dec algo time", timing);
 }
+
+}}} // namespace pvhss::group::hss

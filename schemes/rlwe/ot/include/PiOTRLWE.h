@@ -9,6 +9,8 @@ using NTL::ZZ_p;
 using NTL::ZZ_pX;
 using NTL::ZZ_pXModulus;
 
+namespace pvhss { namespace rlwe { namespace ot {
+
 typedef ZZ PVHSS_SK;
 typedef vec_ZZ_pX PVHSS_CT;
 typedef vec_ZZ_pX PVHSS_MV;
@@ -34,3 +36,5 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, 
 bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck);
 void Decode(ZZ& y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk);
 bool PVHSS_ACC_TEST(int msg_num, int degree_f);
+
+}}} // namespace pvhss::rlwe::ot

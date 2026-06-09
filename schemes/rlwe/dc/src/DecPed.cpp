@@ -3,6 +3,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace rlwe { namespace dc {
+
 void DecPed_ComGen(CK &ck, bgn_t &sk)
 {
     core_init();
@@ -37,3 +39,5 @@ void DecPed_Com(g1_t C[2], bn_t rho, const CK &ck, const ZZ &x_ZZ)
     g1_new(C[1]);
     cp_decped_enc3(C, rho, x, ck.pub);
 }
+
+}}} // namespace pvhss::rlwe::dc

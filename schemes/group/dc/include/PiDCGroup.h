@@ -2,6 +2,8 @@
 #include "DecPed.h"
 #include "VHSSElg.h"
 
+namespace pvhss { namespace group { namespace dc {
+
 typedef VhssElgamalEk PVHSSElg2_EK;
 typedef VhssElgamalCt PVHSSElg2_CT;
 typedef bgn_t PVHSSElg2_SK;
@@ -37,3 +39,5 @@ void PVHSSElg2_Decode(dig_t &y, const PROOF &pi0, const PROOF &pi1, const PVHSSE
 void PVHSSElg2_Prove(PROOF &pi, int b, const ZZ &yb, const ZZ &Yb, const PVHSSElg2_Para &param, bn_t ekpb[2]);
 
 bool PVHSSElg2_ACC_TEST(int msg_num, int degree_f);
+
+}}} // namespace pvhss::group::dc

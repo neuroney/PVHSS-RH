@@ -9,7 +9,7 @@ int main(int, char **)
     for (int i = 0; i < degree_f.size(); ++i)
     {
         cout << "degree_f: " << degree_f[i] << endl;
-        HSS_TIME_TEST(msg_num, degree_f[i] ,cyctimes);
+        pvhss::group::hss::HSS_TIME_TEST(msg_num, degree_f[i] ,cyctimes);
     }
 
     return 0;

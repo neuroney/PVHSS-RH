@@ -3,6 +3,8 @@
 using namespace NTL;
 using namespace std;
 
+namespace pvhss { namespace group { namespace ot {
+
 void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 {
     std::cout << "*******************************************************" << std::endl;
@@ -156,3 +158,5 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     PrintTimeMs("Decryption algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 }
+
+}}} // namespace pvhss::group::ot

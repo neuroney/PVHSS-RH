@@ -9,7 +9,7 @@ int main(int, char **)
     for (int i = 0; i < degree_f.size(); ++i)
     {
         cout << "degree_f: " << degree_f[i] << endl;
-        VHSSRLWE_TIME_TEST(msg_num, degree_f[i] ,cyctimes);
+        pvhss::rlwe::vhss::VHSSRLWE_TIME_TEST(msg_num, degree_f[i] ,cyctimes);
     }
     return 0;
 }

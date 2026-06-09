@@ -2,6 +2,8 @@
 #include "helper.h"
 #include "elgamal.h"
 
+namespace pvhss { namespace group { namespace hss {
+
 using HssPublicKey = ElgamalPublicKey;
 using HssEvalKey = NTL::ZZ;
 using HssCiphertext = std::array<ElgamalCiphertext, 2>;
@@ -31,3 +33,5 @@ void HssEvaluatePolyD2(HssMemoryValue &y_b_res, int b,
                        const HssPublicKey &pk, const HssEvalKey &ekb,
                        int &prf_key, int degree_f);
 void HssDec(NTL::ZZ &z, const HssMemoryValue &Mx, const HssMemoryValue &My);
+
+}}} // namespace pvhss::group::hss

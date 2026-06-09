@@ -2,5 +2,5 @@
 
 int main()
 {
-    return PVHSSElg1_ACC_TEST(5, 5) ? 0 : 1;
+    return pvhss::group::ot::PVHSSElg1_ACC_TEST(5, 5) ? 0 : 1;
 }

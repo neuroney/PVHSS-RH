@@ -23,20 +23,20 @@ endfunction()
 
 add_protocol_benchmark_target(protocol_group_hss_bench group hss
     ${CMAKE_SOURCE_DIR}/schemes/group/hss/include
-    HSS_TIME_TEST
+    ::pvhss::group::hss::HSS_TIME_TEST
     ${CMAKE_SOURCE_DIR}/schemes/group/hss/src/HSSElg.cpp
     ${CMAKE_SOURCE_DIR}/schemes/group/hss/src/tester.cpp
 )
 
 add_protocol_benchmark_target(protocol_group_vhss_bench group vhss
     ${CMAKE_SOURCE_DIR}/schemes/group/vhss/include
-    VHSSElg_TIME_TEST
+    ::pvhss::group::vhss::VHSSElg_TIME_TEST
     ${CMAKE_SOURCE_DIR}/schemes/group/vhss/src/tester.cpp
 )
 
 add_protocol_benchmark_target(protocol_group_ot_bench group ot
     ${CMAKE_SOURCE_DIR}/schemes/group/ot/include
-    PVHSSElg1_TIME_TEST
+    ::pvhss::group::ot::PVHSSElg1_TIME_TEST
     ${CMAKE_SOURCE_DIR}/schemes/group/ot/src/Ped.cpp
     ${CMAKE_SOURCE_DIR}/schemes/group/ot/src/PiOTGroup.cpp
     ${CMAKE_SOURCE_DIR}/schemes/group/ot/src/tester.cpp
@@ -44,7 +44,7 @@ add_protocol_benchmark_target(protocol_group_ot_bench group ot
 
 add_protocol_benchmark_target(protocol_group_dc_bench group dc
     ${CMAKE_SOURCE_DIR}/schemes/group/dc/include
-    PVHSSElg2_TIME_TEST
+    ::pvhss::group::dc::PVHSSElg2_TIME_TEST
     ${CMAKE_SOURCE_DIR}/schemes/group/dc/src/DecPed.cpp
     ${CMAKE_SOURCE_DIR}/schemes/group/dc/src/PiDCGroup.cpp
     ${CMAKE_SOURCE_DIR}/schemes/group/dc/src/tester.cpp
@@ -52,7 +52,7 @@ add_protocol_benchmark_target(protocol_group_dc_bench group dc
 
 add_protocol_benchmark_target(protocol_rlwe_hss_bench rlwe hss
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/hss/include
-    HSS_TIME_TEST
+    ::pvhss::rlwe::hss::HSS_TIME_TEST
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/hss/src/tester.cpp
 )
 
@@ -67,14 +67,14 @@ endif()
 
 add_protocol_benchmark_target(protocol_rlwe_vhss_bench rlwe vhss
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/vhss/include
-    VHSSRLWE_TIME_TEST
+    ::pvhss::rlwe::vhss::VHSSRLWE_TIME_TEST
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/vhss/src/VHSSRLWE.cpp
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/vhss/src/tester.cpp
 )
 
 add_protocol_benchmark_target(protocol_rlwe_ot_bench rlwe ot
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/include
-    PVHSS_TIME_TEST
+    ::pvhss::rlwe::ot::PVHSS_TIME_TEST
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/src/Ped.cpp
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/src/PiOTRLWE.cpp
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/src/VHSSRLWE.cpp
@@ -83,7 +83,7 @@ add_protocol_benchmark_target(protocol_rlwe_ot_bench rlwe ot
 
 add_protocol_benchmark_target(protocol_rlwe_dc_bench rlwe dc
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/include
-    PVHSS_TIME_TEST
+    ::pvhss::rlwe::dc::PVHSS_TIME_TEST
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/src/DecPed.cpp
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/src/PiDCRLWE.cpp
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/src/VHSSRLWE.cpp

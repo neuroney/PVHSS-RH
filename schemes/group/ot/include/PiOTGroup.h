@@ -2,6 +2,8 @@
 #include "Ped.h"
 #include "VHSSElg.h"
 
+namespace pvhss { namespace group { namespace ot {
+
 typedef VhssElgamalEk PVHSSElg1_EK;
 typedef VhssElgamalCt PVHSSElg1_CT;
 typedef ZZ PVHSSElg1_SK;
@@ -29,3 +31,5 @@ bool PVHSSElg1_Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck);
 void PVHSSElg1_Decode(ZZ& y, const PROOF &pi0, const PROOF &pi1, const PVHSSElg1_SK sk);
 
 bool PVHSSElg1_ACC_TEST(int msg_num, int degree_f);
+
+}}} // namespace pvhss::group::ot
