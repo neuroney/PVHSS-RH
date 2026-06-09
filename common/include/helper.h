@@ -6,7 +6,9 @@
 #include <array>
 #include <cstdlib>
 #include <algorithm>
+#include <cstdint>
 #include <ctime>
+#include <functional>
 #include <NTL/vector.h>
 #include <NTL/matrix.h>
 #include <NTL/ZZ.h>
@@ -24,7 +26,7 @@ using namespace NTL;
 
 const int NUMTHREADS = 8;
 #define PI 3.141592654
-#define M_MAX 100
+#define M_MAX 1024
 
 /**
  * Converts an unsigned integer to an array of 4 unsigned bytes.
@@ -63,20 +65,42 @@ int sint2bn(bn_t out, int in, int size);
  */
 int bn2int(int *out, bn_t in);
 
-void ZZ2bn(bn_t out, ZZ in);
+void ZZ2bn(bn_t out, const ZZ &in);
 
 void bn2ZZ(ZZ &out, const bn_t in);
 
 void DataProcess(double &mean, double &stdev, double *Time, int cyctimes);
 
+struct TimingResult
+{
+    int samples;
+    int iterations_per_sample;
+    bool adaptive;
+    double mean_ms;
+    double median_ms;
+    double min_ms;
+    double rsd;
+};
+
+double SteadyTimeSeconds();
+TimingResult MeasureTimeMs(const function<void()> &fn, int samples,
+                           int iterations_per_sample = 1,
+                           bool adaptive = false,
+                           double min_sample_ms = 25.0,
+                           int max_adaptive_iters = 10000000);
+TimingResult MeasureTimeMsAdaptive(const function<void()> &fn, int samples,
+                                   double min_sample_ms = 25.0,
+                                   int max_adaptive_iters = 10000000);
+void PrintTimeMs(const string &label, const TimingResult &result);
+
 // void NativeEval_f(ZZ &y, int d, int num_data, int loop, int beg_ind, int *ind_var, vec_ZZ X, ZZ mmod);
 
-void NativeEval(ZZ &y, int d, int num_data, vec_ZZ X, ZZ mmod, vector<vector<int>> F_TEST);
+void NativeEval(ZZ &y, int d, int num_data, const vec_ZZ &X, const ZZ &mmod, const vector<vector<int>> &F_TEST);
 
-ZZ PRF_ZZ(int prfkey, ZZ mmod);
+ZZ PRF_ZZ(int prfkey, const ZZ &mmod);
 void PRF_ZZ(ZZ& res, int prfkey, const ZZ& mmod);
 
-void PRF_bn(bn_t res, int prfkey, ZZ mmod);
+void PRF_bn(bn_t res, int prfkey, const ZZ &mmod);
 
 void Random_Func(vector<vector<int>> &F_TEST, int msg_num, int degree_f);
 
@@ -92,7 +116,7 @@ void RLWESecretKey(ZZ_pX &sk, int N, int hsk);
 
 void GaussRand(ZZ_pX &e, int N);
 
-void ZZ_pX_ScaleMul_ZZ(ZZ_pX &out, ZZ_pX in1,ZZ in2);
+void ZZ_pX_ScaleMul_ZZ(ZZ_pX &out, const ZZ_pX &in1, const ZZ &in2);
 
 // 计算 P_d(x1, x2, x3, x4, x5) 的动态规划函数
 ZZ P_d(const vec_ZZ& x, int degree_f);

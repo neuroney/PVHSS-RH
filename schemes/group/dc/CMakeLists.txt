@@ -1,0 +1,16 @@
+add_executable(PiDCGroup
+    src/DecPed.cpp
+    src/PiDCGroup.cpp
+    src/tester.cpp
+    test/main.cpp
+)
+
+target_include_directories(PiDCGroup PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+
+target_link_libraries(PiDCGroup
+    PRIVATE
+        common
+)

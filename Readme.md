@@ -16,7 +16,7 @@ The PVHSS-RH implementation requires the following libraries:
 - [RELIC 0.7.0](https://github.com/relic-toolkit/relic) - Pairing toolkit
 - [GMP 6.3.0](https://gmplib.org/) - GNU Multiple Precision Arithmetic Library
 
-## Installation
+## Build
 
 1. Download the repository and navigate to the project directory:
     ```bash
@@ -26,33 +26,36 @@ The PVHSS-RH implementation requires the following libraries:
 
 3. Build library and executables:
     ```bash
-    mkdir build
-    cd build
-    cmake ..
-    make
-    ```
-4. To run an example:
-    ```bash
-    ./PiOTGroup/PiOTGroup
-    ./PiOTRLWE/PiOTRLWE
-    ./PiDCGroup/PiDCGroup
-    ./PiDCRLWE/PiDCRLWE
-    ./PiVHSSRLWE/PiVHSSGroup
-    ./PiVHSSRLWE/PiVHSSRLWE
-    ./PiHSSGroup/PiHSSGroup
-    ./PiHSSRLWE/PiHSSRLWE
-    ./PiCZ/PiCZ
+    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+    cmake --build build
     ```
 
-## Project Structure
-- `common/` - Shared utilities and functions
-- `PiOTGroup/` - Implementation for $\Pi_{\mathrm{OT},G}$
-- `PiOTRLWE/` - Implementation for  $\Pi_{\mathrm{OT},R}$
-- `PiDCGroup/` - Implementation for $\Pi_{\mathrm{DC},G}$
-- `PiDCRLWE/` - Implementation for  $\Pi_{\mathrm{DC},R}$
-- `PiVHSSGroup/` - Implementation for   $\Pi_{\mathrm{VHSS},G}$
-- `PiVHSSRLWE/` - Implementation for  $\Pi_{\mathrm{VHSS},R}$
-- `PiHSSGroup/` - Implementation for   $\Pi_{\mathrm{HSS},G}$
-- `PiHSSRLWE/` - Implementation for  $\Pi_{\mathrm{HSS},R}$
-- `PiCZ/` - Implementation for $\Pi_{\mathrm{CZ}}$
-- `cmake/` - CMake configuration files
+4. To run an example:
+    ```bash
+    build/schemes/group/ot/PiOTGroup
+    build/schemes/rlwe/ot/PiOTRLWE
+    build/schemes/group/dc/PiDCGroup
+    build/schemes/rlwe/dc/PiDCRLWE
+    build/schemes/group/vhss/PiVHSSGroup
+    build/schemes/rlwe/vhss/PiVHSSRLWE
+    build/schemes/group/hss/PiHSSGroup
+    build/schemes/rlwe/hss/PiHSSRLWE
+    build/schemes/cz/PiCZ
+    ```
+
+Benchmarks are enabled by default.  Use `-DPVHSS_BUILD_BENCHMARKS=OFF` when
+only the protocol example binaries are needed.  The benchmark layer produces
+three final CSV tables:
+
+- `benchmarks/results/micro/micro_timing.csv`
+- `benchmarks/results/protocols/protocol_timing.csv`
+- `benchmarks/results/overhead/incremental_timing.csv`
+
+Run `cmake --build build --target benchmark_tables` to regenerate the three
+full benchmark tables.
+
+The convenience script runs the full benchmark flow:
+
+```bash
+./runall.sh
+```

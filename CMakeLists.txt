@@ -1,31 +1,49 @@
 cmake_minimum_required(VERSION 3.10)
-project(PVHSS-RH VERSION 0.1.0)
+project(PVHSS-RH VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+option(PVHSS_BUILD_BENCHMARKS "Build benchmark and P5 accuracy check targets" ON)
 
 find_package(NTL REQUIRED)
 find_package(GMP REQUIRED)
 find_package(RLC REQUIRED)
 
-include_directories(
+add_library(pvhss_external_deps INTERFACE)
+target_include_directories(pvhss_external_deps INTERFACE
     ${NTL_INCLUDE_PATHS}
     ${GMP_INCLUDE_PATHS}
     ${RLC_INCLUDE_PATHS}
 )
+target_link_libraries(pvhss_external_deps INTERFACE
+    ${NTL_LIBRARIES}
+    ${GMP_LIBRARIES}
+    ${RLC_LIBRARIES}
+)
+if(UNIX)
+    target_link_libraries(pvhss_external_deps INTERFACE m)
+endif()
+
+include(CTest)
 
 add_subdirectory(common)
-add_subdirectory(PiOTGroup)
-add_subdirectory(PiDCGroup)
-add_subdirectory(PiHSSGroup)
-add_subdirectory(PiHSSRLWE)
-add_subdirectory(PiOTRLWE)
-add_subdirectory(PiDCRLWE)
-add_subdirectory(PiCZ)
-add_subdirectory(PiVHSSGroup)
-add_subdirectory(PiVHSSRLWE)
-
-
-
-
+add_subdirectory(schemes/group/ot)
+add_subdirectory(schemes/group/dc)
+add_subdirectory(schemes/group/hss)
+add_subdirectory(schemes/group/vhss)
+add_subdirectory(schemes/rlwe/ot)
+add_subdirectory(schemes/rlwe/dc)
+add_subdirectory(schemes/rlwe/hss)
+add_subdirectory(schemes/rlwe/vhss)
+add_subdirectory(schemes/cz)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
+if(PVHSS_BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif()
