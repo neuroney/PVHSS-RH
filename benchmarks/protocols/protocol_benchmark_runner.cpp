@@ -64,15 +64,15 @@ struct IndexKey
 };
 
 static const Target kTargets[] = {
-    {"group-dc", "group", "dc", "benchmarks/protocols/protocol_group_dc_bench"},
     {"group-hss", "group", "hss", "benchmarks/protocols/protocol_group_hss_bench"},
-    {"group-ot", "group", "ot", "benchmarks/protocols/protocol_group_ot_bench"},
     {"group-vhss", "group", "vhss", "benchmarks/protocols/protocol_group_vhss_bench"},
-    {"rlwe-cz", "rlwe", "cz", "benchmarks/protocols/protocol_cz_bench"},
-    {"rlwe-dc", "rlwe", "dc", "benchmarks/protocols/protocol_rlwe_dc_bench"},
+    {"group-ot", "group", "ot", "benchmarks/protocols/protocol_group_ot_bench"},
+    {"group-dc", "group", "dc", "benchmarks/protocols/protocol_group_dc_bench"},
     {"rlwe-hss", "rlwe", "hss", "benchmarks/protocols/protocol_rlwe_hss_bench"},
-    {"rlwe-ot", "rlwe", "ot", "benchmarks/protocols/protocol_rlwe_ot_bench"},
     {"rlwe-vhss", "rlwe", "vhss", "benchmarks/protocols/protocol_rlwe_vhss_bench"},
+    {"rlwe-ot", "rlwe", "ot", "benchmarks/protocols/protocol_rlwe_ot_bench"},
+    {"rlwe-dc", "rlwe", "dc", "benchmarks/protocols/protocol_rlwe_dc_bench"},
+    {"rlwe-cz", "rlwe", "cz", "benchmarks/protocols/protocol_cz_bench"},
 };
 
 static string trim(const string &value)

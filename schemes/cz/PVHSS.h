@@ -270,17 +270,23 @@ inline void PvhssEval(NTL::ZZ_pX &tby, ep_t g1T1, ep2_t g2T2, int b,
 inline void PvhssDecode(NTL::ZZ &y, PvhssParams pvhss_params,
                         const PkeParams params, const NTL::ZZ_pX &y1,
                         const NTL::ZZ_pX &y2) {
+    // Convert to ZZX first to avoid ZZ_p modulus conflict
+    NTL::ZZX y1_zzx, y2_zzx, y_zzx;
+    NTL::conv(y1_zzx, y1);
+    NTL::conv(y2_zzx, y2);
+    NTL::add(y_zzx, y1_zzx, y2_zzx);
+    // Evaluate at x=2 using Horner, modulo group order
     NTL::ZZ_p::init(pvhss_params.g1_order_ZZ);
-    NTL::ZZ_pXModulus modulus(params.xN);
-    NTL::ZZ_p y_zz_p;
-    NTL::ZZX y_zzx;
-    NTL::ZZ_pX y_zz_px;
-    NTL::add(y_zz_px, y1, y2);
-    NTL::conv(y_zzx, y_zz_px);
-    NTL::ZZ_p two_zz_p(2);
-    NTL::conv(y_zz_px, y_zzx);
-    NTL::eval(y_zz_p, y_zz_px, two_zz_p);
-    NTL::conv(y, y_zz_p);
+    NTL::ZZ_p result(0);
+    NTL::ZZ_p two(2);
+    NTL::ZZ_p power(1);
+    for (long i = 0; i <= NTL::deg(y_zzx); i++) {
+        NTL::ZZ coeff;
+        NTL::GetCoeff(coeff, y_zzx, i);
+        result += NTL::conv<NTL::ZZ_p>(coeff) * power;
+        power *= two;
+    }
+    NTL::conv(y, result);
 }
 
 inline void PvhssVerify(const NTL::ZZ_pX &y1, const NTL::ZZ_pX &y2,
@@ -293,17 +299,22 @@ inline void PvhssVerify(const NTL::ZZ_pX &y1, const NTL::ZZ_pX &y2,
     bn_t y_bn;
     bn_new(y_bn);
     NTL::ZZ y_zz;
-    NTL::ZZ_p y_zz_p;
-    NTL::ZZX y_zzx;
-    NTL::ZZ_pX y_zz_px;
 
-    y_zz_px = y1 + y2;
-    NTL::conv(y_zzx, y_zz_px);
+    // Convert to ZZX first (modulus-independent), then clear ZZ_pX before
+    // changing ZZ_p modulus to avoid destructor crashes.
+    NTL::ZZX y_zzx;
+    {
+        NTL::ZZ_pX y_zz_px;
+        y_zz_px = y1 + y2;
+        NTL::conv(y_zzx, y_zz_px);
+    }  // y_zz_px destroyed here with original modulus
 
     NTL::ZZ_p::init(pvhss_params.g1_order_ZZ);
+    NTL::ZZ_p y_zz_p;
     NTL::ZZ_p two_zz_p(2);
-    NTL::conv(y_zz_px, y_zzx);
-    NTL::eval(y_zz_p, y_zz_px, two_zz_p);
+    NTL::ZZ_pX y_zz_px2;
+    NTL::conv(y_zz_px2, y_zzx);
+    NTL::eval(y_zz_p, y_zz_px2, two_zz_p);
 
     NTL::conv(y_zz, y_zz_p);
     ZZtoBn(y_bn, y_zz);

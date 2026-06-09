@@ -66,8 +66,12 @@ inline void EvalPoly(int deg, int num_data) {
     std::cout << 2 << "\n";
 
     std::cout << "******************** Client Verifying ********************\n";
+    // PvhssVerify changes ZZ_p modulus — save/restore inside lambda
+    // because MeasureTimeMsAdaptive may call it multiple times
+    NTL::ZZ saved_mod = NTL::ZZ_p::modulus();
     timing = MeasureTimeMsAdaptive([&]() {
         PvhssVerify(t1y, t2y, g1T1, g2T2, pvhss_params);
+        NTL::ZZ_p::init(saved_mod);
     }, 1);
     PrintTimeMs("running time Verification", timing);
 
@@ -75,6 +79,7 @@ inline void EvalPoly(int deg, int num_data) {
     NTL::ZZ res;
     timing = MeasureTimeMsAdaptive([&]() {
         PvhssDecode(res, pvhss_params, params, t1y, t2y);
+        NTL::ZZ_p::init(saved_mod);
     }, 1);
     PrintTimeMs("running time Decoding", timing);
 
