@@ -1,343 +1,15 @@
 /**
  * HSSRLWE.cpp
- * 
- * lhss-based implementation of the HSSRLWE API.
- * Uses lhss RNS/NTT internally for ~2.2x speedup on N=32768.
+ *
+ * Pure NTL implementation of the HSS-RLWE scheme.
  */
 
 #include "HSSRLWE.h"
 
-#include "lhss.hpp"
-#include "lattice.hpp"
-#include "poly.hpp"
-#include "sampler.hpp"
-#include "secretkey.hpp"
-#include "ctxt.hpp"
-#include "rlwe_ops.hpp"
-#include "rlwe_ops_sym.hpp"
-#include "evaluator.hpp"
-#include "params.hpp"
-
-#include <cstring>
-#include <stdexcept>
-#include <memory>
-#include <vector>
-#include <sstream>
-
 using namespace NTL;
 using namespace std;
 
-using namespace lhss;
-
 namespace pvhss { namespace rlwe { namespace hss {
-
-// ============================================================
-// Internal LHSS context
-// ============================================================
-
-struct LHSSContext {
-    SecretKey sk;
-    Ciphertext pk;
-};
-
-static LHSSContext* GetCtx(PKE_Para& p) {
-    return static_cast<LHSSContext*>(p.lhss_client_);
-}
-
-// ============================================================
-// NTL <-> lhss conversion helpers
-// ============================================================
-
-static inline ZZ mpzToZZ(const mpz_class& val) {
-    return to_ZZ(val.get_str().c_str());
-}
-
-static void NTLToCRTPoly(const ZZ_pX& ntl_poly, CRTPoly& crt)
-{
-    for (size_t mod_i = 0; mod_i < Params::num_moduli; ++mod_i) {
-        UIntType qi = Params::z_qi[mod_i].modulus;
-        auto& sp = crt.small_polys[mod_i];
-        for (size_t j = 0; j < Params::n; ++j) {
-            ZZ c = conv<ZZ>(coeff(ntl_poly, static_cast<long>(j)));
-            sp.coeffs[j] = static_cast<UIntType>(c % qi);
-        }
-    }
-}
-
-static void NTLToSecretKey(const vec_ZZ_pX& ntl_vec, SecretKey& sk)
-{
-    NTLToCRTPoly(ntl_vec[0], sk.GetB());
-    NTLToCRTPoly(ntl_vec[1], sk.GetA());
-    BigNTT::ApplyNTT(sk.GetB());
-    BigNTT::ApplyNTT(sk.GetA());
-}
-
-static void SecretKeyToNTL(const SecretKey& sk, vec_ZZ_pX& ntl_vec)
-{
-    CRTPoly b = sk.GetConstB();
-    CRTPoly a = sk.GetConstA();
-    BigNTT::ApplyInvNTT(b);
-    BigNTT::ApplyInvNTT(a);
-    
-    BigPoly bp_b, bp_a;
-    PolyConv::CRTToBigPoly(b, bp_b);
-    PolyConv::CRTToBigPoly(a, bp_a);
-    
-    ntl_vec.SetLength(2);
-    ntl_vec[0].SetLength(Params::n);
-    ntl_vec[1].SetLength(Params::n);
-    
-    for (size_t j = 0; j < Params::n; ++j) {
-        ZZ v = mpzToZZ(bp_b.GetConstVal(j));
-        SetCoeff(ntl_vec[0], static_cast<long>(j), conv<ZZ_p>(v));
-        v = mpzToZZ(bp_a.GetConstVal(j));
-        SetCoeff(ntl_vec[1], static_cast<long>(j), conv<ZZ_p>(v));
-    }
-}
-
-static void NTLToHSSCtxt(const vec_ZZ_pX& ntl_ct, HSSCtxt& hss_ct)
-{
-    NTLToCRTPoly(ntl_ct[0], hss_ct.enc_m.GetB());
-    NTLToCRTPoly(ntl_ct[1], hss_ct.enc_m.GetA());
-    NTLToCRTPoly(ntl_ct[2], hss_ct.enc_m_times_s.GetB());
-    NTLToCRTPoly(ntl_ct[3], hss_ct.enc_m_times_s.GetA());
-    
-    BigNTT::ApplyNTT(hss_ct.enc_m.GetB());
-    BigNTT::ApplyNTT(hss_ct.enc_m.GetA());
-    BigNTT::ApplyNTT(hss_ct.enc_m_times_s.GetB());
-    BigNTT::ApplyNTT(hss_ct.enc_m_times_s.GetA());
-}
-
-static void CRTPolyToZZ_pX(const CRTPoly& crt, ZZ_pX& out)
-{
-    BigPoly bp;
-    PolyConv::CRTToBigPoly(crt, bp);
-    out.SetLength(Params::n);
-    for (size_t j = 0; j < Params::n; ++j) {
-        ZZ v = mpzToZZ(bp.GetConstVal(j));
-        SetCoeff(out, static_cast<long>(j), conv<ZZ_p>(v));
-    }
-}
-
-// ============================================================
-// Parameter setup
-// ============================================================
-
-static bool s_lhss_global_init = false;
-
-void SetParams(PKE_Para &pkePara)
-{
-    pkePara.N = 32768;
-    
-    if (!s_lhss_global_init) {
-        std::vector<UIntType> plain_mods = {
-            18014398506729473ULL, 18014398505943041ULL,
-            9007199252840449ULL, 9007199252119553ULL,
-            9007199251660801ULL, 9007199250874369ULL
-        };
-        std::vector<UIntType> ctxt_mods = {
-            18014398506729473ULL, 18014398505943041ULL,
-            9007199252840449ULL, 9007199252119553ULL,
-            9007199251660801ULL, 9007199250874369ULL,
-            144115188075593729ULL, 144115188075134977ULL,
-            144115188070809601ULL, 144115188070023169ULL,
-            144115188068319233ULL, 144115188068253697ULL
-        };
-        LHSSInit(plain_mods, ctxt_mods, 32768);
-        s_lhss_global_init = true;
-    }
-    
-    conv(pkePara.q, to_ZZ(Params::Q.get_str().c_str()));
-    conv(pkePara.p, to_ZZ(Params::P.get_str().c_str()));
-    ZZ_p::init(pkePara.q);
-    
-    SetCoeff(pkePara.xN, 0, 1);
-    SetCoeff(pkePara.xN, pkePara.N, 1);
-    
-    pkePara.twice_p = 2 * pkePara.p;
-    pkePara.twice_q = 2 * pkePara.q;
-    pkePara.half_p = pkePara.p / 2;
-    
-    auto* ctx = new LHSSContext();
-    pkePara.lhss_client_ = ctx;
-    pkePara.lhss_initialized_ = true;
-}
-
-// ============================================================
-// Key Generation
-// ============================================================
-
-void PKE_Gen(PKE_Para &pkePara, vec_ZZ_pX &pkePk, vec_ZZ_pX &pkeSk)
-{
-    SetParams(pkePara);
-    auto* ctx = GetCtx(pkePara);
-    
-    CRTPoly::SetConstantNTT(1, ctx->sk.GetB());
-    CRTSampler::SampleUniformTernaryWithHW(pkePara.hsk, ctx->sk.GetA());
-    BigNTT::ApplyNTT(ctx->sk.GetA());
-    
-    EncryptZero(ctx->sk, ctx->pk);
-    
-    SecretKey pk_as_sk;
-    pk_as_sk.GetB() = ctx->pk.GetConstB();
-    pk_as_sk.GetA() = ctx->pk.GetConstA();
-    SecretKeyToNTL(pk_as_sk, pkePk);
-    SecretKeyToNTL(ctx->sk, pkeSk);
-}
-
-// ============================================================
-// HSS Key Sharing
-// ============================================================
-
-void HssGen(vec_ZZ_pX &hssEk_1, vec_ZZ_pX &hssEk_2,
-             const PKE_Para& pkePara, const vec_ZZ_pX& pkeSk)
-{
-    SecretKey sk_lhss;
-    NTLToSecretKey(pkeSk, sk_lhss);
-    
-    SecretKey ek1_lhss;
-    CRTSampler::SampleUniformModQ(ek1_lhss.GetB());
-    CRTSampler::SampleUniformModQ(ek1_lhss.GetA());
-    
-    SecretKey ek2_lhss;
-    SecretKey::SubMod(sk_lhss, ek1_lhss, ek2_lhss);
-    
-    SecretKeyToNTL(ek1_lhss, hssEk_1);
-    SecretKeyToNTL(ek2_lhss, hssEk_2);
-}
-
-// ============================================================
-// HSS Encryption
-// ============================================================
-
-void HSS_Enc(vec_ZZ_pX &C, const PKE_Para &pkePara, ZZ_pXModulus &modulus,
-             const vec_ZZ_pX& pkePk, const ZZ &x)
-{
-    SecretKey pk_lhss;
-    NTLToSecretKey(pkePk, pk_lhss);
-    
-    auto pk_ptr = std::make_shared<Ciphertext>();
-    pk_ptr->GetB() = pk_lhss.GetB();
-    pk_ptr->GetA() = pk_lhss.GetA();
-    
-    uint64_t m = static_cast<uint64_t>(to_long(x));
-    HSSCtxt hss_ct;
-    Poly plain;
-    plain.SetCoeffs({m});
-    HSSEncrypt(pk_ptr, plain, hss_ct);
-    
-    BigNTT::ApplyInvNTT(hss_ct.enc_m.GetB());
-    BigNTT::ApplyInvNTT(hss_ct.enc_m.GetA());
-    BigNTT::ApplyInvNTT(hss_ct.enc_m_times_s.GetB());
-    BigNTT::ApplyInvNTT(hss_ct.enc_m_times_s.GetA());
-    
-    C.SetLength(4);
-    CRTPolyToZZ_pX(hss_ct.enc_m.GetB(), C[0]);
-    CRTPolyToZZ_pX(hss_ct.enc_m.GetA(), C[1]);
-    CRTPolyToZZ_pX(hss_ct.enc_m_times_s.GetB(), C[2]);
-    CRTPolyToZZ_pX(hss_ct.enc_m_times_s.GetA(), C[3]);
-}
-
-// ============================================================
-// HSS Multiplication
-// ============================================================
-
-void HSS_Mult(vec_ZZ_pX &db, const PKE_Para& pkePara, const ZZ_pXModulus& modulus,
-              const vec_ZZ_pX& pkeSk, const vec_ZZ_pX& C)
-{
-    SecretKey sk_lhss;
-    NTLToSecretKey(pkeSk, sk_lhss);
-    
-    HSSCtxt hss_ct;
-    NTLToHSSCtxt(C, hss_ct);
-    
-    auto dummy_pk = std::make_shared<Ciphertext>();
-    Evaluator eval(dummy_pk, sk_lhss, "", 0);
-    
-    SecretKey result;
-    eval.MultHSSCtxtAndShare(hss_ct, sk_lhss, result);
-    
-    SecretKeyToNTL(result, db);
-}
-
-// ============================================================
-// HSS Memory Operations
-// ============================================================
-
-void HssAddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX& C_Y)
-{
-    tb[0] = C_X[0] + C_Y[0];
-    tb[1] = C_X[1] + C_Y[1];
-}
-
-void HssConvertInput(vec_ZZ_pX &tb_y, const PKE_Para& pkePara,
-                      const ZZ_pXModulus& modulus, const vec_ZZ_pX& ek,
-                      const vec_ZZ_pX& C_X)
-{
-    tb_y.SetLength(2);
-    HSS_Mult(tb_y, pkePara, modulus, ek, C_X);
-}
-
-// ============================================================
-// Optimized DP Evaluation
-// ============================================================
-
-void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const Vec<vec_ZZ_pX> &Ix,
-                       const PKE_Para &pkePara, ZZ_pXModulus modulus,
-                       const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f,
-                       const vec_ZZ_pX &M1)
-{
-    int k = Ix.length();
-    
-    SecretKey sk_lhss;
-    NTLToSecretKey(pkeSk, sk_lhss);
-    
-    std::vector<HSSCtxt> ctxts(k);
-    for (int i = 0; i < k; ++i) {
-        NTLToHSSCtxt(Ix[i], ctxts[i]);
-    }
-    
-    SecretKey M1_lhss;
-    NTLToSecretKey(M1, M1_lhss);
-    
-    auto dummy_pk = std::make_shared<Ciphertext>();
-    Evaluator eval(dummy_pk, sk_lhss, "", 0);
-    
-    std::vector<SecretKey> dp_prev(degree_f + 1);
-    std::vector<SecretKey> dp_curr(degree_f + 1);
-    
-    dp_prev[0] = M1_lhss;
-    
-    for (int i = 0; i < k; ++i) {
-        for (int s = 0; s <= degree_f; ++s) {
-            dp_curr[s] = dp_prev[s];
-        }
-        
-        for (int r = 0; r < degree_f; ++r) {
-            SecretKey chain = dp_prev[r];
-            
-            for (int j = 1; r + j <= degree_f; ++j) {
-                SecretKey next_chain;
-                eval.MultHSSCtxtAndShare(ctxts[i], chain, next_chain);
-                chain = next_chain;
-                SecretKey::AddMod(chain, dp_curr[r + j]);
-            }
-        }
-        
-        dp_prev.swap(dp_curr);
-    }
-    
-    SecretKey result;
-    for (int s = 1; s <= degree_f; ++s) {
-        SecretKey::AddMod(dp_prev[s], result);
-    }
-    
-    SecretKeyToNTL(result, y_b_res);
-}
-
-// ============================================================
-// Data generation (for testing/benchmarking)
-// ============================================================
 
 void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk)
 {
@@ -348,7 +20,7 @@ void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk)
     ZZ_pXModulus modulus(pkePara.xN);
     for (int i = 0; i < pkePara.num_data; i++)
     {
-        NTL::RandomBits(data.X[i], pkePara.msg_bit);
+        RandomBits(data.X[i], pkePara.msg_bit);
         HSS_Enc(C_x, pkePara, modulus, pkePk, data.X[i]);
         data.C_X.append(C_x);
     }
@@ -360,17 +32,272 @@ void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk)
     }
 }
 
-// ============================================================
-// Cleanup
-// ============================================================
-
-void PKE_Cleanup(PKE_Para &pkePara)
+void PKE_Gen(PKE_Para &pkePara, vec_ZZ_pX &pkePk, vec_ZZ_pX &pkeSk)
 {
-    if (pkePara.lhss_client_) {
-        delete GetCtx(pkePara);
-        pkePara.lhss_client_ = nullptr;
+    // initialize the parameters
+    SetParams(pkePara);
+
+    power(pkePara.p, 2, pkePara.p_bit);
+    power(pkePara.q, 2, pkePara.q_bit);
+    ZZ_p::init(pkePara.q);
+
+    SetCoeff(pkePara.xN, 0, 1);
+    SetCoeff(pkePara.xN, pkePara.N, 1);
+    ZZ_pXModulus modulus(pkePara.xN);
+
+    pkePara.twice_p = 2 * pkePara.p;
+    pkePara.twice_q = 2 * pkePara.q;
+    pkePara.half_p = pkePara.p / 2;
+
+    // gen sk
+    ZZ_pX hat_s, e;
+    RandomZZpx(pkePk[0], pkePara.N, pkePara.q_bit);
+    RlweSecretKey(hat_s, pkePara.N, pkePara.hsk);
+    GaussRandom(e, pkePara.N);
+
+    MulMod(pkePk[1], pkePk[0], hat_s, modulus);
+    pkePk[1] = pkePk[1] + e;
+    // gen sk
+    SetCoeff(pkeSk[0], 0, 1);
+    pkeSk[1] = hat_s;
+}
+
+void PKE_Enc(vec_ZZ_pX &c, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ &x)
+{
+    ZZ_pX v, e1, e2, x_ZZ_pX;
+    ZZ q_div_p = pkePara.q / pkePara.p;
+    ZZ_p coeff;
+    RlweSecretKey(v, pkePara.N, pkePara.hsk);
+    GaussRandom(e1, pkePara.N);
+    GaussRandom(e2, pkePara.N);
+    MulMod(c[0], pkePk[1], v, modulus);
+    c[0] = c[0] + e1;
+    conv(coeff, q_div_p * x);
+    SetCoeff(x_ZZ_pX, 0, coeff);
+    c[0] = c[0] + x_ZZ_pX;
+    MulMod(c[1], pkePk[0], v, modulus);
+    c[1] = e2 - c[1];
+}
+
+void PKE_OKDM(vec_ZZ_pX &C, const PKE_Para &pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ &x)
+{
+    C.SetLength(4);
+    ZZ zero;
+    zero = 0;
+    ZZ q_div_p = pkePara.q / pkePara.p;
+    vec_ZZ_pX c_xs1, c_xs2;
+    ZZ_p coeff;
+    ZZ_pX x_ZZ_pX;
+    c_xs1.SetLength(2);
+    c_xs2.SetLength(2);
+
+    PKE_Enc(c_xs1, pkePara, modulus, pkePk, x);
+    PKE_Enc(c_xs2, pkePara, modulus, pkePk, zero);
+    conv(coeff, q_div_p * x);
+    SetCoeff(x_ZZ_pX, 0, coeff);
+    c_xs2[1] = c_xs2[1] + x_ZZ_pX;
+    C[0] = c_xs1[0];
+    C[1] = c_xs1[1];
+    C[2] = c_xs2[0];
+    C[3] = c_xs2[1];
+}
+
+void PKE_DDec(vec_ZZ_pX &db, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk, const vec_ZZ_pX& C)
+{
+    ZZ coeff;
+    ZZX temp;
+    ZZ_pX temp1, temp2;
+    MulMod(temp1, pkeSk[0], C[0], modulus);
+    MulMod(temp2, pkeSk[1], C[1], modulus);
+    temp1 = temp1 + temp2;
+    conv(temp, temp1);
+    for (int i = 0; i < pkePara.N; i++)
+    {
+        GetCoeff(coeff, temp, i);
+        coeff = (coeff * pkePara.twice_p + pkePara.q) / (pkePara.twice_q);
+        coeff = coeff % pkePara.p;
+        if (coeff > pkePara.half_p)
+        {
+            coeff -= pkePara.p;
+        }
+        SetCoeff(temp, i, coeff);
     }
-    pkePara.lhss_initialized_ = false;
+    conv(db[0], temp);
+    MulMod(temp1, pkeSk[0], C[2], modulus);
+    MulMod(temp2, pkeSk[1], C[3], modulus);
+    temp1 = temp1 + temp2;
+    conv(temp, temp1);
+    for (int i = 0; i < pkePara.N; i++)
+    {
+        GetCoeff(coeff, temp, i);
+        coeff = (coeff * pkePara.twice_p + pkePara.q) / (pkePara.twice_q);
+        coeff = coeff % pkePara.p;
+        if (coeff > pkePara.half_p)
+        {
+            coeff -= pkePara.p;
+        }
+        SetCoeff(temp, i, coeff);
+    }
+    conv(db[1], temp);
+}
+
+void SetParams(PKE_Para &pkePara)
+{
+    pkePara.N = 32768;
+    pkePara.p_bit = 319;
+    pkePara.q_bit = 662;
+}
+
+void HssGen(vec_ZZ_pX &hssEk_1, vec_ZZ_pX &hssEk_2,
+             const PKE_Para& pkePara, const vec_ZZ_pX& pkeSk)
+{
+    RandomZZpx(hssEk_1[0], pkePara.N, pkePara.q_bit);
+    RandomZZpx(hssEk_1[1], pkePara.N, pkePara.q_bit);
+
+    hssEk_2[0] = pkeSk[0] - hssEk_1[0];
+    hssEk_2[1] = pkeSk[1] - hssEk_1[1];
+}
+
+void HSS_Enc(vec_ZZ_pX &C, const PKE_Para &pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ &x)
+{
+    C.SetLength(4);
+    PKE_OKDM(C, pkePara, modulus, pkePk, x);
+}
+
+void HSS_Mult(vec_ZZ_pX &db, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk, const vec_ZZ_pX& C)
+{
+    db.SetLength(2);
+    PKE_DDec(db, pkePara, modulus, pkeSk, C);
+}
+
+void HssConvertInput(vec_ZZ_pX &tb_y, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& ek, const vec_ZZ_pX& C_X)
+{
+    tb_y.SetLength(2);
+    HSS_Mult(tb_y, pkePara, modulus, ek, C_X);
+}
+
+void HssAddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX& C_Y)
+{
+    tb[0] = C_X[0] + C_Y[0];
+    tb[1] = C_X[1] + C_Y[1];
+}
+
+// Helper for polynomial evaluation
+static void f_eval(vec_ZZ_pX &tb, int b, int d, int num_data, int loop, int beg_ind, int *ind_var,
+       const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& ek, const Vec<vec_ZZ_pX>& C_X, const Vec<vec_ZZ_pX>& PRF, int &prfkey)
+{
+    if (loop == d)
+    {
+        vec_ZZ_pX tb_temp;
+        tb_temp.SetLength(2);
+        if (d == 1)
+        {
+            prfkey = (prfkey + 1) % 10;
+            HSS_Mult(tb_temp, pkePara, modulus, ek, C_X[ind_var[0]]);
+
+            if (b == 1)
+            {
+                tb_temp[0] = tb_temp[0] + PRF[prfkey][0];
+                tb_temp[1] = tb_temp[1] + PRF[prfkey][1];
+            }
+            else
+            {
+                tb_temp[0] = tb_temp[0] - PRF[prfkey][0];
+                tb_temp[1] = tb_temp[1] - PRF[prfkey][1];
+            }
+
+            tb[0] = tb[0] + tb_temp[0];
+            tb[1] = tb[1] + tb_temp[1];
+        }
+        else
+        {
+            HSS_Mult(tb_temp, pkePara, modulus, ek, C_X[ind_var[0]]);
+            prfkey = (prfkey + 1) % 10;
+
+            if (b == 1)
+            {
+                tb_temp[0] = tb_temp[0] + PRF[prfkey][0];
+                tb_temp[1] = tb_temp[1] + PRF[prfkey][1];
+            }
+            else
+            {
+                tb_temp[0] = tb_temp[0] - PRF[prfkey][0];
+                tb_temp[1] = tb_temp[1] - PRF[prfkey][1];
+            }
+
+            for (int i = 1; i < d; i++)
+            {
+                HSS_Mult(tb_temp, pkePara, modulus, tb_temp, C_X[ind_var[i]]);
+                prfkey = (prfkey + 1) % 10;
+                if (b == 1)
+                {
+                    tb_temp[0] = tb_temp[0] + PRF[prfkey][0];
+                    tb_temp[1] = tb_temp[1] + PRF[prfkey][1];
+                }
+                else
+                {
+                    tb_temp[0] = tb_temp[0] - PRF[prfkey][0];
+                    tb_temp[1] = tb_temp[1] - PRF[prfkey][1];
+                }
+            }
+            tb[0] = tb[0] + tb_temp[0];
+            tb[1] = tb[1] + tb_temp[1];
+        }
+    }
+    else
+    {
+        loop = loop + 1;
+        for (int i = beg_ind; i < num_data; i++)
+        {
+            ind_var[loop - 1] = i;
+            f_eval(tb, b, d, num_data, loop, i, ind_var, pkePara, modulus, ek, C_X, PRF, prfkey);
+        }
+    }
+}
+
+void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const Vec<vec_ZZ_pX> &Ix, const PKE_Para &pkePara, ZZ_pXModulus modulus, const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f, const vec_ZZ_pX &M1)
+{
+    // Use the DP-based evaluation from the old implementation
+    vec_ZZ_pX tmp1, tmp2;
+    tmp1.SetLength(2);
+    tmp2.SetLength(2);
+
+    int k = Ix.length();
+
+    Mat<ZZ_pX> dp_prev, dp_curr;
+    dp_prev.SetDims(1 + degree_f, 2);
+    dp_curr.SetDims(1 + degree_f, 2);
+
+    dp_prev[0] = M1;
+
+    for (int i = 1; i <= k; i++)
+    {
+        for (int s = 0; s <= degree_f; s++)
+        {
+            dp_curr[s].SetLength(2);
+            dp_curr[s][0] = 0;
+            dp_curr[s][1] = 0;
+            HssAddMemory(dp_curr[s], dp_curr[s], dp_prev[s]);
+            for (int j = 1; j <= s; j++)
+            {
+                copy(begin(dp_prev[s - j]), end(dp_prev[s - j]), begin(tmp1));
+                for (int h = 0; h < j; ++h)
+                {
+                    HSS_Mult(tmp2, pkePara, modulus, tmp1, Ix[i - 1]);
+                    copy(begin(tmp2), end(tmp2), begin(tmp1));
+                }
+                HssAddMemory(dp_curr[s], dp_curr[s], tmp1);
+            }
+        }
+        dp_prev.swap(dp_curr);
+    }
+    y_b_res.SetLength(2);
+    y_b_res[0] = 0;
+    y_b_res[1] = 0;
+    for (int s = 1; s <= degree_f; s++) {
+        HssAddMemory(y_b_res, y_b_res, dp_prev[s]);
+    }
 }
 
 }}} // namespace pvhss::rlwe::hss
+

@@ -8,11 +8,11 @@
 
 namespace lhss
 {
-std::normal_distribution<double> d(0.0, 3.2);
+inline std::normal_distribution<double> d(0.0, 3.2);
 // for ternary uniform sampling (pk gen and ctxt gen)
-std::uniform_int_distribution<UIntType> z3_uniform(0, 2);
+inline std::uniform_int_distribution<UIntType> z3_uniform(0, 2);
 // for uniform sampling w/ hamming weight (sk gen)
-std::uniform_int_distribution<UIntType> z2_uniform(0, 1);
+inline std::uniform_int_distribution<UIntType> z2_uniform(0, 1);
 struct SmallSampler
 {
   using SmallPoly = Poly;

@@ -14,7 +14,7 @@ namespace lhss
  * @param[in] c a ciphertext (in R^2_Q) in NTT form
  * @param[out] dest_plain secret share of output plaintext in Non-NTT form
  */
-void HSSDDecryption(const SecretKey& sk, const Ciphertext& c, CRTPoly& dest_plain)
+inline void HSSDDecryption(const SecretKey& sk, const Ciphertext& c, CRTPoly& dest_plain)
 {
   CRTPoly tmp;
   CRTPoly::MulMod(c.GetConstB(), sk.GetConstB(), tmp);
@@ -29,7 +29,7 @@ void HSSDDecryption(const SecretKey& sk, const Ciphertext& c, CRTPoly& dest_plai
  * @param[in] c a ciphertext (in R^2_Q) in NTT form
  * @param[out] dest_plain secret share of output plaintext in Non-NTT form
  */
-void HSSDDecryptionOpt(const SecretKey& sk, const Ciphertext& c, CRTPoly& dest_plain)
+inline void HSSDDecryptionOpt(const SecretKey& sk, const Ciphertext& c, CRTPoly& dest_plain)
 {
   CRTPoly::MulMod(c.GetConstA(), sk.GetConstA(), dest_plain);
   if (sk.GetConstB().GetConstSmallPoly(0).GetConstVal(0) == 1)
@@ -38,7 +38,7 @@ void HSSDDecryptionOpt(const SecretKey& sk, const Ciphertext& c, CRTPoly& dest_p
   BigNTT::ApplyInvNTT(dest_plain);
 }
 
-void HSSDDecryption(const SecretKey& sk, const HSSCiphertext& c, CRTPoly t[2])
+inline void HSSDDecryption(const SecretKey& sk, const HSSCiphertext& c, CRTPoly t[2])
 {
   CRTPoly t0, t1;
   CRTPoly::MulMod(c.GetConstB0(), sk.GetConstB(), t0);
@@ -52,7 +52,7 @@ void HSSDDecryption(const SecretKey& sk, const HSSCiphertext& c, CRTPoly t[2])
   BigNTT::ApplyInvNTT(t[1]);
 }
 
-void DotProd(const SecretKey& sk, const Ciphertext& c, CRTPoly& res)
+inline void DotProd(const SecretKey& sk, const Ciphertext& c, CRTPoly& res)
 {
   CRTPoly t;
   CRTPoly::MulMod(c.GetConstB(), sk.GetConstB(), t);
@@ -61,13 +61,13 @@ void DotProd(const SecretKey& sk, const Ciphertext& c, CRTPoly& res)
   BigNTT::ApplyInvNTT(res);
 }
 
-void HSSDotProd(const SecretKey& sk, const HSSCtxt& c, CRTPoly t[2])
+inline void HSSDotProd(const SecretKey& sk, const HSSCtxt& c, CRTPoly t[2])
 {
   DotProd(sk, c.enc_m, t[0]);
   DotProd(sk, c.enc_m_times_s, t[1]);
 }
 
-void HSSDDecryptionOpt(const SecretKey& sk, const HSSCiphertext& c, CRTPoly t[2])
+inline void HSSDDecryptionOpt(const SecretKey& sk, const HSSCiphertext& c, CRTPoly t[2])
 {
   // Multiplication on A
   CRTPoly::MulMod(c.GetConstA0(), sk.GetConstA(), t[0]);
@@ -87,7 +87,7 @@ void HSSDDecryptionOpt(const SecretKey& sk, const HSSCiphertext& c, CRTPoly t[2]
  * @param[in] m plaintext to be encrypted
  * @param[out] ct LPR ciphetext
  */
-void EncryptZero(const SecretKey& sk, Ciphertext& ct)
+inline void EncryptZero(const SecretKey& sk, Ciphertext& ct)
 {
   // a
   CRTSampler::SampleUniformModQ(ct.GetA());
@@ -107,7 +107,7 @@ void EncryptZero(const SecretKey& sk, Ciphertext& ct)
  * @param[in] m a plaintext to be encrypted
  * @param[out] ct a ciphertext that encrypts m
  */
-void Encrypt(const SecretKey& sk, const Poly& m, Ciphertext& ct)
+inline void Encrypt(const SecretKey& sk, const Poly& m, Ciphertext& ct)
 {
   CRTPoly m_times_delta;
   CRTPoly::MulSmallPolyAndCRTConstant(m, Params::q_div_p_mod_qi, m_times_delta);
@@ -122,7 +122,7 @@ void Encrypt(const SecretKey& sk, const Poly& m, Ciphertext& ct)
  * @param[in] m a plaintext to be encrypted
  * @param[out] ct a ciphertext that encrypts m
  */
-void EncryptMTimesSk(const SecretKey& sk, const Poly& m, Ciphertext& ct)
+inline void EncryptMTimesSk(const SecretKey& sk, const Poly& m, Ciphertext& ct)
 {
   CRTPoly m_times_delta;
   CRTPoly::MulSmallPolyAndCRTConstant(m, Params::q_div_p_mod_qi, m_times_delta);
@@ -137,7 +137,7 @@ void EncryptMTimesSk(const SecretKey& sk, const Poly& m, Ciphertext& ct)
  * @param[in] m a plaintext to be encrypted
  * @param[out] ct a ciphertext that encrypts m
  */
-void Encrypt(const SecretKey& sk, const std::uint64_t& m, Ciphertext& ct)
+inline void Encrypt(const SecretKey& sk, const std::uint64_t& m, Ciphertext& ct)
 {
   Poly plain;
   plain.SetCoeffs({m});
@@ -154,7 +154,7 @@ void Encrypt(const SecretKey& sk, const std::uint64_t& m, Ciphertext& ct)
  * @param[in] m a plaintext to be encrypted
  * @param[out] ct a ciphertext that encrypts m
  */
-void HSSEncrypt(const SecretKey& sk, const std::uint64_t& m, HSSCtxt& ct)
+inline void HSSEncrypt(const SecretKey& sk, const std::uint64_t& m, HSSCtxt& ct)
 {
   Poly plain;
   plain.SetCoeffs({m});
@@ -163,7 +163,7 @@ void HSSEncrypt(const SecretKey& sk, const std::uint64_t& m, HSSCtxt& ct)
 }
 
 //FIXME
-void CircularEncrypt(const SecretKey& sk, const SecretKey& plain_sk, HSSCiphertext& ct)
+inline void CircularEncrypt(const SecretKey& sk, const SecretKey& plain_sk, HSSCiphertext& ct)
 {
   // deep copy
   SecretKey org_sk = plain_sk;
@@ -197,7 +197,7 @@ void CircularEncrypt(const SecretKey& sk, const SecretKey& plain_sk, HSSCipherte
 }
 
 // input should be NTTed vals
-void ReconstShare(const SecretKey& s0, const SecretKey& s1, BigPoly recons[2])
+inline void ReconstShare(const SecretKey& s0, const SecretKey& s1, BigPoly recons[2])
 {
   SecretKey t0 = s0;
   SecretKey t1 = s1;
@@ -221,7 +221,7 @@ void ReconstShare(const SecretKey& s0, const SecretKey& s1, BigPoly recons[2])
 }
 
 // Only the constant term of the message is obtained.
-void ReconstShares(const SecretKey& s0, const SecretKey& s1, std::uint64_t& res)
+inline void ReconstShares(const SecretKey& s0, const SecretKey& s1, std::uint64_t& res)
 {
   BigPoly recons;
   SecretKey debug_m;

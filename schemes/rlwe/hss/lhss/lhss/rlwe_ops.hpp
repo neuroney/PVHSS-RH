@@ -10,7 +10,7 @@ namespace lhss
 {
 using PkPtr = std::shared_ptr<Ciphertext>;
 
-void MergeDDecPlain(const Ciphertext& c, const std::vector<CRTPoly>& ddec_plains, BigPoly& m)
+inline void MergeDDecPlain(const Ciphertext& c, const std::vector<CRTPoly>& ddec_plains, BigPoly& m)
 {
   CRTPoly sum = c.GetConstB();
   BigNTT::ApplyInvNTT(sum);  
@@ -28,7 +28,7 @@ void MergeDDecPlain(const Ciphertext& c, const std::vector<CRTPoly>& ddec_plains
  * @param[in] m a plaintext to be encrypted
  * @param[out] ct a ciphertext that encrypts m
  */
-void EncryptZero(const PkPtr& pk, Ciphertext& ct)
+inline void EncryptZero(const PkPtr& pk, Ciphertext& ct)
 {
   // e0
   CRTSampler::SamplePolyFromNormalDist(ct.GetB());
@@ -60,7 +60,7 @@ void EncryptZero(const PkPtr& pk, Ciphertext& ct)
  * @param[in] m a plaintext to be encrypted
  * @param[out] ct a ciphertext that encrypts m
  */
-void Encrypt(const PkPtr& pk, const Poly& m, Ciphertext& ct)
+inline void Encrypt(const PkPtr& pk, const Poly& m, Ciphertext& ct)
 {
   CRTPoly m_times_delta;
   CRTPoly::MulSmallPolyAndCRTConstant(m, Params::q_div_p_mod_qi, m_times_delta);
@@ -75,7 +75,7 @@ void Encrypt(const PkPtr& pk, const Poly& m, Ciphertext& ct)
  * @param[in] m a plaintext to be encrypted
  * @param[out] ct a ciphertext that encrypts m
  */
-void EncryptMTimesSk(const PkPtr& pk, const Poly& m, Ciphertext& ct)
+inline void EncryptMTimesSk(const PkPtr& pk, const Poly& m, Ciphertext& ct)
 {
   CRTPoly m_times_delta;
   CRTPoly::MulSmallPolyAndCRTConstant(m, Params::q_div_p_mod_qi, m_times_delta);
@@ -92,7 +92,7 @@ void EncryptMTimesSk(const PkPtr& pk, const Poly& m, Ciphertext& ct)
  * @param[out] lct a HSS ciphertext that encrypts m (and m*s)
  */
 // void HSSEncrypt(const PkPtr& pk, const Poly& m, HSSCtxt& hss_ct)
-void HSSEncrypt(const PkPtr& pk, const Poly& m, HSSCtxt& hss_ct)
+inline void HSSEncrypt(const PkPtr& pk, const Poly& m, HSSCtxt& hss_ct)
 {
   Encrypt(pk, m, hss_ct.enc_m);
   EncryptMTimesSk(pk, m, hss_ct.enc_m_times_s);
@@ -105,7 +105,7 @@ void HSSEncrypt(const PkPtr& pk, const Poly& m, HSSCtxt& hss_ct)
  * @param[out] lct a HSS ciphertext that encrypts m (and m*s)
  */
 // void HSSEncrypt(const PkPtr& pk, const std::uint64_t m, HSSCtxt& hss_ct)
-void HSSEncrypt(const PkPtr& pk, const std::uint64_t m, HSSCtxt& hss_ct)
+inline void HSSEncrypt(const PkPtr& pk, const std::uint64_t m, HSSCtxt& hss_ct)
 {
   Poly plain;
   plain.SetCoeffs({m});
@@ -113,7 +113,7 @@ void HSSEncrypt(const PkPtr& pk, const std::uint64_t m, HSSCtxt& hss_ct)
   EncryptMTimesSk(pk, plain, hss_ct.enc_m_times_s);
 }
 
-void ScaleAndRound(BigPoly* bp)
+inline void ScaleAndRound(BigPoly* bp)
 {
   PolyConv::SymmetricRepToAsymmetricRepEqual(bp[0]);
   PolyConv::SymmetricRepToAsymmetricRepEqual(bp[1]);
@@ -123,7 +123,7 @@ void ScaleAndRound(BigPoly* bp)
   BigPoly::ModReduceEqual(Params::P, bp[1]);
 }
 
-void Lift(BigPoly* bp, SecretKey& t)
+inline void Lift(BigPoly* bp, SecretKey& t)
 {
   PolyConv::AsymmetricRepToSymmetricRepEqual(Params::P, bp[0]);
   PolyConv::AsymmetricRepToSymmetricRepEqual(Params::P, bp[1]);

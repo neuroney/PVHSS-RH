@@ -18,12 +18,12 @@
 namespace lhss
 {
 
-void ConvMpz2Ull(const mpz_class& z, unsigned long long& dest)
+inline void ConvMpz2Ull(const mpz_class& z, unsigned long long& dest)
 {
   mpz_export(&dest, 0, -1, sizeof(dest), 0, 0, z.get_mpz_t());
 }
 
-void ConvUll2Mpz(const unsigned long long ull, mpz_class& z)
+inline void ConvUll2Mpz(const unsigned long long ull, mpz_class& z)
 {
   mpz_import(z.get_mpz_t(), 1, -1, sizeof(ull), 0, 0, &ull);
 }
@@ -108,7 +108,7 @@ inline void AddUint128(const UIntType* a, UIntType *res)
 #endif
 }
 
-std::uint32_t BitReverse(std::uint32_t v, std::size_t numbit) 
+inline std::uint32_t BitReverse(std::uint32_t v, std::size_t numbit) 
 {
   std::uint32_t r = v; // result
   std::uint32_t s = numbit - 1;
@@ -129,7 +129,7 @@ std::uint32_t BitReverse(std::uint32_t v, std::size_t numbit)
 
 // vector size must be a power of 2.
 template <class T>
-void PermuteBitRev(const std::vector<T>& src, std::vector<T>& dest)
+inline void PermuteBitRev(const std::vector<T>& src, std::vector<T>& dest)
 {
   if (src.size() != dest.size())
     throw std::invalid_argument("vector sizes are different.");
@@ -139,7 +139,7 @@ void PermuteBitRev(const std::vector<T>& src, std::vector<T>& dest)
     dest[BitReverse(i, numbit)] = src[i];
 }
 
-void XGCD(std::int64_t& d, std::int64_t& a, std::int64_t& b, std::int64_t x, std::int64_t y)
+inline void XGCD(std::int64_t& d, std::int64_t& a, std::int64_t& b, std::int64_t x, std::int64_t y)
 {
    std::int64_t u, v, u0, v0, u1, v1, u2, v2, q, r;
 
@@ -166,7 +166,7 @@ void XGCD(std::int64_t& d, std::int64_t& a, std::int64_t& b, std::int64_t x, std
 
 // NOTE
 // x and mod must be smaller than 2^{63}
-void MultInverse(const std::uint64_t x, const std::uint64_t mod, std::uint64_t& inv)
+inline void MultInverse(const std::uint64_t x, const std::uint64_t mod, std::uint64_t& inv)
 {
   std::uint64_t xx = x;
   if (xx > mod)
@@ -185,7 +185,7 @@ void MultInverse(const std::uint64_t x, const std::uint64_t mod, std::uint64_t& 
     inv = static_cast<std::uint64_t>(a);
 }
 
-UIntType ExpAndMod(const UIntType base, const UIntType exp, const UIntType modulus)
+inline UIntType ExpAndMod(const UIntType base, const UIntType exp, const UIntType modulus)
 {
   std::size_t log2_exp_floor = std::log2(exp);
   UIntType nearest_small_pof2 = 1UL << log2_exp_floor;
@@ -220,7 +220,7 @@ UIntType ExpAndMod(const UIntType base, const UIntType exp, const UIntType modul
 }
 
 // from SEAL
-bool IsPrimitiveRoot(const UIntType root, UIntType m, UIntType modulus)
+inline bool IsPrimitiveRoot(const UIntType root, UIntType m, UIntType modulus)
 {
   if (root == 0)
     return false;
@@ -231,7 +231,7 @@ bool IsPrimitiveRoot(const UIntType root, UIntType m, UIntType modulus)
 }
 
 // from SEAL
-bool FindPrimitiveRoot(const UIntType m, const UIntType prime_modulus, UIntType &root)
+inline bool FindPrimitiveRoot(const UIntType m, const UIntType prime_modulus, UIntType &root)
 {   
   UIntType size_entire_group = prime_modulus - 1;
   UIntType size_quotient_group = size_entire_group / m;
@@ -259,7 +259,7 @@ bool FindPrimitiveRoot(const UIntType m, const UIntType prime_modulus, UIntType 
   return IsPrimitiveRoot(root, m, prime_modulus);
 }
 
-void MultModEqualNaive(const std::uint64_t a, const std::uint64_t mod, std::uint64_t& res)
+inline void MultModEqualNaive(const std::uint64_t a, const std::uint64_t mod, std::uint64_t& res)
 {
   u128 prod = static_cast<u128>(a) * res;
   res = static_cast<std::uint64_t>(prod % mod);  

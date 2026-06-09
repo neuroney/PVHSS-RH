@@ -15,7 +15,7 @@ using SkShare = SecretKey;
 using SkPtr = std::unique_ptr<SecretKey>;
 using PkPtr = std::shared_ptr<Ciphertext>;
 
-void LHSSInit(
+inline void LHSSInit(
  const std::vector<UIntType>& plain_mods,
  const std::vector<UIntType>& ctxt_mods,
  const std::size_t deg
@@ -25,7 +25,7 @@ void LHSSInit(
 }
 
 // Failure probability per multiplication is <= 2^-40.
-void Setup(const std::size_t max_bound_message_bit)
+inline void Setup(const std::size_t max_bound_message_bit)
 {
   /**  log(P) = 62, log(Q) = 144, N = 2^13, security >= 128
    * - Size of P: {62}
