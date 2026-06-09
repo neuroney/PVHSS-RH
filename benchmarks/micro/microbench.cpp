@@ -5,9 +5,13 @@
 #include "HSSRLWE.h"
 
 #include <chrono>
+#include <cmath>
+#include <cstdint>
 #include <functional>
 #include <iomanip>
+#include <stdexcept>
 #include <string>
+#include <unordered_map>
 
 using namespace NTL;
 using namespace std;
@@ -34,6 +38,8 @@ struct BenchConfig
     double min_sample_ms = 25.0;
     int max_adaptive_iters = 10000000;
     bool csv = true;
+    bool compact = false;
+    bool header = true;
 };
 
 struct BenchResult
@@ -91,6 +97,12 @@ static BenchConfig parse_config(int argc, char **argv)
         }
     }
     cfg.csv = !has_arg(argc, argv, "--pretty");
+    cfg.compact = has_arg(argc, argv, "--compact");
+    cfg.header = !has_arg(argc, argv, "--no-header");
+    if (cfg.compact)
+    {
+        cfg.csv = true;
+    }
     return cfg;
 }
 
@@ -191,9 +203,9 @@ static BenchResult run_bench(const string &category, const string &primitive,
     return result;
 }
 
-static void print_result(const BenchResult &r, bool csv)
+static void print_result(const BenchResult &r, const BenchConfig &cfg)
 {
-    if (csv)
+    if (cfg.csv)
     {
         auto csv_escape = [](const string &value) {
             string escaped;
@@ -216,6 +228,14 @@ static void print_result(const BenchResult &r, bool csv)
             }
             return needs_quotes ? "\"" + escaped + "\"" : escaped;
         };
+
+        if (cfg.compact)
+        {
+            cout << csv_escape(r.category) << ","
+                 << csv_escape(r.primitive) << ","
+                 << fixed << setprecision(6) << r.mean_ms << "\n";
+            return;
+        }
 
         cout << csv_escape(r.category) << ","
              << csv_escape(r.primitive) << ","
@@ -250,6 +270,212 @@ static void init_relic()
     ep2_curve_set_twist(RLC_EP_MTYPE);
 }
 
+static uint64_t message_limit_for_bits(unsigned int bits)
+{
+    if (bits == 0 || bits > 32)
+    {
+        throw runtime_error("DecPed microbench supports bounded 1..32-bit plaintexts");
+    }
+    return uint64_t(1) << bits;
+}
+
+static uint64_t ceil_sqrt_u64(uint64_t value)
+{
+    uint64_t root = static_cast<uint64_t>(sqrt(static_cast<long double>(value)));
+    while (root * root < value)
+    {
+        ++root;
+    }
+    while (root > 0 && (root - 1) * (root - 1) >= value)
+    {
+        --root;
+    }
+    return root;
+}
+
+static void bn_set_u64(bn_t out, uint64_t value)
+{
+    ostringstream encoded;
+    encoded << value;
+    const string text = encoded.str();
+    bn_read_str(out, text.c_str(), static_cast<int>(text.size()), 10);
+}
+
+static string g1_key(const g1_t point)
+{
+    if (g1_is_infty(point) == 1)
+    {
+        return string("INF");
+    }
+
+    g1_t normalized;
+    g1_null(normalized);
+    g1_new(normalized);
+    g1_norm(normalized, point);
+
+    const size_t len = g1_size_bin(normalized, 1);
+    vector<uint8_t> bytes(len);
+    g1_write_bin(bytes.data(), len, normalized, 1);
+    g1_free(normalized);
+
+    return string(reinterpret_cast<const char *>(bytes.data()), bytes.size());
+}
+
+class DecPedBsgsDecoder
+{
+public:
+    DecPedBsgsDecoder(const bgn_t prv, unsigned int bits)
+        : limit_(message_limit_for_bits(bits)),
+          step_size_(ceil_sqrt_u64(limit_))
+    {
+        bn_null(order_);
+        bn_null(secret_scalar_);
+        bn_null(step_bn_);
+        g1_null(base_);
+        g1_null(giant_step_);
+
+        bn_new(order_);
+        bn_new(secret_scalar_);
+        bn_new(step_bn_);
+        g1_new(base_);
+        g1_new(giant_step_);
+
+        pc_get_ord(order_);
+        bn_mul(secret_scalar_, prv->x, prv->y);
+        bn_sub(secret_scalar_, secret_scalar_, prv->z);
+        bn_mod(secret_scalar_, secret_scalar_, order_);
+        g1_mul_gen(base_, secret_scalar_);
+        g1_norm(base_, base_);
+
+        build_table();
+    }
+
+    ~DecPedBsgsDecoder()
+    {
+        bn_free(order_);
+        bn_free(secret_scalar_);
+        bn_free(step_bn_);
+        g1_free(base_);
+        g1_free(giant_step_);
+    }
+
+    uint64_t max_message() const
+    {
+        return limit_ - 1;
+    }
+
+    int decode(uint64_t &out, const g1_t in[2], const bgn_t prv) const
+    {
+        g1_t target;
+        g1_t current;
+        g1_null(target);
+        g1_null(current);
+        g1_new(target);
+        g1_new(current);
+
+        int result = RLC_ERR;
+        g1_mul(target, in[0], prv->x);
+        g1_sub(target, target, in[1]);
+        g1_norm(target, target);
+
+        if (g1_is_infty(target) == 1)
+        {
+            out = 0;
+            result = RLC_OK;
+        }
+        else
+        {
+            g1_copy(current, target);
+            const uint64_t giant_steps = (limit_ + step_size_ - 1) / step_size_;
+            for (uint64_t j = 0; j <= giant_steps; ++j)
+            {
+                const unordered_map<string, uint64_t>::const_iterator it = baby_steps_.find(g1_key(current));
+                if (it != baby_steps_.end())
+                {
+                    const uint64_t candidate = j * step_size_ + it->second;
+                    if (candidate < limit_)
+                    {
+                        out = candidate;
+                        result = RLC_OK;
+                        break;
+                    }
+                }
+
+                g1_sub(current, current, giant_step_);
+                g1_norm(current, current);
+            }
+        }
+
+        g1_free(target);
+        g1_free(current);
+        return result;
+    }
+
+private:
+    void build_table()
+    {
+        baby_steps_.reserve(static_cast<size_t>(step_size_ * 2));
+
+        g1_t current;
+        g1_null(current);
+        g1_new(current);
+        g1_set_infty(current);
+
+        for (uint64_t i = 0; i < step_size_ && i < limit_; ++i)
+        {
+            baby_steps_[g1_key(current)] = i;
+            g1_add(current, current, base_);
+            g1_norm(current, current);
+        }
+
+        bn_set_u64(step_bn_, step_size_);
+        g1_mul(giant_step_, base_, step_bn_);
+        g1_norm(giant_step_, giant_step_);
+        g1_free(current);
+    }
+
+    uint64_t limit_;
+    uint64_t step_size_;
+    unordered_map<string, uint64_t> baby_steps_;
+    bn_t order_;
+    bn_t secret_scalar_;
+    bn_t step_bn_;
+    g1_t base_;
+    g1_t giant_step_;
+};
+
+static void bench_decped_decryption_bits(const BenchConfig &cfg, const bgn_t pub,
+                                         const bgn_t prv, bn_t rho, unsigned int bits)
+{
+    DecPedBsgsDecoder decoder(prv, bits);
+
+    g1_t ciphertext[2];
+    bn_t message_bn;
+    g1_new(ciphertext[0]);
+    g1_new(ciphertext[1]);
+    bn_new(message_bn);
+
+    const uint64_t message = decoder.max_message();
+    bn_set_u64(message_bn, message);
+    cp_decped_enc3(ciphertext, rho, message_bn, pub);
+
+    uint64_t decoded = 0;
+    if (decoder.decode(decoded, ciphertext, prv) != RLC_OK || decoded != message)
+    {
+        throw runtime_error("DecPed bounded decryption self-check failed");
+    }
+
+    const string label = string("DecPed decryption ") + to_string(bits) + "-bit";
+    print_result(run_bench("commitment", label, cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+                     decoder.decode(decoded, ciphertext, prv);
+                 }),
+                 cfg);
+
+    bn_free(message_bn);
+    g1_free(ciphertext[0]);
+    g1_free(ciphertext[1]);
+}
+
 static void bench_pairing_primitives(const BenchConfig &cfg)
 {
     g1_t g1_base;
@@ -277,22 +503,22 @@ static void bench_pairing_primitives(const BenchConfig &cfg)
     print_result(run_bench("pairing", "e(G1,G2)", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
                      pp_map_oatep_k12(gt_out, g1_base, g2_base);
                  }),
-                 cfg.csv);
+                 cfg);
 
     print_result(run_bench("group", "G1 exponentiation", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
                      g1_mul(g1_out, g1_base, scalar);
                  }),
-                 cfg.csv);
+                 cfg);
 
     print_result(run_bench("group", "G2 exponentiation", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
                      g2_mul(g2_out, g2_base, scalar);
                  }),
-                 cfg.csv);
+                 cfg);
 
     print_result(run_bench("group", "GT exponentiation", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
                      fp12_exp(gt_pow_out, gt_out, scalar);
                  }),
-                 cfg.csv);
+                 cfg);
 }
 
 static void bench_commitments(const BenchConfig &cfg)
@@ -327,12 +553,11 @@ static void bench_commitments(const BenchConfig &cfg)
                      g1_add(ped_out, t1, t2);
                      g1_norm(ped_out, ped_out);
                  }),
-                 cfg.csv);
+                 cfg);
 
     bgn_t pub;
     bgn_t prv;
     g1_t decped_out[2];
-    dig_t decoded = 0;
     bgn_new(pub);
     bgn_new(prv);
     g1_new(decped_out[0]);
@@ -342,13 +567,11 @@ static void bench_commitments(const BenchConfig &cfg)
     print_result(run_bench("commitment", "DecPed commitment", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
                      cp_decped_enc3(decped_out, rho, x, pub);
                  }),
-                 cfg.csv);
+                 cfg);
 
-    cp_decped_enc3(decped_out, rho, x, pub);
-    print_result(run_bench("commitment", "DecPed decryption", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
-                     cp_decped_dec1(decoded, decped_out, prv);
-                 }),
-                 cfg.csv);
+    bench_decped_decryption_bits(cfg, pub, prv, rho, 8);
+    bench_decped_decryption_bits(cfg, pub, prv, rho, 16);
+    bench_decped_decryption_bits(cfg, pub, prv, rho, 32);
 }
 
 static void bench_prf(const BenchConfig &cfg)
@@ -360,14 +583,14 @@ static void bench_prf(const BenchConfig &cfg)
     print_result(run_bench("prf", "PrfZZ", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
                      PrfZZ(out, 7, modulus);
                  }),
-                 cfg.csv);
+                 cfg);
 
     bn_t out_bn;
     bn_new(out_bn);
     print_result(run_bench("prf", "PrfBn", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
                      PrfBn(out_bn, 7, modulus);
                  }),
-                 cfg.csv);
+                 cfg);
 }
 
 static void bench_group_hss(const BenchConfig &cfg)
@@ -388,12 +611,12 @@ static void bench_group_hss(const BenchConfig &cfg)
     print_result(run_bench("hss-group", "HSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
                      HssAddMemory(mz, pk, mx, my);
                  }),
-                 cfg.csv);
+                 cfg);
 
     print_result(run_bench("hss-group", "HSS Multiply", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
                      HssMul(mz, 0, pk, ct, mx, prf_key);
                  }),
-                 cfg.csv);
+                 cfg);
 }
 
 static void bench_group_vhss(const BenchConfig &cfg)
@@ -415,12 +638,12 @@ static void bench_group_vhss(const BenchConfig &cfg)
     print_result(run_bench("vhss-group", "VHSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
                      VhssElgamalAddMemory(mz, pk, mx, my);
                  }),
-                 cfg.csv);
+                 cfg);
 
     print_result(run_bench("vhss-group", "VHSS Multiply", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
                      VhssElgamalMul(mz, 0, pk, ct, mx, prf_key);
                  }),
-                 cfg.csv);
+                 cfg);
 }
 
 static void bench_rlwe_hss(const BenchConfig &cfg)
@@ -458,17 +681,17 @@ static void bench_rlwe_hss(const BenchConfig &cfg)
     print_result(run_bench("hss-rlwe", "HSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
                      HssAddMemory(mz, mx, my);
                  }),
-                 cfg.csv);
+                 cfg);
 
     print_result(run_bench("hss-rlwe", "HSS Enc/OKDM", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
                      HSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
                  }),
-                 cfg.csv);
+                 cfg);
 
     print_result(run_bench("hss-rlwe", "HSS Multiply/DDec", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
                      HSS_Mult(mz, pke_para, modulus, hss_ek0, ct);
                  }),
-                 cfg.csv);
+                 cfg);
 }
 
 int main(int argc, char **argv)
@@ -476,9 +699,16 @@ int main(int argc, char **argv)
     BenchConfig cfg = parse_config(argc, argv);
     init_relic();
 
-    if (cfg.csv)
+    if (cfg.csv && cfg.header)
     {
-        cout << "category,primitive,samples,iterations_per_sample,mode,mean_ms,median_ms,min_ms,rsd_percent\n";
+        if (cfg.compact)
+        {
+            cout << "category,operation,mean_ms\n";
+        }
+        else
+        {
+            cout << "category,primitive,samples,iterations_per_sample,mode,mean_ms,median_ms,min_ms,rsd_percent\n";
+        }
     }
 
     bench_pairing_primitives(cfg);

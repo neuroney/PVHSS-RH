@@ -35,8 +35,8 @@ target_link_libraries(microbench_vhss_rlwe
 )
 
 add_custom_target(microbenchmark_results
-    COMMAND python3
-        ${CMAKE_CURRENT_SOURCE_DIR}/run_microbenchmarks.py
+    COMMAND bash
+        ${CMAKE_CURRENT_SOURCE_DIR}/run_microbenchmarks.sh
         --build-dir ${CMAKE_BINARY_DIR}
         --out-dir ${CMAKE_SOURCE_DIR}/benchmarks/results/micro
     DEPENDS microbench microbench_vhss_rlwe

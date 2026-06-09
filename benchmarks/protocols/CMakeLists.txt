@@ -103,6 +103,10 @@ target_link_libraries(protocol_cz_bench
         common
 )
 
+add_executable(protocol_benchmark_runner
+    protocol_benchmark_runner.cpp
+)
+
 set(PVHSS_PROTOCOL_BENCH_TARGETS
     protocol_group_hss_bench
     protocol_group_vhss_bench
@@ -116,23 +120,21 @@ set(PVHSS_PROTOCOL_BENCH_TARGETS
 )
 
 add_custom_target(protocol_benchmarks_p5
-    COMMAND python3
-        ${CMAKE_CURRENT_SOURCE_DIR}/run_protocol_benchmarks.py
+    COMMAND $<TARGET_FILE:protocol_benchmark_runner>
         --build-dir ${CMAKE_BINARY_DIR}
         --out-dir ${CMAKE_SOURCE_DIR}/benchmarks/results/protocols
         --degrees 5
         --samples 1
-    DEPENDS ${PVHSS_PROTOCOL_BENCH_TARGETS}
+    DEPENDS ${PVHSS_PROTOCOL_BENCH_TARGETS} protocol_benchmark_runner
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
 add_custom_target(protocol_benchmarks
-    COMMAND python3
-        ${CMAKE_CURRENT_SOURCE_DIR}/run_protocol_benchmarks.py
+    COMMAND $<TARGET_FILE:protocol_benchmark_runner>
         --build-dir ${CMAKE_BINARY_DIR}
         --out-dir ${CMAKE_SOURCE_DIR}/benchmarks/results/protocols
         --degrees 5,10,15
         --samples 1
-    DEPENDS ${PVHSS_PROTOCOL_BENCH_TARGETS}
+    DEPENDS ${PVHSS_PROTOCOL_BENCH_TARGETS} protocol_benchmark_runner
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )

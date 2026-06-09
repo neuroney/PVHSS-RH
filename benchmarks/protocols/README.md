@@ -17,7 +17,7 @@ cmake --build build --target protocol_group_ot_bench protocol_group_dc_bench
 Run the unified runner on a small P5 subset:
 
 ```sh
-python3 benchmarks/protocols/run_protocol_benchmarks.py \
+bash benchmarks/protocols/run_protocol_benchmarks.sh \
   --build-dir build \
   --targets group-ot group-dc \
   --degrees 5 \
@@ -38,4 +38,4 @@ The runner writes:
 
 `protocol_timing.csv` is the presentation table.  The component CSV keeps the
 direct `SetupIncremental`, `GenIncremental`, and `EvalIncremental*` rows used by
-`benchmarks/overhead/generate_incremental_overhead.py`.
+`benchmarks/overhead/generate_incremental_overhead.sh`.

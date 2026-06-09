@@ -28,7 +28,7 @@ using namespace NTL;
 
 const int PVHSS_NUM_THREADS = 8;
 #define PVHSS_PI 3.141592654
-#define PVHSS_M_MAX 1024
+#define PVHSS_M_MAX (UINT64_C(1) << 32)
 
 // === Integer conversion utilities ===
 

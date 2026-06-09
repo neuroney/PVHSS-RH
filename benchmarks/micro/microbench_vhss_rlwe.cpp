@@ -21,6 +21,8 @@ struct BenchConfig
     int expensive_iters = 1;
     double min_sample_ms = 25.0;
     int max_adaptive_iters = 10000000;
+    bool compact = false;
+    bool header = true;
 };
 
 struct BenchResult
@@ -48,6 +50,18 @@ static int read_int_arg(int argc, char **argv, const string &name, int fallback)
     return fallback;
 }
 
+static bool has_arg(int argc, char **argv, const string &name)
+{
+    for (int i = 1; i < argc; ++i)
+    {
+        if (argv[i] == name)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 static BenchConfig parse_config(int argc, char **argv)
 {
     BenchConfig cfg;
@@ -63,6 +77,8 @@ static BenchConfig parse_config(int argc, char **argv)
             cfg.min_sample_ms = atof(argv[i + 1]);
         }
     }
+    cfg.compact = has_arg(argc, argv, "--compact");
+    cfg.header = !has_arg(argc, argv, "--no-header");
     return cfg;
 }
 
@@ -163,8 +179,16 @@ static BenchResult run_bench(const string &category, const string &primitive,
     return result;
 }
 
-static void print_result(const BenchResult &r)
+static void print_result(const BenchResult &r, const BenchConfig &cfg)
 {
+    if (cfg.compact)
+    {
+        cout << r.category << ","
+             << r.primitive << ","
+             << fixed << setprecision(6) << r.mean_ms << "\n";
+        return;
+    }
+
     cout << r.category << ","
          << r.primitive << ","
          << r.samples << ","
@@ -208,21 +232,34 @@ static void bench_rlwe_vhss(const BenchConfig &cfg)
 
     print_result(run_bench("vhss-rlwe", "VHSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
         HssAddMemory(mz, mx, my);
-    }));
+    }),
+                 cfg);
 
     print_result(run_bench("vhss-rlwe", "VHSS Enc/OKDM", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
         VHSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
-    }));
+    }),
+                 cfg);
 
     print_result(run_bench("vhss-rlwe", "VHSS Multiply/DDec", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
         VHSS_Mult(mz, pke_para, modulus, vhss_para.vhssEk_1, ct);
-    }));
+    }),
+                 cfg);
 }
 
 int main(int argc, char **argv)
 {
     BenchConfig cfg = parse_config(argc, argv);
-    cout << "category,primitive,samples,iterations_per_sample,mode,mean_ms,median_ms,min_ms,rsd_percent\n";
+    if (cfg.header)
+    {
+        if (cfg.compact)
+        {
+            cout << "category,operation,mean_ms\n";
+        }
+        else
+        {
+            cout << "category,primitive,samples,iterations_per_sample,mode,mean_ms,median_ms,min_ms,rsd_percent\n";
+        }
+    }
     bench_rlwe_vhss(cfg);
     return 0;
 }

@@ -196,7 +196,6 @@ void Time_Eval(int msg_num, int degree_f, int cyctimes) {
 
     TimingResult timing = MeasureTimeMs([&]() {
         prf_key = 0;
-        // HSS_Eval(y1, 1, pkePara, modulus, hssEk_1, data.C_X, data.PRF, prf_key, );
         HssEvaluatePolyD2(y1, 1, data.C_X, pkePara, modulus, hssEk_1, prf_key, degree_f, M1);
     }, cyctimes);
     PrintTimeMs("Eval algo time", timing);

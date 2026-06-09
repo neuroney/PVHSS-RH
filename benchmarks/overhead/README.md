@@ -1,6 +1,6 @@
 # Incremental Timing Table
 
-`generate_incremental_overhead.py` generates the final OT/DC incremental timing
+`incremental_timing_generator` generates the final OT/DC incremental timing
 table.  It reads the internal protocol component CSV at
 `benchmarks/results/protocols/logs/protocol_components.csv` and does not rerun
 the expensive Eval benchmarks.
@@ -8,7 +8,7 @@ the expensive Eval benchmarks.
 Run:
 
 ```sh
-python3 benchmarks/overhead/generate_incremental_overhead.py
+bash benchmarks/overhead/generate_incremental_overhead.sh --build-dir build
 ```
 
 It writes:

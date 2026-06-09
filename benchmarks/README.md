@@ -28,7 +28,7 @@ cmake --build build --target microbenchmark_results
 Fast smoke test:
 
 ```sh
-python3 benchmarks/micro/run_microbenchmarks.py \
+bash benchmarks/micro/run_microbenchmarks.sh \
   --build-dir build \
   --cheap-samples 1 \
   --cheap-iters 1 \
@@ -63,7 +63,7 @@ The overhead script reads protocol benchmark components and does not rerun the
 expensive Eval benchmarks:
 
 ```sh
-python3 benchmarks/overhead/generate_incremental_overhead.py
+bash benchmarks/overhead/generate_incremental_overhead.sh --build-dir build
 ```
 
 By default, it writes `benchmarks/results/overhead/incremental_timing.csv`.

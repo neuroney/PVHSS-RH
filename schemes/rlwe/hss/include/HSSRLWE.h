@@ -81,10 +81,5 @@ void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const Vec<vec_ZZ_pX> &Ix, cons
 // Data generation (for testing/benchmarking)
 void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk);
 
-// Recursive HSS evaluation (legacy)
-void HSS_Eval(ZZ_pX &tb_y, int b, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& ek, const Vec<vec_ZZ_pX>& C_X, const Vec<vec_ZZ_pX>& PRF, int &prfkey);
-void f(vec_ZZ_pX &tb, int b, int d, int num_data, int loop, int beg_ind, int *ind_var,
-       const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& ek, const Vec<vec_ZZ_pX>& C_X, const Vec<vec_ZZ_pX>& PRF, int &prfkey);
-
 // --- Cleanup ---
 void PKE_Cleanup(PKE_Para &pkePara);
