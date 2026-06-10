@@ -6,6 +6,18 @@ using namespace std;
 
 namespace pvhss { namespace rlwe { namespace vhss {
 
+static void EncodeBinaryPolynomial(ZZ_pX &out, ZZ value, int bits)
+{
+    ZZX encoded;
+    clear(out);
+    for (int i = 0; i < bits; ++i)
+    {
+        SetCoeff(encoded, i, value % 2);
+        value = (value - (value % 2)) / 2;
+    }
+    conv(out, encoded);
+}
+
 void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk)
 {
     data.X.SetLength(pkePara.num_data);
@@ -237,7 +249,9 @@ void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, c
 
 void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk)
 {
-    RandomZZpx(vhssPara.alpha, pkePara.N, 1);
+    ZZ alpha_scalar;
+    do { RandomBits(alpha_scalar, 255); } while (IsZero(alpha_scalar));
+    EncodeBinaryPolynomial(vhssPara.alpha, alpha_scalar, 255);
     vec_ZZ_pX alpha_pkeSk;
     alpha_pkeSk.SetLength(2);
     vhssPara.vhssEk_1.SetLength(2);
@@ -261,10 +275,9 @@ void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& 
 
 bool VHSS_Verify(const vec_ZZ_pX &y_0_res, const vec_ZZ_pX &y_1_res, const vec_ZZ_pX &Y_0_res, const vec_ZZ_pX &Y_1_res,const VHSS_Para &vk)
 {
-    ZZ  y, Y;
-    y = rep(y_0_res[0][0]) + rep(y_1_res[0][0]);
-    Y = rep(Y_0_res[0][0]) + rep(Y_1_res[0][0]);
-    return (y * rep(vk.alpha[0]) == Y);
+    ZZ_pX y = y_0_res[0] + y_1_res[0];
+    ZZ_pX Y = Y_0_res[0] + Y_1_res[0];
+    return (y * vk.alpha == Y);
 }
 
 }}} // namespace pvhss::rlwe::vhss

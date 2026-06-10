@@ -6,6 +6,18 @@ using namespace std;
 
 namespace pvhss { namespace rlwe { namespace dc {
 
+static void EncodeBinaryPolynomial(ZZ_pX &out, ZZ value, int bits)
+{
+    ZZX encoded;
+    clear(out);
+    for (int i = 0; i < bits; ++i)
+    {
+        SetCoeff(encoded, i, value % 2);
+        value = (value - (value % 2)) / 2;
+    }
+    conv(out, encoded);
+}
+
 void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk)
 {
     data.X.SetLength(pkePara.num_data);
@@ -209,6 +221,35 @@ ZZ HssOutputCoeff(const ZZ_p& coeff, const PKE_Para& pkePara, const ZZ& output_m
     return value;
 }
 
+ZZ HssOutputPolyAtTwo(const ZZ_pX& poly, const PKE_Para& pkePara, const ZZ& output_mod)
+{
+    ZZX coeffs;
+    conv(coeffs, poly);
+
+    ZZ result(0);
+    ZZ power_of_two(1);
+    const ZZ half_q = pkePara.q / 2;
+    for (long i = 0; i <= deg(coeffs); ++i)
+    {
+        ZZ value;
+        GetCoeff(value, coeffs, i);
+        if (value > half_q)
+        {
+            value -= pkePara.q;
+        }
+        value %= output_mod;
+        if (value < 0)
+        {
+            value += output_mod;
+        }
+        result += value * power_of_two;
+        result %= output_mod;
+        power_of_two *= 2;
+        power_of_two %= output_mod;
+    }
+    return result;
+}
+
 // Optimized chain reuse DP: O(k*d^2) VHSS_Mult calls instead of O(k*d^3)
 void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, const PKE_Para &pkePara, ZZ_pXModulus modulus, const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f, const vec_ZZ_pX &M1)
 {
@@ -264,10 +305,9 @@ void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, c
 
 void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk)
 {
-    // alpha is sampled at the output-modulus scale rather than at p scale.
     ZZ alpha_scalar;
     do { RandomBits(alpha_scalar, 255); } while (IsZero(alpha_scalar));
-    SetCoeff(vhssPara.alpha, 0, conv<ZZ_p>(alpha_scalar));
+    EncodeBinaryPolynomial(vhssPara.alpha, alpha_scalar, 255);
     vec_ZZ_pX alpha_pkeSk;
     alpha_pkeSk.SetLength(2);
     vhssPara.vhssEk_1.SetLength(2);

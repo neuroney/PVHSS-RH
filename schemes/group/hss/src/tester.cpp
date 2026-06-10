@@ -13,14 +13,14 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     std::cout << "degree_f: " << degree_f << "        msg_num: " << msg_num << "        cyctimes: " << cyctimes << std::endl;
     HssPublicKey pk;
     HssEvalKey ek0, ek1;
-    int msg_bits = 256;
+    int msg_bits = 32;
     int skLen = 1024;
 
     TimingResult timing;
     timing = MeasureTimeMs([&]() {
         HssGen(pk, ek0, ek1, skLen);
     }, cyctimes);
-    PrintTimeMs("HssGen algo time", timing);
+    PrintTimeMs("Setup algorithm time", timing);
 
     ZZ X_single;
     NTL::RandomBits(X_single, msg_bits);
@@ -28,7 +28,7 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     timing = MeasureTimeMs([&]() {
         HssInput(X_Input, pk, X_single);
     }, cyctimes);
-    PrintTimeMs("HssInput algo time", timing);
+    PrintTimeMs("Input algorithm time", timing);
 
     int prf_key = 0;
 

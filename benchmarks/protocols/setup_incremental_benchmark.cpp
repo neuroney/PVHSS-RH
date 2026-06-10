@@ -182,7 +182,7 @@ static void init_group_dc_params(pvhss::group::dc::PVHSSElg2_Para &param, int ms
 {
     param.skLen = 1024;
     param.vkLen = 256;
-    param.msg_bits = 1;
+    param.msg_bits = 32;
     param.degree_f = degree;
     param.msg_num = msg_num;
 }
@@ -508,7 +508,7 @@ static void add_rlwe_ot_incremental_rows(vector<Row> &rows, int samples, int msg
     rows.push_back(run_row("rlwe", "ot", "setup_incremental", "", samples, [&]() {
         rot::CK ck;
         rot::Ped_ComGen(ck);
-        ZZ A_ZZ = rot::HssOutputCoeff(vhssPara.alpha[0], pkePara, ck.g1_order_ZZ);
+        ZZ A_ZZ = rot::HssOutputPolyAtTwo(vhssPara.alpha, pkePara, ck.g1_order_ZZ);
         bn_t A;
         bn_new(A);
         ep2_new(ck.g2_A);
@@ -595,7 +595,7 @@ static void add_rlwe_dc_incremental_rows(vector<Row> &rows, int samples, int msg
     namespace rdc = pvhss::rlwe::dc;
 
     rdc::PKE_Para pkePara;
-    pkePara.msg_bit = 1;
+    pkePara.msg_bit = 32;
     pkePara.num_data = msg_num;
     pkePara.d = degree;
     vec_ZZ_pX pkePk, pkeSk;
@@ -610,7 +610,7 @@ static void add_rlwe_dc_incremental_rows(vector<Row> &rows, int samples, int msg
         rdc::CK ck;
         rdc::PVHSS_SK sk;
         rdc::DecPed_ComGen(ck, sk);
-        ZZ A_ZZ = rdc::HssOutputCoeff(vhssPara.alpha[0], pkePara, ck.g1_order_ZZ);
+        ZZ A_ZZ = rdc::HssOutputPolyAtTwo(vhssPara.alpha, pkePara, ck.g1_order_ZZ);
         bn_t A;
         bn_new(A);
         g2_t vk;

@@ -289,7 +289,7 @@ inline void PvhssDecode(NTL::ZZ &y, PvhssParams pvhss_params,
     NTL::conv(y, result);
 }
 
-inline void PvhssVerify(const NTL::ZZ_pX &y1, const NTL::ZZ_pX &y2,
+inline bool PvhssVerify(const NTL::ZZ_pX &y1, const NTL::ZZ_pX &y2,
                         ep_t g1T1, ep2_t g2T2, PvhssParams pvhss_params) {
     fp12_t gtT1, gtT2, right_side, left_side;
     fp12_new(gtT1);
@@ -326,11 +326,5 @@ inline void PvhssVerify(const NTL::ZZ_pX &y1, const NTL::ZZ_pX &y2,
     pp_map_oatep_k12(gtT2, pvhss_params.g1_gen, g2T2);
     fp12_mul(left_side, gtT1, gtT2);
 
-    std::cout << "The value of y= " << y_zz << "\n";
-    if (fp12_cmp(left_side, right_side) == RLC_EQ) {
-        std::cout << "Verification passed!\n";
-    } else {
-        std::printf("******************** ERROR ********************\n");
-        std::exit(1);
-    }
+    return fp12_cmp(left_side, right_side) == RLC_EQ;
 }

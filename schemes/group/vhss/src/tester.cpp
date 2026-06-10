@@ -28,7 +28,7 @@ void VHSSElg_TIME_TEST(int msg_num, int degree_f, int cyctimes)
         VhssElgamalGen(pk000, vk000, ek000, ek100, skLen, vkLen);
     }, cyctimes);
 
-    PrintTimeMs("Gen algorithm time", timing);
+    PrintTimeMs("Setup algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
     // Key Generation Phase
     VhssElgamalGen(pk, vk, ek0, ek1, skLen, vkLen);

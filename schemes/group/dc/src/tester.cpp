@@ -90,10 +90,6 @@ void PVHSSElg2_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     PrintTimeMs("Input algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
-    // Polynomial Generation Phase
-    vector<vector<int>> F_TEST;
-    GenerateRandomFunc(F_TEST, msg_num, degree_f);
-
     // Evaluation Phase for Server 0: VHSS base computation plus DC proof.
     VhssElgamalMv y0_base, y1_base;
     int prf_key0 = 0;
@@ -115,13 +111,13 @@ void PVHSSElg2_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     timing = MeasureTimeMs([&]() {
         prf_key1 = 0;
         VhssElgamalEvaluatePD2(y1_base, 1, Ix, param.pk, ek1, prf_key1, param.degree_f);
-    }, 1);
+    }, cyctimes);
     PrintTimeMs("Evaluation base 1 algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
     timing = MeasureTimeMs([&]() {
         PVHSSElg2_Prove(pi1, 1, y1_base[0], y1_base[2], param, ekp1);
-    }, 1);
+    }, cyctimes);
     PrintTimeMs("Evaluation incremental 1 DC algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 

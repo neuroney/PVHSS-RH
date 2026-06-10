@@ -19,7 +19,7 @@ void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     VHSS_Gen(param.vhssPara, param.pkePara, modulus, pkeSk);
     Ped_ComGen(param.ck);
     NTL::RandomBits(param.sk_alpha, 32);
-    ZZ A_ZZ = HssOutputCoeff(param.vhssPara.alpha[0], param.pkePara, param.ck.g1_order_ZZ);
+    ZZ A_ZZ = HssOutputPolyAtTwo(param.vhssPara.alpha, param.pkePara, param.ck.g1_order_ZZ);
 
     bn_t A;
     bn_new(A);
@@ -66,7 +66,7 @@ void Prove(PROOF &pi, int b, const PVHSS_MV &y_b, const PVHSS_MV &Y_b, const PVH
 {
     (void)b;
     const ZZ yb_zz = HssOutputCoeff(y_b[0][0], param.pkePara, param.ck.g1_order_ZZ);
-    const ZZ Yb_zz = HssOutputCoeff(Y_b[0][0], param.pkePara, param.ck.g1_order_ZZ);
+    const ZZ Yb_zz = HssOutputPolyAtTwo(Y_b[0], param.pkePara, param.ck.g1_order_ZZ);
 
     pi.y = yb_zz;
     Ped_Com(pi.D, ekpb, param.ck, Yb_zz);
@@ -90,22 +90,19 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, 
         HssEvaluatePolyD2(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_4, prf_key, param.pkePara.d, M2);
 
     }
-    TimingResult timing = MeasureTimeMs([&]() {
-        if (b == 0)
-        {
-            HssConvertInput(sk_b, param.pkePara, modulus, param.vhssPara.vhssEk_1, param.pk_f);
-            HssConvertInput(SK_b, param.pkePara, modulus, param.vhssPara.vhssEk_3, param.pk_f);
-        }
-        else
-        {
-            HssConvertInput(sk_b, param.pkePara, modulus, param.vhssPara.vhssEk_2, param.pk_f);
-            HssConvertInput(SK_b, param.pkePara, modulus, param.vhssPara.vhssEk_4, param.pk_f);
-        }
-        HssAddMemory(y_b_res, y_b_res, sk_b);
-        HssAddMemory(Y_b_res, Y_b_res, SK_b);
-        Prove(proof, b, y_b_res, Y_b_res, param, ekpb);
-    }, 1);
-    PrintTimeMs("Prove algorithm time", timing);
+    if (b == 0)
+    {
+        HssConvertInput(sk_b, param.pkePara, modulus, param.vhssPara.vhssEk_1, param.pk_f);
+        HssConvertInput(SK_b, param.pkePara, modulus, param.vhssPara.vhssEk_3, param.pk_f);
+    }
+    else
+    {
+        HssConvertInput(sk_b, param.pkePara, modulus, param.vhssPara.vhssEk_2, param.pk_f);
+        HssConvertInput(SK_b, param.pkePara, modulus, param.vhssPara.vhssEk_4, param.pk_f);
+    }
+    HssAddMemory(y_b_res, y_b_res, sk_b);
+    HssAddMemory(Y_b_res, Y_b_res, SK_b);
+    Prove(proof, b, y_b_res, Y_b_res, param, ekpb);
 }
 
 bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)

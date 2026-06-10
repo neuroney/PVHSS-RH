@@ -144,7 +144,7 @@ bool PVHSSElg2_ACC_TEST(int msg_num, int degree_f)
     bn_t ekp0[2], ekp1[2];
     param.skLen = 1024;
     param.vkLen = 256;
-    param.msg_bits = 1;
+    param.msg_bits = 32;
     param.degree_f = degree_f;
     param.msg_num = msg_num;
     TimingResult timing = MeasureTimeMs([&]() {

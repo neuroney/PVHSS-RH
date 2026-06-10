@@ -28,6 +28,22 @@ target_link_libraries(p5_dc_group_acc
         common
 )
 
+# ---- RLWE VHSS P5 ----
+add_executable(p5_vhss_rlwe_acc
+    p5_vhss_rlwe_acc.cpp
+    ${CMAKE_SOURCE_DIR}/schemes/rlwe/vhss/src/VHSSRLWE.cpp
+    ${CMAKE_SOURCE_DIR}/schemes/rlwe/vhss/src/tester.cpp
+)
+
+target_include_directories(p5_vhss_rlwe_acc PRIVATE
+    ${CMAKE_SOURCE_DIR}/schemes/rlwe/vhss/include
+)
+
+target_link_libraries(p5_vhss_rlwe_acc
+    PRIVATE
+        common
+)
+
 # ---- RLWE OT P5 ----
 # Note: VHSSRLWE.cpp has its own HSS functions; do NOT link PiHSSRLWE to avoid conflicts.
 add_executable(p5_ot_rlwe_acc
@@ -66,11 +82,13 @@ target_link_libraries(p5_dc_rlwe_acc
 # ---- Tests ----
 add_test(NAME p5_ot_group_acc COMMAND p5_ot_group_acc)
 add_test(NAME p5_dc_group_acc COMMAND p5_dc_group_acc)
+add_test(NAME p5_vhss_rlwe_acc COMMAND p5_vhss_rlwe_acc)
 add_test(NAME p5_ot_rlwe_acc COMMAND p5_ot_rlwe_acc)
 add_test(NAME p5_dc_rlwe_acc COMMAND p5_dc_rlwe_acc)
 
 set_tests_properties(p5_ot_group_acc PROPERTIES LABELS "correctness;fast;p5")
 set_tests_properties(p5_dc_group_acc PROPERTIES LABELS "correctness;fast;p5")
+set_tests_properties(p5_vhss_rlwe_acc PROPERTIES LABELS "correctness;fast;p5;rlwe")
 set_tests_properties(p5_ot_rlwe_acc PROPERTIES LABELS "correctness;fast;p5;rlwe")
 set_tests_properties(p5_dc_rlwe_acc PROPERTIES LABELS "correctness;fast;p5;rlwe")
 
@@ -79,7 +97,7 @@ add_custom_target(check_correctness_fast
         --test-dir ${CMAKE_BINARY_DIR}
         -L fast
         --output-on-failure
-    DEPENDS p5_ot_group_acc p5_dc_group_acc p5_ot_rlwe_acc p5_dc_rlwe_acc
+    DEPENDS p5_ot_group_acc p5_dc_group_acc p5_vhss_rlwe_acc p5_ot_rlwe_acc p5_dc_rlwe_acc
 )
 
 add_custom_target(check_correctness
@@ -87,5 +105,5 @@ add_custom_target(check_correctness
         --test-dir ${CMAKE_BINARY_DIR}
         -L correctness
         --output-on-failure
-    DEPENDS p5_ot_group_acc p5_dc_group_acc p5_ot_rlwe_acc p5_dc_rlwe_acc
+    DEPENDS p5_ot_group_acc p5_dc_group_acc p5_vhss_rlwe_acc p5_ot_rlwe_acc p5_dc_rlwe_acc
 )

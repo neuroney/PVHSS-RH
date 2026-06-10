@@ -67,11 +67,16 @@ inline void EvalPoly(int deg, int num_data, int cyctimes) {
 
     // Verification
     NTL::ZZ saved_mod = NTL::ZZ_p::modulus();
+    bool acc = false;
     timing = MeasureTimeMsAdaptive([&]() {
-        PvhssVerify(t1y, t2y, g1T1, g2T2, pvhss_params);
+        acc = PvhssVerify(t1y, t2y, g1T1, g2T2, pvhss_params);
         NTL::ZZ_p::init(saved_mod);
     }, cyctimes);
     PrintTimeMs("Verification algorithm time", timing);
+    if (!acc) {
+        std::printf("******************** ERROR ********************\n");
+        std::exit(1);
+    }
     std::cout << "-------------------------------------------------------" << std::endl;
 
     // Decoding

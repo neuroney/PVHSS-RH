@@ -8,7 +8,7 @@ namespace pvhss { namespace rlwe { namespace dc {
 void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
            int msg_num, int degree_f)
 {
-    param.pkePara.msg_bit = 1;
+    param.pkePara.msg_bit = 32;
     param.pkePara.num_data = msg_num;
     param.pkePara.d = degree_f;
     vec_ZZ_pX pkeSk;
@@ -21,7 +21,7 @@ void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     DecPed_ComGen(param.ck, param.f_sk);
 
     NTL::RandomBits(param.sk_alpha, 32);
-    ZZ A_ZZ = HssOutputCoeff(param.vhssPara.alpha[0], param.pkePara, param.ck.g1_order_ZZ);
+    ZZ A_ZZ = HssOutputPolyAtTwo(param.vhssPara.alpha, param.pkePara, param.ck.g1_order_ZZ);
 
     bn_t A;
     bn_new(A);
@@ -92,7 +92,7 @@ void Prove(PROOF &pi, int b, const PVHSS_MV &y_b, const PVHSS_MV &Y_b, const PVH
 {
     (void)b;
     const ZZ yb_zz = HssOutputCoeff(y_b[0][0], param.pkePara, param.ck.g1_order_ZZ);
-    const ZZ Yb_zz = HssOutputCoeff(Y_b[0][0], param.pkePara, param.ck.g1_order_ZZ);
+    const ZZ Yb_zz = HssOutputPolyAtTwo(Y_b[0], param.pkePara, param.ck.g1_order_ZZ);
 
     DecPed_Com(pi.C, ekpb[0], param.ck, yb_zz);
     DecPed_Com(pi.D, ekpb[1], param.ck, Yb_zz);
@@ -113,10 +113,7 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, 
         HssEvaluatePolyD2(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_2, prf_key, param.pkePara.d, M1);
         HssEvaluatePolyD2(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_4, prf_key, param.pkePara.d, M2);
     }
-    TimingResult timing = MeasureTimeMs([&]() {
-        Prove(proof, b, y_b_res, Y_b_res, param, ekpb);
-    }, 1);
-    PrintTimeMs("Prove algorithm time", timing);
+    Prove(proof, b, y_b_res, Y_b_res, param, ekpb);
 }
 
 bool Verify(const PROOF &pi0, const PROOF &pi1, const PVHSSPara &param)

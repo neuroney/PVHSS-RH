@@ -51,6 +51,7 @@ inline void HssAddMemoryInPlace(vec_ZZ_pX& acc, const vec_ZZ_pX& x) {
     acc[1] += x[1];
 }
 ZZ HssOutputCoeff(const ZZ_p& coeff, const PKE_Para& pkePara, const ZZ& output_mod);
+ZZ HssOutputPolyAtTwo(const ZZ_pX& poly, const PKE_Para& pkePara, const ZZ& output_mod);
 void HssConvertInput(vec_ZZ_pX &tb_y, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& ek, const vec_ZZ_pX& C_X);
 
 

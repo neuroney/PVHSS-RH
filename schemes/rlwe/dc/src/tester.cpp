@@ -20,36 +20,57 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
 
     TimingResult timing;
 
-    // Setup Phase
+    // Setup Phase: VHSS base plus DC-specific decryptable commitment state.
     timing = MeasureTimeMs([&]() {
         PVHSSPara param00;
         vec_ZZ_pX pkePk00;
-        PVHSS_SK sk00;
-        Setup(param00, pkePk00, msg_num, degree_f);
+        vec_ZZ_pX pkeSk00;
+        pkePk00.SetLength(2);
+        pkeSk00.SetLength(2);
+        param00.pkePara.msg_bit = 32;
+        param00.pkePara.num_data = msg_num;
+        param00.pkePara.d = degree_f;
+        PKE_Gen(param00.pkePara, pkePk00, pkeSk00);
         ZZ_pXModulus modulus00(param00.pkePara.xN);
+        VHSS_Gen(param00.vhssPara, param00.pkePara, modulus00, pkeSk00);
     }, cyctimes);
-
-    PrintTimeMs("Setup algorithm time", timing);
+    PrintTimeMs("Setup base VHSS algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
-    // Key Generation Phase
+
+    PVHSSPara setup_param;
+    vec_ZZ_pX setup_pkePk, setup_pkeSk;
+    setup_pkePk.SetLength(2);
+    setup_pkeSk.SetLength(2);
+    setup_param.pkePara.msg_bit = 32;
+    setup_param.pkePara.num_data = msg_num;
+    setup_param.pkePara.d = degree_f;
+    PKE_Gen(setup_param.pkePara, setup_pkePk, setup_pkeSk);
+    ZZ_pXModulus setup_modulus(setup_param.pkePara.xN);
+    VHSS_Gen(setup_param.vhssPara, setup_param.pkePara, setup_modulus, setup_pkeSk);
     timing = MeasureTimeMs([&]() {
-        PVHSSPara param00;
-        vec_ZZ_pX pkePk00;
-        PVHSS_SK sk00;
+        DecPed_ComGen(setup_param.ck, setup_param.f_sk);
+        NTL::RandomBits(setup_param.sk_alpha, 32);
+        ZZ A_ZZ = HssOutputPolyAtTwo(setup_param.vhssPara.alpha, setup_param.pkePara, setup_param.ck.g1_order_ZZ);
+        bn_t A;
+        bn_new(A);
+        ep2_new(setup_param.vk);
+        ZZtoBn(A, A_ZZ);
+        ep2_mul_gen(setup_param.vk, A);
+    }, cyctimes);
+    PrintTimeMs("Setup incremental DC algorithm time", timing);
+    std::cout << "-------------------------------------------------------" << std::endl;
+
+    // Key Generation Phase: DC-specific result-hiding material.
+    PVHSSPara keygen_param;
+    vec_ZZ_pX keygen_pkePk;
+    Setup(keygen_param, keygen_pkePk, msg_num, degree_f);
+    ZZ_pXModulus keygen_modulus(keygen_param.pkePara.xN);
+    timing = MeasureTimeMs([&]() {
         bn_t ekp000[2], ekp100[2];
-
-        Setup(param00, pkePk00, msg_num, degree_f);
-        ZZ_pXModulus modulus00(param00.pkePara.xN);
-        KeyGen(param00, sk00, modulus00, pkePk00, ekp000, ekp100);
+        KeyGen(keygen_param, keygen_param.f_sk, keygen_modulus, keygen_pkePk, ekp000, ekp100);
     }, cyctimes);
-
-    PrintTimeMs("KeyGen algorithm time", timing);
+    PrintTimeMs("Gen incremental DC algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
-
-
-
-
-
     Setup(param, pkePk, msg_num, degree_f);
     ZZ_pXModulus modulus(param.pkePara.xN);
     KeyGen(param, param.f_sk, modulus, pkePk, ekp0, ekp1);
@@ -70,10 +91,6 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     PrintTimeMs("Input algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
-    // Polynomial Generation Phase
-    vector<vector<int>> F_TEST;
-    GenerateRandomFunc(F_TEST, msg_num, degree_f);
-
     PVHSS_CT C1;
     PVHSS_MV M1, M2, M3, M4;
     VHSS_Enc(C1, param.pkePara, modulus, pkePk, ZZ(1));
@@ -82,18 +99,37 @@ void PVHSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     HssConvertInput(M3, param.pkePara, modulus, param.vhssPara.vhssEk_3, C1);
     HssConvertInput(M4, param.pkePara, modulus, param.vhssPara.vhssEk_4, C1);
 
-    // Evaluation Phase for Server 0
+    // Evaluation Phase for Server 0: VHSS base computation plus DC proof.
+    PVHSS_MV y0_base, Y0_base, y1_base, Y1_base;
+    int prf_key0 = 0;
+    int prf_key1 = 0;
     timing = MeasureTimeMs([&]() {
-        Compute(pi0, 0, param, param.vhssPara.vhssEk_1, param.vhssPara.vhssEk_3, Ix, modulus, M1, M3, F_TEST, ekp0);
+        prf_key0 = 0;
+        HssEvaluatePolyD2(y0_base, 0, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_1, prf_key0, param.pkePara.d, M1);
+        HssEvaluatePolyD2(Y0_base, 0, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_3, prf_key0, param.pkePara.d, M3);
     }, cyctimes);
-    PrintTimeMs("Evaluation 0 algorithm time", timing);
+    PrintTimeMs("Evaluation base 0 algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
-    // Evaluation Phase for Server 1
     timing = MeasureTimeMs([&]() {
-        Compute(pi1, 1, param, param.vhssPara.vhssEk_2, param.vhssPara.vhssEk_4, Ix, modulus, M2, M4, F_TEST, ekp1);
-    }, 1);
-    PrintTimeMs("Evaluation 1 algorithm time", timing);
+        Prove(pi0, 0, y0_base, Y0_base, param, ekp0);
+    }, cyctimes);
+    PrintTimeMs("Evaluation incremental 0 DC algorithm time", timing);
+    std::cout << "-------------------------------------------------------" << std::endl;
+
+    // Evaluation Phase for Server 1.
+    timing = MeasureTimeMs([&]() {
+        prf_key1 = 0;
+        HssEvaluatePolyD2(y1_base, 1, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_2, prf_key1, param.pkePara.d, M2);
+        HssEvaluatePolyD2(Y1_base, 1, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_4, prf_key1, param.pkePara.d, M4);
+    }, cyctimes);
+    PrintTimeMs("Evaluation base 1 algorithm time", timing);
+    std::cout << "-------------------------------------------------------" << std::endl;
+
+    timing = MeasureTimeMs([&]() {
+        Prove(pi1, 1, y1_base, Y1_base, param, ekp1);
+    }, cyctimes);
+    PrintTimeMs("Evaluation incremental 1 DC algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
     // Verification Phase

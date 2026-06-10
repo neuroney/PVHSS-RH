@@ -90,10 +90,6 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     PrintTimeMs("Input algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
-    // Polynomial Generation Phase
-    vector<vector<int>> F_TEST;
-    GenerateRandomFunc(F_TEST, msg_num, degree_f);
-
     // Evaluation Phase for Server 0: VHSS base computation plus OT result-hiding proof.
     VhssElgamalMv y0_base, y1_base;
     int prf_key0 = 0;
@@ -121,7 +117,7 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     timing = MeasureTimeMs([&]() {
         prf_key1 = 0;
         VhssElgamalEvaluatePD2(y1_base, 1, Ix, param.pk, ek1, prf_key1, param.degree_f);
-    }, 1);
+    }, cyctimes);
     PrintTimeMs("Evaluation base 1 algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
@@ -133,7 +129,7 @@ void PVHSSElg1_TIME_TEST(int msg_num, int degree_f, int cyctimes)
         y_tmp[0] = y_tmp[0] + sk_b[0];
         y_tmp[2] = y_tmp[2] + sk_b[2];
         Ped_Prove(pi1, 1, y_tmp[0], y_tmp[2], param.ck, proof_prf_key, ekp1);
-    }, 1);
+    }, cyctimes);
     PrintTimeMs("Evaluation incremental 1 OT algorithm time", timing);
     std::cout << "-------------------------------------------------------" << std::endl;
 
