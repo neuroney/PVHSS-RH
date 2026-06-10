@@ -15,10 +15,8 @@ BUILD_TYPE="${BUILD_TYPE:-Release}"
 JOBS="${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 
-MICRO_CHEAP_SAMPLES="${MICRO_CHEAP_SAMPLES:-10}"
-MICRO_CHEAP_ITERS="${MICRO_CHEAP_ITERS:-1}"
-MICRO_EXPENSIVE_SAMPLES="${MICRO_EXPENSIVE_SAMPLES:-1}"
-MICRO_EXPENSIVE_ITERS="${MICRO_EXPENSIVE_ITERS:-1}"
+MICRO_SAMPLES="${MICRO_SAMPLES:-1}"
+MICRO_ITERS="${MICRO_ITERS:-1}"
 
 PROTO_DEGREES="${PROTO_DEGREES:-5,10,15}"
 PROTO_CYCTIMES="${PROTO_CYCTIMES:-3}"
@@ -32,7 +30,7 @@ echo "===== PVHSS-RH runall ======"
 echo "Config:   $CONF"
 echo "Mode:     $RUN_MODE"
 echo "Build:    $BUILD_DIR ($BUILD_TYPE), jobs=$JOBS"
-echo "Micro:    cheap=${MICRO_CHEAP_SAMPLES}x${MICRO_CHEAP_ITERS}  expensive=${MICRO_EXPENSIVE_SAMPLES}x${MICRO_EXPENSIVE_ITERS}"
+echo "Micro:    samples=${MICRO_SAMPLES}  iters=${MICRO_ITERS}"
 echo "Protocol: degrees=$PROTO_DEGREES  cyctimes=$PROTO_CYCTIMES  msg_num=$PROTO_MSG_NUM"
 
 # --- Build ----------------------------------------------------
@@ -46,10 +44,8 @@ run_micro() {
     echo "===== Micro-benchmarks ====="
     mkdir -p "$RESULT_DIR/micro"
     "$BUILD_DIR/benchmarks/micro/microbench" --compact \
-        --cheap-samples   "$MICRO_CHEAP_SAMPLES" \
-        --cheap-iters     "$MICRO_CHEAP_ITERS" \
-        --expensive-samples "$MICRO_EXPENSIVE_SAMPLES" \
-        --expensive-iters "$MICRO_EXPENSIVE_ITERS" \
+        --samples "$MICRO_SAMPLES" \
+        --iters   "$MICRO_ITERS" \
         > "$RESULT_DIR/micro/micro_timing.csv"
     echo "Wrote $RESULT_DIR/micro/micro_timing.csv"
 }

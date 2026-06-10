@@ -31,10 +31,8 @@ using HSSGroup_MV = group_hss::HssMemoryValue;
 
 struct BenchConfig
 {
-    int cheap_samples = 10;
-    int cheap_iters = 1;
-    int expensive_samples = 1;
-    int expensive_iters = 1;
+    int samples = 1;
+    int iters = 1;
     double min_sample_ms = 25.0;
     int max_adaptive_iters = 10000000;
     bool csv = true;
@@ -59,14 +57,15 @@ using Clock = std::chrono::steady_clock;
 
 static int read_int_arg(int argc, char **argv, const string &name, int fallback)
 {
+    int value = fallback;
     for (int i = 1; i + 1 < argc; ++i)
     {
         if (argv[i] == name)
         {
-            return atoi(argv[i + 1]);
+            value = atoi(argv[i + 1]);
         }
     }
-    return fallback;
+    return value;
 }
 
 static bool has_arg(int argc, char **argv, const string &name)
@@ -84,10 +83,8 @@ static bool has_arg(int argc, char **argv, const string &name)
 static BenchConfig parse_config(int argc, char **argv)
 {
     BenchConfig cfg;
-    cfg.cheap_samples = read_int_arg(argc, argv, "--cheap-samples", cfg.cheap_samples);
-    cfg.cheap_iters = read_int_arg(argc, argv, "--cheap-iters", cfg.cheap_iters);
-    cfg.expensive_samples = read_int_arg(argc, argv, "--expensive-samples", cfg.expensive_samples);
-    cfg.expensive_iters = read_int_arg(argc, argv, "--expensive-iters", cfg.expensive_iters);
+    cfg.samples = read_int_arg(argc, argv, "--samples", cfg.samples);
+    cfg.iters = read_int_arg(argc, argv, "--iters", cfg.iters);
     cfg.max_adaptive_iters = read_int_arg(argc, argv, "--max-adaptive-iters", cfg.max_adaptive_iters);
     for (int i = 1; i + 1 < argc; ++i)
     {
@@ -466,7 +463,7 @@ static void bench_decped_decryption_bits(const BenchConfig &cfg, const bgn_t pub
     }
 
     const string label = string("DecPed decryption ") + to_string(bits) + "-bit";
-    print_result(run_bench("commitment", label, cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+    print_result(run_bench("commitment", label, cfg.samples, cfg.iters, false, cfg, [&]() {
                      decoder.decode(decoded, ciphertext, prv);
                  }),
                  cfg);
@@ -500,22 +497,22 @@ static void bench_pairing_primitives(const BenchConfig &cfg)
     pc_get_ord(scalar);
     bn_rand_mod(scalar, scalar);
 
-    print_result(run_bench("pairing", "e(G1,G2)", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+    print_result(run_bench("pairing", "e(G1,G2)", cfg.samples, cfg.iters, false, cfg, [&]() {
                      pp_map_oatep_k12(gt_out, g1_base, g2_base);
                  }),
                  cfg);
 
-    print_result(run_bench("group", "G1 exponentiation", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+    print_result(run_bench("group", "G1 exponentiation", cfg.samples, cfg.iters, true, cfg, [&]() {
                      g1_mul(g1_out, g1_base, scalar);
                  }),
                  cfg);
 
-    print_result(run_bench("group", "G2 exponentiation", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+    print_result(run_bench("group", "G2 exponentiation", cfg.samples, cfg.iters, false, cfg, [&]() {
                      g2_mul(g2_out, g2_base, scalar);
                  }),
                  cfg);
 
-    print_result(run_bench("group", "GT exponentiation", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+    print_result(run_bench("group", "GT exponentiation", cfg.samples, cfg.iters, false, cfg, [&]() {
                      fp12_exp(gt_pow_out, gt_out, scalar);
                  }),
                  cfg);
@@ -547,7 +544,7 @@ static void bench_commitments(const BenchConfig &cfg)
     g1_get_gen(g);
     g1_mul_gen(h, rho);
 
-    print_result(run_bench("commitment", "Pedersen commitment", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+    print_result(run_bench("commitment", "Pedersen commitment", cfg.samples, cfg.iters, true, cfg, [&]() {
                      g1_mul(t1, h, rho);
                      g1_mul(t2, g, x);
                      g1_add(ped_out, t1, t2);
@@ -564,7 +561,7 @@ static void bench_commitments(const BenchConfig &cfg)
     g1_new(decped_out[1]);
     cp_decped_gen(pub, prv);
 
-    print_result(run_bench("commitment", "DecPed commitment", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+    print_result(run_bench("commitment", "DecPed commitment", cfg.samples, cfg.iters, true, cfg, [&]() {
                      cp_decped_enc3(decped_out, rho, x, pub);
                  }),
                  cfg);
@@ -580,14 +577,14 @@ static void bench_prf(const BenchConfig &cfg)
     power(modulus, ZZ(2), 256);
     ZZ out;
 
-    print_result(run_bench("prf", "PrfZZ", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+    print_result(run_bench("prf", "PrfZZ", cfg.samples, cfg.iters, true, cfg, [&]() {
                      PrfZZ(out, 7, modulus);
                  }),
                  cfg);
 
     bn_t out_bn;
     bn_new(out_bn);
-    print_result(run_bench("prf", "PrfBn", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+    print_result(run_bench("prf", "PrfBn", cfg.samples, cfg.iters, true, cfg, [&]() {
                      PrfBn(out_bn, 7, modulus);
                  }),
                  cfg);
@@ -608,12 +605,12 @@ static void bench_group_hss(const BenchConfig &cfg)
     group_hss::HssConvertInput(mx, 0, pk, ek0, ct, prf_key);
     group_hss::HssConvertInput(my, 0, pk, ek0, ct, prf_key);
 
-    print_result(run_bench("hss-group", "HSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+    print_result(run_bench("hss-group", "HSS AddMemory", cfg.samples, cfg.iters, true, cfg, [&]() {
                      group_hss::HssAddMemory(mz, pk, mx, my);
                  }),
                  cfg);
 
-    print_result(run_bench("hss-group", "HSS Multiply", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+    print_result(run_bench("hss-group", "HSS Multiply", cfg.samples, cfg.iters, false, cfg, [&]() {
                      group_hss::HssMul(mz, 0, pk, ct, mx, prf_key);
                  }),
                  cfg);
@@ -635,12 +632,12 @@ static void bench_group_vhss(const BenchConfig &cfg)
     VhssElgamalConvertInput(mx, 0, pk, ek0, ct, prf_key);
     VhssElgamalConvertInput(my, 0, pk, ek0, ct, prf_key);
 
-    print_result(run_bench("vhss-group", "VHSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+    print_result(run_bench("vhss-group", "VHSS AddMemory", cfg.samples, cfg.iters, true, cfg, [&]() {
                      VhssElgamalAddMemory(mz, pk, mx, my);
                  }),
                  cfg);
 
-    print_result(run_bench("vhss-group", "VHSS Multiply", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+    print_result(run_bench("vhss-group", "VHSS Multiply", cfg.samples, cfg.iters, false, cfg, [&]() {
                      VhssElgamalMul(mz, 0, pk, ct, mx, prf_key);
                  }),
                  cfg);
@@ -678,17 +675,17 @@ static void bench_rlwe_hss(const BenchConfig &cfg)
     rlwe_hss::HSS_Mult(mx, pke_para, modulus, hss_ek0, ct);
     rlwe_hss::HSS_Mult(my, pke_para, modulus, hss_ek0, ct);
 
-    print_result(run_bench("hss-rlwe", "HSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+    print_result(run_bench("hss-rlwe", "HSS AddMemory", cfg.samples, cfg.iters, true, cfg, [&]() {
                      rlwe_hss::HssAddMemory(mz, mx, my);
                  }),
                  cfg);
 
-    print_result(run_bench("hss-rlwe", "HSS Enc/OKDM", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+    print_result(run_bench("hss-rlwe", "HSS Enc/OKDM", cfg.samples, cfg.iters, false, cfg, [&]() {
                      rlwe_hss::HSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
                  }),
                  cfg);
 
-    print_result(run_bench("hss-rlwe", "HSS Multiply/DDec", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+    print_result(run_bench("hss-rlwe", "HSS Multiply/DDec", cfg.samples, cfg.iters, false, cfg, [&]() {
                      rlwe_hss::HSS_Mult(mz, pke_para, modulus, hss_ek0, ct);
                  }),
                  cfg);
@@ -724,17 +721,17 @@ static void bench_rlwe_vhss(const BenchConfig &cfg)
     rlwe_vhss::HssConvertInput(mx, pke_para, modulus, vhss_para.vhssEk_1, ct);
     rlwe_vhss::HssConvertInput(my, pke_para, modulus, vhss_para.vhssEk_1, ct);
 
-    print_result(run_bench("vhss-rlwe", "VHSS AddMemory", cfg.cheap_samples, cfg.cheap_iters, true, cfg, [&]() {
+    print_result(run_bench("vhss-rlwe", "VHSS AddMemory", cfg.samples, cfg.iters, true, cfg, [&]() {
                      rlwe_vhss::HssAddMemory(mz, mx, my);
                  }),
                  cfg);
 
-    print_result(run_bench("vhss-rlwe", "VHSS Enc/OKDM", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+    print_result(run_bench("vhss-rlwe", "VHSS Enc/OKDM", cfg.samples, cfg.iters, false, cfg, [&]() {
                      rlwe_vhss::VHSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
                  }),
                  cfg);
 
-    print_result(run_bench("vhss-rlwe", "VHSS Multiply/DDec", cfg.expensive_samples, cfg.expensive_iters, false, cfg, [&]() {
+    print_result(run_bench("vhss-rlwe", "VHSS Multiply/DDec", cfg.samples, cfg.iters, false, cfg, [&]() {
                      rlwe_vhss::VHSS_Mult(mz, pke_para, modulus, vhss_para.vhssEk_1, ct);
                  }),
                  cfg);

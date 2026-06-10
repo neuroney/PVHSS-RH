@@ -28,10 +28,8 @@ Fast smoke test:
 ```sh
 bash benchmarks/micro/run_microbenchmarks.sh \
   --build-dir build \
-  --cheap-samples 1 \
-  --cheap-iters 1 \
-  --expensive-samples 1 \
-  --expensive-iters 1
+  --samples 1 \
+  --iters 1
 ```
 
 See `benchmarks/micro/README.md` for the measured primitives and output schema.

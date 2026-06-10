@@ -3,6 +3,8 @@ set -euo pipefail
 
 BUILD_DIR="build"
 OUT_DIR="benchmarks/results/micro"
+MICRO_SAMPLES="${MICRO_SAMPLES:-1}"
+MICRO_ITERS="${MICRO_ITERS:-1}"
 ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -31,7 +33,10 @@ if [[ ! -x "$MICROBENCH" ]]; then
 fi
 
 mkdir -p "$OUT_DIR"
-"$MICROBENCH" --compact ${ARGS[@]+"${ARGS[@]}"} > "$OUT_FILE"
+"$MICROBENCH" --compact \
+    --samples "$MICRO_SAMPLES" \
+    --iters "$MICRO_ITERS" \
+    ${ARGS[@]+"${ARGS[@]}"} > "$OUT_FILE"
 
 rows=$(($(wc -l < "$OUT_FILE") - 1))
 echo "Wrote $rows micro timing rows to $OUT_FILE"

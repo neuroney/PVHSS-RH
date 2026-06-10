@@ -14,12 +14,12 @@ operation:
 category,operation,mean_ms
 ```
 
-The C++ benchmark executables use `std::chrono::steady_clock`.  Cheap operations are timed with
-adaptive batching until a sample reaches `--min-sample-ms`; expensive
-operations use fixed iteration counts so long RLWE and HSS paths can run once.
-By default, cheap operations use 10 samples and expensive operations use 1
-sample.  The reported `mean_ms` is the average per operation after dividing
-each sample by the number of iterations used for that sample.
+The C++ benchmark executable uses `std::chrono::steady_clock`.  Some fast
+operations use adaptive batching until a sample reaches `--min-sample-ms`; long
+operations use fixed iteration counts.  `--samples` controls how many samples
+are taken for every operation, and `--iters` controls the starting iteration
+count per sample.  The reported `mean_ms` is the average per operation after
+dividing each sample by the number of iterations used for that sample.
 The runner executes the single `microbench` binary.  Protocol code is namespaced
 so RLWE HSS and VHSS can be linked into the same executable without symbol
 collisions.
@@ -34,6 +34,5 @@ Measured primitives include:
 - Pedersen commitment, DecPed commitment, DecPed decryption at 8/16/32 bits
 - PrfZZ and PrfBn
 
-Useful knobs include `--cheap-samples`, `--cheap-iters`,
-`--min-sample-ms`, `--max-adaptive-iters`, `--expensive-samples`, and
-`--expensive-iters`.
+Useful knobs include `--samples`, `--iters`, `--min-sample-ms`, and
+`--max-adaptive-iters`.
