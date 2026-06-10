@@ -1,17 +1,14 @@
 #include "../../common/include/helper.h"
-#include "../../schemes/cz/function.h"
 #include "../../schemes/group/dc/include/PiDCGroup.h"
-#include "../../schemes/group/hss/include/HSSElg.h"
 #include "../../schemes/group/ot/include/PiOTGroup.h"
 #include "../../schemes/rlwe/dc/include/PiDCRLWE.h"
-#include "../../schemes/rlwe/hss/include/HSSRLWE.h"
 #include "../../schemes/rlwe/ot/include/PiOTRLWE.h"
-#include "../../schemes/rlwe/vhss/include/VHSSRLWE.h"
 
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
@@ -28,6 +25,7 @@ struct Row
 {
     string backend;
     string scheme;
+    int degree;
     string phase;
     string server;
     int samples;
@@ -103,12 +101,14 @@ static void write_rows(const string &path, const vector<Row> &rows)
         throw runtime_error("failed to write " + path);
     }
 
-    out << "backend,scheme,phase,server,samples,mean_ms,rsd_percent\n";
+    out << "backend,scheme,parent,degree,phase,server,samples,mean_ms,rsd_percent\n";
     out << fixed << setprecision(6);
     for (size_t i = 0; i < rows.size(); ++i)
     {
         out << csv_escape(rows[i].backend) << ","
             << csv_escape(rows[i].scheme) << ","
+            << "vhss,"
+            << rows[i].degree << ","
             << csv_escape(rows[i].phase) << ","
             << csv_escape(rows[i].server) << ","
             << rows[i].samples << ","
@@ -118,11 +118,11 @@ static void write_rows(const string &path, const vector<Row> &rows)
 }
 
 static Row run_row(const string &backend, const string &scheme, const string &phase,
-                   const string &server, int samples, const BenchFn &fn)
+                   const string &server, int samples, int degree, const BenchFn &fn)
 {
     if (getenv("PVHSS_BENCH_TRACE") != NULL)
     {
-        cerr << "running " << backend << "," << scheme << "," << phase;
+        cerr << "running " << backend << "," << scheme << ",degree=" << degree << "," << phase;
         if (!server.empty())
         {
             cerr << "," << server;
@@ -130,7 +130,7 @@ static Row run_row(const string &backend, const string &scheme, const string &ph
         cerr << "\n";
     }
     TimingResult timing = MeasureTimeMs(fn, samples);
-    return Row{backend, scheme, phase, server, timing.samples, timing.mean_ms, timing.rsd * 100.0};
+    return Row{backend, scheme, degree, phase, server, timing.samples, timing.mean_ms, timing.rsd * 100.0};
 }
 
 static int read_int_arg(int argc, char **argv, const string &name, int fallback)
@@ -155,6 +155,45 @@ static string read_string_arg(int argc, char **argv, const string &name, const s
         }
     }
     return fallback;
+}
+
+static vector<int> parse_degrees(const string &value)
+{
+    vector<int> degrees;
+    size_t start = 0;
+    while (start <= value.size())
+    {
+        const size_t end = value.find(',', start);
+        const string part = value.substr(start, end == string::npos ? string::npos : end - start);
+        const int degree = atoi(part.c_str());
+        if (degree <= 0)
+        {
+            throw runtime_error("invalid degree in --degrees: " + value);
+        }
+        degrees.push_back(degree);
+        if (end == string::npos)
+        {
+            break;
+        }
+        start = end + 1;
+    }
+    if (degrees.empty())
+    {
+        throw runtime_error("empty --degrees value");
+    }
+    return degrees;
+}
+
+static vector<int> read_degrees_arg(int argc, char **argv, int fallback)
+{
+    for (int i = 1; i + 1 < argc; ++i)
+    {
+        if (argv[i] == string("--degrees"))
+        {
+            return parse_degrees(argv[i + 1]);
+        }
+    }
+    return vector<int>(1, read_int_arg(argc, argv, "--degree", fallback));
 }
 
 static bool has_arg(int argc, char **argv, const string &name)
@@ -187,164 +226,6 @@ static void init_group_dc_params(pvhss::group::dc::PVHSSElg2_Para &param, int ms
     param.msg_num = msg_num;
 }
 
-static void add_setup_gen_rows(vector<Row> &rows, int samples, int msg_num, int degree)
-{
-    namespace ghss = pvhss::group::hss;
-    namespace got = pvhss::group::ot;
-    namespace gdc = pvhss::group::dc;
-    namespace rhss = pvhss::rlwe::hss;
-    namespace rvhss = pvhss::rlwe::vhss;
-    namespace rot = pvhss::rlwe::ot;
-    namespace rdc = pvhss::rlwe::dc;
-
-    rows.push_back(run_row("group", "hss", "setup", "", samples, [&]() {
-        ghss::HssPublicKey pk;
-        ghss::HssEvalKey ek0, ek1;
-        ghss::HssGen(pk, ek0, ek1, 1024);
-    }));
-
-    rows.push_back(run_row("group", "vhss", "setup", "", samples, [&]() {
-        VhssElgamalPk pk;
-        VhssElgamalVk vk;
-        VhssElgamalEk ek0, ek1;
-        VhssElgamalGen(pk, vk, ek0, ek1, 1024, 256);
-    }));
-
-    rows.push_back(run_row("group", "ot", "setup", "", samples, [&]() {
-        got::PVHSSElg1_Para param;
-        got::PVHSSElg1_EK ek0, ek1;
-        init_group_ot_params(param, msg_num, degree);
-        got::PVHSSElg1_Setup(param, ek0, ek1);
-    }));
-
-    {
-        got::PVHSSElg1_Para param;
-        got::PVHSSElg1_EK ek0, ek1;
-        got::PVHSSElg1_SK sk;
-        init_group_ot_params(param, msg_num, degree);
-        got::PVHSSElg1_Setup(param, ek0, ek1);
-        bn_t ekp0, ekp1;
-        bn_new(ekp0);
-        bn_new(ekp1);
-        rows.push_back(run_row("group", "ot", "gen", "", samples, [&]() {
-            got::PVHSSElg1_KeyGen(param, sk, ekp0, ekp1);
-        }));
-    }
-
-    rows.push_back(run_row("group", "dc", "setup", "", samples, [&]() {
-        gdc::PVHSSElg2_Para param;
-        gdc::PVHSSElg2_EK ek0, ek1;
-        gdc::PVHSSElg2_SK sk;
-        init_group_dc_params(param, msg_num, degree);
-        gdc::PVHSSElg2_Setup(param, ek0, ek1, sk);
-    }));
-
-    {
-        gdc::PVHSSElg2_Para param;
-        gdc::PVHSSElg2_EK ek0, ek1;
-        gdc::PVHSSElg2_SK sk;
-        init_group_dc_params(param, msg_num, degree);
-        gdc::PVHSSElg2_Setup(param, ek0, ek1, sk);
-        bn_t ekp0[2], ekp1[2];
-        for (int i = 0; i < 2; ++i)
-        {
-            bn_new(ekp0[i]);
-            bn_new(ekp1[i]);
-        }
-        rows.push_back(run_row("group", "dc", "gen", "", samples, [&]() {
-            gdc::PVHSSElg2_KeyGen(param, sk, ekp0, ekp1);
-        }));
-    }
-
-    rows.push_back(run_row("rlwe", "hss", "setup", "", samples, [&]() {
-        rhss::PKE_Para param;
-        param.msg_bit = 32;
-        param.num_data = msg_num;
-        param.d = degree;
-        vec_ZZ_pX pkePk, pkeSk, ek0, ek1;
-        pkePk.SetLength(2);
-        pkeSk.SetLength(2);
-        ek0.SetLength(2);
-        ek1.SetLength(2);
-        rhss::PKE_Gen(param, pkePk, pkeSk);
-        rhss::HssGen(ek0, ek1, param, pkeSk);
-    }));
-
-    rows.push_back(run_row("rlwe", "vhss", "setup", "", samples, [&]() {
-        rvhss::PKE_Para param;
-        param.msg_bit = 32;
-        param.num_data = msg_num;
-        param.d = degree;
-        vec_ZZ_pX pkePk, pkeSk;
-        pkePk.SetLength(2);
-        pkeSk.SetLength(2);
-        rvhss::VHSS_Para vhss;
-        rvhss::PKE_Gen(param, pkePk, pkeSk);
-        ZZ_pXModulus modulus(param.xN);
-        rvhss::VHSS_Gen(vhss, param, modulus, pkeSk);
-    }));
-
-    rows.push_back(run_row("rlwe", "ot", "setup", "", samples, [&]() {
-        rot::PVHSSPara param;
-        vec_ZZ_pX pkePk;
-        rot::Setup(param, pkePk, msg_num, degree);
-    }));
-
-    {
-        rot::PVHSSPara param;
-        vec_ZZ_pX pkePk;
-        rot::Setup(param, pkePk, msg_num, degree);
-        ZZ_pXModulus modulus(param.pkePara.xN);
-        rot::PVHSS_SK sk;
-        bn_t ekp0, ekp1;
-        bn_new(ekp0);
-        bn_new(ekp1);
-        rows.push_back(run_row("rlwe", "ot", "gen", "", samples, [&]() {
-            rot::KeyGen(param, sk, modulus, pkePk, ekp0, ekp1);
-        }));
-    }
-
-    rows.push_back(run_row("rlwe", "dc", "setup", "", samples, [&]() {
-        rdc::PVHSSPara param;
-        vec_ZZ_pX pkePk;
-        rdc::Setup(param, pkePk, msg_num, degree);
-    }));
-
-    {
-        rdc::PVHSSPara param;
-        vec_ZZ_pX pkePk;
-        rdc::Setup(param, pkePk, msg_num, degree);
-        ZZ_pXModulus modulus(param.pkePara.xN);
-        rdc::PVHSS_SK sk;
-        bn_t ekp0[2], ekp1[2];
-        for (int i = 0; i < 2; ++i)
-        {
-            bn_new(ekp0[i]);
-            bn_new(ekp1[i]);
-        }
-        rows.push_back(run_row("rlwe", "dc", "gen", "", samples, [&]() {
-            rdc::KeyGen(param, sk, modulus, pkePk, ekp0, ekp1);
-        }));
-    }
-
-    rows.push_back(run_row("rlwe", "cz", "setup", "", samples, [&]() {
-        PkeParams params;
-        PvhssParams pvhss_params;
-        vec_ZZ_pX pk, sk, hss_ek1, hss_ek2, C_alpha;
-        pk.SetLength(2);
-        sk.SetLength(2);
-        hss_ek1.SetLength(2);
-        hss_ek2.SetLength(2);
-        C_alpha.SetLength(4);
-        params.msg_bit = 32;
-        params.d = degree;
-        params.num_data = msg_num;
-        PkeGen(params, pk, sk, 1);
-        ZZ_pXModulus modulus(params.xN);
-        PvhssGen(hss_ek1, hss_ek2, C_alpha, pvhss_params, params, modulus, pk, sk);
-    }));
-}
-
 static void add_group_ot_incremental_rows(vector<Row> &rows, int samples, int msg_num, int degree)
 {
     namespace got = pvhss::group::ot;
@@ -353,7 +234,7 @@ static void add_group_ot_incremental_rows(vector<Row> &rows, int samples, int ms
     VhssElgamalEk ek0, ek1;
     VhssElgamalGen(pk, ek0, ek1, 1024, 256);
 
-    rows.push_back(run_row("group", "ot", "setup_incremental", "", samples, [&]() {
+    rows.push_back(run_row("group", "ot", "setup_incremental", "", samples, degree, [&]() {
         got::CK ck;
         got::Ped_ComGen(ck);
         bn_t A;
@@ -372,7 +253,7 @@ static void add_group_ot_incremental_rows(vector<Row> &rows, int samples, int ms
     bn_new(ekp1);
     got::PVHSSElg1_KeyGen(param, sk, ekp0, ekp1);
 
-    rows.push_back(run_row("group", "ot", "gen_incremental", "", samples, [&]() {
+    rows.push_back(run_row("group", "ot", "gen_incremental", "", samples, degree, [&]() {
         got::PVHSSElg1_KeyGen(param, sk, ekp0, ekp1);
     }));
 
@@ -392,7 +273,7 @@ static void add_group_ot_incremental_rows(vector<Row> &rows, int samples, int ms
     VhssElgamalEvaluatePD2(base1, 1, Ix, param.pk, ek1, prf_key1, param.degree_f);
 
     got::PROOF pi0, pi1;
-    rows.push_back(run_row("group", "ot", "eval_incremental", "0", samples, [&]() {
+    rows.push_back(run_row("group", "ot", "eval_incremental", "0", samples, degree, [&]() {
         int prf_key = prf_key0;
         VhssElgamalMv y = base0;
         VhssElgamalMv sk_b;
@@ -401,7 +282,7 @@ static void add_group_ot_incremental_rows(vector<Row> &rows, int samples, int ms
         y[2] += sk_b[2];
         got::Ped_Prove(pi0, 0, y[0], y[2], param.ck, prf_key, ekp0);
     }));
-    rows.push_back(run_row("group", "ot", "eval_incremental", "1", samples, [&]() {
+    rows.push_back(run_row("group", "ot", "eval_incremental", "1", samples, degree, [&]() {
         int prf_key = prf_key1;
         VhssElgamalMv y = base1;
         VhssElgamalMv sk_b;
@@ -411,11 +292,11 @@ static void add_group_ot_incremental_rows(vector<Row> &rows, int samples, int ms
         got::Ped_Prove(pi1, 1, y[0], y[2], param.ck, prf_key, ekp1);
     }));
 
-    rows.push_back(run_row("group", "ot", "verify_incremental", "", samples, [&]() {
+    rows.push_back(run_row("group", "ot", "verify_incremental", "", samples, degree, [&]() {
         volatile bool ok = got::PVHSSElg1_Verify(pi0, pi1, param.ck);
         (void)ok;
     }));
-    rows.push_back(run_row("group", "ot", "decode_incremental", "", samples, [&]() {
+    rows.push_back(run_row("group", "ot", "decode_incremental", "", samples, degree, [&]() {
         ZZ y;
         got::PVHSSElg1_Decode(y, pi0, pi1, sk);
     }));
@@ -429,7 +310,7 @@ static void add_group_dc_incremental_rows(vector<Row> &rows, int samples, int ms
     VhssElgamalEk ek0, ek1;
     VhssElgamalGen(pk, ek0, ek1, 1024, 256);
 
-    rows.push_back(run_row("group", "dc", "setup_incremental", "", samples, [&]() {
+    rows.push_back(run_row("group", "dc", "setup_incremental", "", samples, degree, [&]() {
         gdc::CK ck;
         gdc::PVHSSElg2_SK sk;
         gdc::DecPed_ComGen(ck, sk);
@@ -453,7 +334,7 @@ static void add_group_dc_incremental_rows(vector<Row> &rows, int samples, int ms
     }
     gdc::PVHSSElg2_KeyGen(param, sk, ekp0, ekp1);
 
-    rows.push_back(run_row("group", "dc", "gen_incremental", "", samples, [&]() {
+    rows.push_back(run_row("group", "dc", "gen_incremental", "", samples, degree, [&]() {
         gdc::PVHSSElg2_KeyGen(param, sk, ekp0, ekp1);
     }));
 
@@ -473,48 +354,25 @@ static void add_group_dc_incremental_rows(vector<Row> &rows, int samples, int ms
     VhssElgamalEvaluatePD2(base1, 1, Ix, param.pk, ek1, prf_key1, param.degree_f);
 
     gdc::PROOF pi0, pi1;
-    rows.push_back(run_row("group", "dc", "eval_incremental", "0", samples, [&]() {
+    rows.push_back(run_row("group", "dc", "eval_incremental", "0", samples, degree, [&]() {
         gdc::PVHSSElg2_Prove(pi0, 0, base0[0], base0[2], param, ekp0);
     }));
-    rows.push_back(run_row("group", "dc", "eval_incremental", "1", samples, [&]() {
+    rows.push_back(run_row("group", "dc", "eval_incremental", "1", samples, degree, [&]() {
         gdc::PVHSSElg2_Prove(pi1, 1, base1[0], base1[2], param, ekp1);
     }));
-    rows.push_back(run_row("group", "dc", "verify_incremental", "", samples, [&]() {
+    rows.push_back(run_row("group", "dc", "verify_incremental", "", samples, degree, [&]() {
         volatile bool ok = gdc::PVHSSElg2_Verify(pi0, pi1, param);
         (void)ok;
     }));
-    rows.push_back(run_row("group", "dc", "decode_incremental", "", samples, [&]() {
+    rows.push_back(run_row("group", "dc", "decode_incremental", "", samples, degree, [&]() {
         dig_t y;
         gdc::PVHSSElg2_Decode(y, pi0, pi1, sk);
     }));
 }
 
-static void add_rlwe_ot_incremental_rows(vector<Row> &rows, int samples, int msg_num, int degree)
+static void add_rlwe_ot_eval_incremental_rows(vector<Row> &rows, int samples, int msg_num, int degree)
 {
     namespace rot = pvhss::rlwe::ot;
-
-    rot::PKE_Para pkePara;
-    pkePara.msg_bit = 32;
-    pkePara.num_data = msg_num;
-    pkePara.d = degree;
-    vec_ZZ_pX pkePk, pkeSk;
-    pkePk.SetLength(2);
-    pkeSk.SetLength(2);
-    rot::PKE_Gen(pkePara, pkePk, pkeSk);
-    ZZ_pXModulus base_modulus(pkePara.xN);
-    rot::VHSS_Para vhssPara;
-    rot::VHSS_Gen(vhssPara, pkePara, base_modulus, pkeSk);
-
-    rows.push_back(run_row("rlwe", "ot", "setup_incremental", "", samples, [&]() {
-        rot::CK ck;
-        rot::Ped_ComGen(ck);
-        ZZ A_ZZ = rot::HssOutputPolyAtTwo(vhssPara.alpha, pkePara, ck.g1_order_ZZ);
-        bn_t A;
-        bn_new(A);
-        ep2_new(ck.g2_A);
-        ZZtoBn(A, A_ZZ);
-        ep2_mul_gen(ck.g2_A, A);
-    }));
 
     rot::PVHSSPara param;
     vec_ZZ_pX setupPk;
@@ -525,10 +383,6 @@ static void add_rlwe_ot_incremental_rows(vector<Row> &rows, int samples, int msg
     bn_new(ekp0);
     bn_new(ekp1);
     rot::KeyGen(param, sk, modulus, setupPk, ekp0, ekp1);
-
-    rows.push_back(run_row("rlwe", "ot", "gen_incremental", "", samples, [&]() {
-        rot::KeyGen(param, sk, modulus, setupPk, ekp0, ekp1);
-    }));
 
     vec_ZZ X;
     X.SetLength(msg_num);
@@ -560,7 +414,7 @@ static void add_rlwe_ot_incremental_rows(vector<Row> &rows, int samples, int msg
                            prf_key1, param.pkePara.d, M3_1);
 
     rot::PROOF pi0, pi1;
-    rows.push_back(run_row("rlwe", "ot", "eval_incremental", "0", samples, [&]() {
+    rows.push_back(run_row("rlwe", "ot", "eval_incremental", "0", samples, degree, [&]() {
         vec_ZZ_pX y = base_y0;
         vec_ZZ_pX Y = base_Y0;
         vec_ZZ_pX sk_b, SK_b;
@@ -570,7 +424,7 @@ static void add_rlwe_ot_incremental_rows(vector<Row> &rows, int samples, int msg
         rot::HssAddMemory(Y, Y, SK_b);
         rot::Prove(pi0, 0, y, Y, param, ekp0);
     }));
-    rows.push_back(run_row("rlwe", "ot", "eval_incremental", "1", samples, [&]() {
+    rows.push_back(run_row("rlwe", "ot", "eval_incremental", "1", samples, degree, [&]() {
         vec_ZZ_pX y = base_y1;
         vec_ZZ_pX Y = base_Y1;
         vec_ZZ_pX sk_b, SK_b;
@@ -580,44 +434,11 @@ static void add_rlwe_ot_incremental_rows(vector<Row> &rows, int samples, int msg
         rot::HssAddMemory(Y, Y, SK_b);
         rot::Prove(pi1, 1, y, Y, param, ekp1);
     }));
-    rows.push_back(run_row("rlwe", "ot", "verify_incremental", "", samples, [&]() {
-        volatile bool ok = rot::Verify(pi0, pi1, param.ck);
-        (void)ok;
-    }));
-    rows.push_back(run_row("rlwe", "ot", "decode_incremental", "", samples, [&]() {
-        ZZ y;
-        rot::Decode(y, pi0, pi1, sk);
-    }));
 }
 
-static void add_rlwe_dc_incremental_rows(vector<Row> &rows, int samples, int msg_num, int degree)
+static void add_rlwe_dc_eval_incremental_rows(vector<Row> &rows, int samples, int msg_num, int degree)
 {
     namespace rdc = pvhss::rlwe::dc;
-
-    rdc::PKE_Para pkePara;
-    pkePara.msg_bit = 32;
-    pkePara.num_data = msg_num;
-    pkePara.d = degree;
-    vec_ZZ_pX pkePk, pkeSk;
-    pkePk.SetLength(2);
-    pkeSk.SetLength(2);
-    rdc::PKE_Gen(pkePara, pkePk, pkeSk);
-    ZZ_pXModulus base_modulus(pkePara.xN);
-    rdc::VHSS_Para vhssPara;
-    rdc::VHSS_Gen(vhssPara, pkePara, base_modulus, pkeSk);
-
-    rows.push_back(run_row("rlwe", "dc", "setup_incremental", "", samples, [&]() {
-        rdc::CK ck;
-        rdc::PVHSS_SK sk;
-        rdc::DecPed_ComGen(ck, sk);
-        ZZ A_ZZ = rdc::HssOutputPolyAtTwo(vhssPara.alpha, pkePara, ck.g1_order_ZZ);
-        bn_t A;
-        bn_new(A);
-        g2_t vk;
-        ep2_new(vk);
-        ZZtoBn(A, A_ZZ);
-        ep2_mul_gen(vk, A);
-    }));
 
     rdc::PVHSSPara param;
     vec_ZZ_pX setupPk;
@@ -631,10 +452,6 @@ static void add_rlwe_dc_incremental_rows(vector<Row> &rows, int samples, int msg
         bn_new(ekp1[i]);
     }
     rdc::KeyGen(param, sk, modulus, setupPk, ekp0, ekp1);
-
-    rows.push_back(run_row("rlwe", "dc", "gen_incremental", "", samples, [&]() {
-        rdc::KeyGen(param, sk, modulus, setupPk, ekp0, ekp1);
-    }));
 
     vec_ZZ X;
     X.SetLength(msg_num);
@@ -666,34 +483,24 @@ static void add_rlwe_dc_incremental_rows(vector<Row> &rows, int samples, int msg
                            prf_key1, param.pkePara.d, M4);
 
     rdc::PROOF pi0, pi1;
-    rows.push_back(run_row("rlwe", "dc", "eval_incremental", "0", samples, [&]() {
+    rows.push_back(run_row("rlwe", "dc", "eval_incremental", "0", samples, degree, [&]() {
         rdc::Prove(pi0, 0, base_y0, base_Y0, param, ekp0);
     }));
-    rows.push_back(run_row("rlwe", "dc", "eval_incremental", "1", samples, [&]() {
+    rows.push_back(run_row("rlwe", "dc", "eval_incremental", "1", samples, degree, [&]() {
         rdc::Prove(pi1, 1, base_y1, base_Y1, param, ekp1);
-    }));
-    rows.push_back(run_row("rlwe", "dc", "verify_incremental", "", samples, [&]() {
-        volatile bool ok = rdc::Verify(pi0, pi1, param);
-        (void)ok;
-    }));
-    rows.push_back(run_row("rlwe", "dc", "decode_incremental", "", samples, [&]() {
-        dig_t y;
-        rdc::Decode(y, pi0, pi1, param.f_sk);
     }));
 }
 
 static void add_incremental_rows(vector<Row> &rows, int samples, int msg_num, int degree)
 {
-    add_group_ot_incremental_rows(rows, samples, msg_num, degree);
-    add_group_dc_incremental_rows(rows, samples, msg_num, degree);
-    add_rlwe_ot_incremental_rows(rows, samples, msg_num, degree);
-    add_rlwe_dc_incremental_rows(rows, samples, msg_num, degree);
+    add_rlwe_ot_eval_incremental_rows(rows, samples, msg_num, degree);
+    add_rlwe_dc_eval_incremental_rows(rows, samples, msg_num, degree);
 }
 
 static void print_usage(const char *program)
 {
     cerr << "Usage: " << program
-         << " --mode setup-gen|incremental [--samples N] [--msg-num N] [--degree N] [--out PATH]\n";
+         << " --mode incremental [--samples N] [--msg-num N] [--degree N|--degrees A,B,C] [--out PATH]\n";
 }
 }
 
@@ -710,21 +517,17 @@ int main(int argc, char **argv)
 
         const int samples = read_int_arg(argc, argv, "--samples", 100);
         const int msg_num = read_int_arg(argc, argv, "--msg-num", 5);
-        const int degree = read_int_arg(argc, argv, "--degree", 5);
-        const string default_out =
-            mode == "setup-gen"
-                ? "benchmarks/results/protocols/setup_gen_timing.csv"
-                : "benchmarks/results/overhead/incremental_component_timing.csv";
+        const vector<int> degrees = read_degrees_arg(argc, argv, 5);
+        const string default_out = "benchmarks/results/overhead/incremental_component_timing.csv";
         const string out_path = read_string_arg(argc, argv, "--out", default_out);
 
         vector<Row> rows;
-        if (mode == "setup-gen")
+        if (mode == "incremental")
         {
-            add_setup_gen_rows(rows, samples, msg_num, degree);
-        }
-        else if (mode == "incremental")
-        {
-            add_incremental_rows(rows, samples, msg_num, degree);
+            for (size_t i = 0; i < degrees.size(); ++i)
+            {
+                add_incremental_rows(rows, samples, msg_num, degrees[i]);
+            }
         }
         else
         {
