@@ -13,14 +13,8 @@ target_include_directories(microbench PRIVATE
 target_link_libraries(microbench
     PRIVATE
         common
-        PiHSSRLWE
+        PiHSSRLWE_core
 )
-
-# Find gmpxx for lhss linkage
-find_library(GMPXX_LIB NAMES gmpxx)
-if(GMPXX_LIB)
-    target_link_libraries(microbench PRIVATE ${GMPXX_LIB})
-endif()
 
 add_custom_target(microbenchmark_results
     COMMAND bash

@@ -1,23 +1,26 @@
-# NTL-based RLWE HSS library
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-add_library(PiHSSRLWE STATIC
+add_library(PiHSSRLWE_core STATIC
     src/HSSRLWE.cpp
 )
 
-target_include_directories(PiHSSRLWE PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-target_include_directories(PiHSSRLWE PRIVATE
-    ${GMP_INCLUDE_PATHS}
-    ${NTL_INCLUDE_PATHS}
-    ${RLC_INCLUDE_PATHS}
+add_executable(PiHSSRLWE
+    src/tester.cpp
+    test/main.cpp
 )
 
-target_link_libraries(PiHSSRLWE PRIVATE
-    ${GMP_LIBRARIES}
-    ${NTL_LIBRARIES}
-    common
+target_include_directories(PiHSSRLWE_core PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(PiHSSRLWE PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(PiHSSRLWE_core
+    PUBLIC
+        common
+)
+
+target_link_libraries(PiHSSRLWE
+    PRIVATE
+        PiHSSRLWE_core
 )
