@@ -45,14 +45,13 @@ The PVHSS-RH implementation requires the following libraries:
 
 Benchmarks are enabled by default.  Use `-DPVHSS_BUILD_BENCHMARKS=OFF` when
 only the protocol example binaries are needed.  The benchmark layer produces
-three final CSV tables:
+two final CSV tables:
 
 - `benchmarks/results/micro/micro_timing.csv`
 - `benchmarks/results/protocols/protocol_timing.csv`
-- `benchmarks/results/overhead/incremental_timing.csv`
 
-Run `cmake --build build --target benchmark_tables` to regenerate the three
-full benchmark tables.
+Run `cmake --build build --target benchmark_tables` to regenerate the full
+benchmark tables.
 
 The convenience script runs the full benchmark flow:
 

@@ -37,5 +37,4 @@ The runner writes:
 - `benchmarks/results/protocols/logs/protocol_components.csv`
 
 `protocol_timing.csv` is the presentation table.  The component CSV keeps the
-direct `SetupIncremental`, `GenIncremental`, and `EvalIncremental*` rows used by
-`benchmarks/overhead/generate_incremental_overhead.sh`.
+normalized phase rows used to assemble the compact timing table.

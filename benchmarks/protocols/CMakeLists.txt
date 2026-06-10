@@ -99,77 +99,6 @@ add_executable(protocol_benchmark_runner
     protocol_benchmark_runner.cpp
 )
 
-add_library(setup_bench_group_ot_impl STATIC
-    ${CMAKE_SOURCE_DIR}/schemes/group/ot/src/Ped.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/group/ot/src/PiOTGroup.cpp
-)
-
-target_include_directories(setup_bench_group_ot_impl PUBLIC
-    ${CMAKE_SOURCE_DIR}/schemes/group/ot/include
-)
-
-target_link_libraries(setup_bench_group_ot_impl PUBLIC
-    common
-)
-
-add_library(setup_bench_group_dc_impl STATIC
-    ${CMAKE_SOURCE_DIR}/schemes/group/dc/src/DecPed.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/group/dc/src/PiDCGroup.cpp
-)
-
-target_include_directories(setup_bench_group_dc_impl PUBLIC
-    ${CMAKE_SOURCE_DIR}/schemes/group/dc/include
-)
-
-target_link_libraries(setup_bench_group_dc_impl PUBLIC
-    common
-)
-
-add_library(setup_bench_rlwe_ot_impl STATIC
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/src/Ped.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/src/PiOTRLWE.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/src/VHSSRLWE.cpp
-)
-
-target_include_directories(setup_bench_rlwe_ot_impl PUBLIC
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/include
-)
-
-target_link_libraries(setup_bench_rlwe_ot_impl PUBLIC
-    common
-)
-
-add_library(setup_bench_rlwe_dc_impl STATIC
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/src/DecPed.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/src/PiDCRLWE.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/src/VHSSRLWE.cpp
-)
-
-target_include_directories(setup_bench_rlwe_dc_impl PUBLIC
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/include
-)
-
-target_link_libraries(setup_bench_rlwe_dc_impl PUBLIC
-    common
-)
-
-add_executable(setup_incremental_benchmark
-    setup_incremental_benchmark.cpp
-)
-
-target_include_directories(setup_incremental_benchmark PRIVATE
-    ${CMAKE_SOURCE_DIR}
-)
-
-target_link_libraries(setup_incremental_benchmark
-    PRIVATE
-        common
-        setup_bench_group_ot_impl
-        setup_bench_group_dc_impl
-        setup_bench_rlwe_ot_impl
-        setup_bench_rlwe_dc_impl
-)
-
 set(PVHSS_PROTOCOL_BENCH_TARGETS
     protocol_group_hss_bench
     protocol_group_vhss_bench
@@ -180,17 +109,6 @@ set(PVHSS_PROTOCOL_BENCH_TARGETS
     protocol_rlwe_ot_bench
     protocol_rlwe_dc_bench
     protocol_cz_bench
-)
-
-add_custom_target(incremental_component_timing_results
-    COMMAND $<TARGET_FILE:setup_incremental_benchmark>
-        --mode incremental
-        --samples 100
-        --msg-num 5
-        --degrees 5,10,15
-        --out ${CMAKE_SOURCE_DIR}/benchmarks/results/overhead/incremental_component_timing.csv
-    DEPENDS setup_incremental_benchmark
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
 add_custom_target(protocol_benchmarks_p5

@@ -6,15 +6,13 @@ generation.
 
 ## Final Tables
 
-The benchmark layer produces three presentation-ready CSV tables:
+The benchmark layer produces two presentation-ready CSV tables:
 
 - `benchmarks/results/micro/micro_timing.csv`
 - `benchmarks/results/protocols/protocol_timing.csv`
-- `benchmarks/results/overhead/incremental_timing.csv`
 
 Protocol logs and component-level parser output are kept under
-`benchmarks/results/protocols/logs/` as internal inputs for the incremental
-table.
+`benchmarks/results/protocols/logs/`.
 
 ## Microbenchmark
 
@@ -57,19 +55,7 @@ The normalized result is written to
 `benchmarks/results/protocols/protocol_timing.csv`.
 See `benchmarks/protocols/README.md` for target selection and runner options.
 
-## Incremental overhead tables
-
-The overhead script reads protocol benchmark components and does not rerun the
-expensive Eval benchmarks:
-
-```sh
-bash benchmarks/overhead/generate_incremental_overhead.sh --build-dir build
-```
-
-By default, it writes `benchmarks/results/overhead/incremental_timing.csv`.
-See `benchmarks/overhead/README.md` for details.
-
-To regenerate all three final tables on the fast P5 protocol subset:
+To regenerate the final tables on the fast P5 protocol subset:
 
 ```sh
 cmake --build build --target benchmark_tables_p5

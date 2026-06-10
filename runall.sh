@@ -66,36 +66,22 @@ run_proto() {
         --msg-num  "$PROTO_MSG_NUM"
 }
 
-# --- Helper: run overhead -------------------------------------
-run_overhead() {
-    echo "===== Overhead analysis ====="
-    mkdir -p "$RESULT_DIR/overhead"
-    "$BUILD_DIR/benchmarks/overhead/incremental_timing_generator" \
-        --protocol-components "$RESULT_DIR/protocols/logs/protocol_components.csv" \
-        --out-dir "$RESULT_DIR/overhead"
-}
-
 # --- Dispatch by mode -----------------------------------------
 case "$RUN_MODE" in
     full)
         run_micro
         run_proto
-        run_overhead
         ;;
     p5)
         PROTO_DEGREES="5"
         run_micro
         run_proto
-        run_overhead
         ;;
     micro)
         run_micro
         ;;
     proto)
         run_proto
-        ;;
-    overhead)
-        run_overhead
         ;;
     *)
         echo "Unknown RUN_MODE: $RUN_MODE" >&2
@@ -106,4 +92,3 @@ esac
 echo "===== Final results ====="
 echo "micro:      $RESULT_DIR/micro/micro_timing.csv"
 echo "protocol:   $RESULT_DIR/protocols/protocol_timing.csv"
-echo "overhead:   $RESULT_DIR/overhead/incremental_timing.csv"
