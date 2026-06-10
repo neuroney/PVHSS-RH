@@ -52,13 +52,13 @@ void GenerateData(Data &data, const PKE_Para &pkePara, const vec_ZZ_pX &pkePk)
     {
         RandomBits(data.X[i], pkePara.msg_bit);
         HSS_Enc(C_x, pkePara, modulus, pkePk, data.X[i]);
-        data.C_X.append(C_x);
+        data.C_X.push_back(C_x);
     }
     for (int i = 0; i < 10; i++)
     {
         RandomZZpx(prf[0], pkePara.N, pkePara.q_bit);
         RandomZZpx(prf[1], pkePara.N, pkePara.q_bit);
-        data.PRF.append(prf);
+        data.PRF.push_back(prf);
     }
 }
 
@@ -189,7 +189,7 @@ void HssAddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX &C_Y)
     tb[1] = C_X[1] + C_Y[1];
 }
 
-void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const Vec<vec_ZZ_pX> &Ix,
+void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix,
                        const PKE_Para &pkePara, ZZ_pXModulus modulus,
                        const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f,
                        const vec_ZZ_pX &M1)
@@ -197,7 +197,7 @@ void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const Vec<vec_ZZ_pX> &Ix,
     (void)b;
     (void)prf_key;
 
-    int k = Ix.length();
+    int k = static_cast<int>(Ix.size());
 
     Mat<ZZ_pX> dp_prev, dp_curr;
     dp_prev.SetDims(1 + degree_f, 2);

@@ -15,8 +15,8 @@ struct PKE_Para
 
 struct Data {
     vec_ZZ X;
-    Vec<vec_ZZ_pX> C_X;
-    Vec<vec_ZZ_pX> PRF;
+    vector<vec_ZZ_pX> C_X;
+    vector<vec_ZZ_pX> PRF;
 };
 
 void GenerateData(Data &data, const PKE_Para &pkePara, const vec_ZZ_pX &pkePk);
@@ -38,7 +38,7 @@ void HssAddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX &C_Y);
 void HssConvertInput(vec_ZZ_pX &tb_y, const PKE_Para &pkePara,
                      const ZZ_pXModulus &modulus, const vec_ZZ_pX &ek,
                      const vec_ZZ_pX &C_X);
-void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const Vec<vec_ZZ_pX> &Ix,
+void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix,
                        const PKE_Para &pkePara, ZZ_pXModulus modulus,
                        const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f,
                        const vec_ZZ_pX &M1);

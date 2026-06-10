@@ -54,14 +54,14 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
         RandomBits(X[i], param.msg_bit);
     }
 
-    Vec<vec_ZZ_pX> Ix;
+    vector<vec_ZZ_pX> Ix;
     timing = MeasureTimeMs([&]() {
-        Ix.SetLength(0);
+        Ix.clear();
         vec_ZZ_pX CTtmp;
         for (int j = 0; j < X.length(); ++j)
         {
             HSS_Enc(CTtmp, param, modulus, pkePk, X[j]);
-            Ix.append(CTtmp);
+            Ix.push_back(CTtmp);
         }
     }, cyctimes);
     PrintTimeMs("Input algorithm time", timing);

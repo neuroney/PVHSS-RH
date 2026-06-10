@@ -1,6 +1,7 @@
 add_executable(microbench
     microbench.cpp
     ${CMAKE_SOURCE_DIR}/schemes/group/hss/src/HSSElg.cpp
+    ${CMAKE_SOURCE_DIR}/schemes/rlwe/hss/src/HSSRLWE.cpp
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/vhss/src/VHSSRLWE.cpp
 )
 
@@ -13,7 +14,6 @@ target_include_directories(microbench PRIVATE
 target_link_libraries(microbench
     PRIVATE
         common
-        PiHSSRLWE_core
 )
 
 add_custom_target(microbenchmark_results
