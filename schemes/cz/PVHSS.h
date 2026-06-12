@@ -9,18 +9,15 @@ extern "C" {
 #include <NTL/ZZ.h>
 #include <NTL/ZZX.h>
 #include <NTL/ZZ_pX.h>
+#include <NTL/matrix.h>
 #include "PKE.h"
 
 // PVHSS pairing parameters.
 struct PvhssParams {
     NTL::ZZ g1_order_ZZ;
     NTL::ZZ g2_order_ZZ;
-    NTL::ZZ_pX alpha;
-    bn_t g1_order;
-    bn_t g2_order;
     ep_t g1_gen;
     ep2_t g2_gen;
-    fp12_t gT_gen;
     fp12_t A_gT;
     fp12_t const_gT;
 };
@@ -31,8 +28,6 @@ struct PvhssEvalWorkspace {
     NTL::Mat<NTL::ZZ_pX> dp_curr;
     NTL::vec_ZZ_pX chain;
     NTL::vec_ZZ_pX next;
-    NTL::vec_ZZ_pX acc;
-    PkeWorkspace pke_ws;
 };
 
 inline void InitPvhssEvalWorkspace(PvhssEvalWorkspace &ws, int degree_f) {
@@ -40,7 +35,6 @@ inline void InitPvhssEvalWorkspace(PvhssEvalWorkspace &ws, int degree_f) {
     ws.dp_curr.SetDims(degree_f + 1, 2);
     ws.chain.SetLength(2);
     ws.next.SetLength(2);
-    ws.acc.SetLength(2);
 }
 
 // Forward declaration.
@@ -52,11 +46,8 @@ inline void PvhssGen(NTL::vec_ZZ_pX &hss_ek1, NTL::vec_ZZ_pX &hss_ek2,
                      NTL::vec_ZZ_pX &C_alpha, PvhssParams &pvhss_params,
                      const PkeParams &params, const NTL::ZZ_pXModulus &modulus,
                      const NTL::vec_ZZ_pX &pk, const NTL::vec_ZZ_pX &sk) {
-    bn_new(pvhss_params.g1_order);
-    bn_new(pvhss_params.g2_order);
     ep_new(pvhss_params.g1_gen);
     ep2_new(pvhss_params.g2_gen);
-    fp12_new(pvhss_params.gT_gen);
     fp12_new(pvhss_params.A_gT);
     fp12_new(pvhss_params.const_gT);
     core_init();
@@ -66,7 +57,6 @@ inline void PvhssGen(NTL::vec_ZZ_pX &hss_ek1, NTL::vec_ZZ_pX &hss_ek2,
     ep2_curve_set_twist(RLC_EP_MTYPE);
     ep_curve_get_gen(pvhss_params.g1_gen);
     ep2_curve_get_gen(pvhss_params.g2_gen);
-    pp_map_oatep_k12(pvhss_params.gT_gen, pvhss_params.g1_gen, pvhss_params.g2_gen);
 
     // Evaluation keys
     RandomZZpx(hss_ek1[0], params.N, params.q_bit);
@@ -80,7 +70,6 @@ inline void PvhssGen(NTL::vec_ZZ_pX &hss_ek1, NTL::vec_ZZ_pX &hss_ek2,
     A = NTL::RandomBits_ZZ(255);
     DecimalToBinary(alpha, A, 255);
     PvhssEnc(C_alpha, params, modulus, pk, alpha);
-    pvhss_params.alpha = alpha;
     bn_t A_bn;
     ep_t temp;
     bn_new(A_bn);
@@ -88,18 +77,24 @@ inline void PvhssGen(NTL::vec_ZZ_pX &hss_ek1, NTL::vec_ZZ_pX &hss_ek2,
     ZZtoBn(A_bn, A);
     ep_mul_gen(temp, A_bn);
     pp_map_oatep_k12(pvhss_params.A_gT, temp, pvhss_params.g2_gen);
-    ep_curve_get_ord(pvhss_params.g1_order);
-    ep2_curve_get_ord(pvhss_params.g2_order);
-    int size = bn_size_str(pvhss_params.g1_order, 10);
+    bn_t g1_order;
+    bn_t g2_order;
+    bn_new(g1_order);
+    bn_new(g2_order);
+    ep_curve_get_ord(g1_order);
+    ep2_curve_get_ord(g2_order);
+    int size = bn_size_str(g1_order, 10);
     char *g1_order_str = new char[size];
-    bn_write_str(g1_order_str, size, pvhss_params.g1_order, 10);
+    bn_write_str(g1_order_str, size, g1_order, 10);
     NTL::ZZ g1_order_ZZ = NTL::conv<NTL::ZZ>(g1_order_str);
     pvhss_params.g1_order_ZZ = g1_order_ZZ;
-    size = bn_size_str(pvhss_params.g2_order, 10);
+    delete[] g1_order_str;
+    size = bn_size_str(g2_order, 10);
     char *g2_order_str = new char[size];
-    bn_write_str(g2_order_str, size, pvhss_params.g2_order, 10);
+    bn_write_str(g2_order_str, size, g2_order, 10);
     NTL::ZZ g2_order_ZZ = NTL::conv<NTL::ZZ>(g2_order_str);
     pvhss_params.g2_order_ZZ = g2_order_ZZ;
+    delete[] g2_order_str;
 
     // Compute e(g1, g2)^{q(2^N-1)}
     bn_t const_bn;
@@ -124,72 +119,6 @@ inline void PvhssMult(NTL::vec_ZZ_pX &db, const PkeParams &params,
     PkeDualDecrypt(db, params, modulus, sk, C);
 }
 
-// Global PRF counter (legacy).
-static int prf_key = 1;
-
-// Recursively evaluate all degree-d monomials over the encrypted data.
-inline void EvaluateRecursive(NTL::vec_ZZ_pX &tb, int b, int d, int num_data,
-                              int loop, int beg_ind, int *ind_var,
-                              const PkeParams &params,
-                              const NTL::ZZ_pXModulus &modulus,
-                              const NTL::vec_ZZ_pX &ek,
-                              const NTL::Vec<NTL::vec_ZZ_pX> &C_X,
-                              const NTL::Vec<NTL::vec_ZZ_pX> &PRF) {
-    if (loop == d) {
-        NTL::vec_ZZ_pX tb_temp;
-        tb_temp.SetLength(2);
-        if (d == 1) {
-            prf_key = (prf_key + 1) % 10;
-            PvhssMult(tb_temp, params, modulus, ek, C_X[ind_var[0]]);
-            if (b == 1) {
-                tb_temp[0] = tb_temp[0] + PRF[prf_key][0];
-                tb_temp[1] = tb_temp[1] + PRF[prf_key][1];
-            } else {
-                tb_temp[0] = tb_temp[0] - PRF[prf_key][0];
-                tb_temp[1] = tb_temp[1] - PRF[prf_key][1];
-            }
-            tb[0] = tb[0] + tb_temp[0];
-            tb[1] = tb[1] + tb_temp[1];
-        } else {
-            PvhssMult(tb_temp, params, modulus, ek, C_X[ind_var[0]]);
-            prf_key = (prf_key + 1) % 10;
-            if (b == 1) {
-                tb_temp[0] = tb_temp[0] + PRF[prf_key][0];
-                tb_temp[1] = tb_temp[1] + PRF[prf_key][1];
-            } else {
-                tb_temp[0] = tb_temp[0] - PRF[prf_key][0];
-                tb_temp[1] = tb_temp[1] - PRF[prf_key][1];
-            }
-            for (int i = 1; i < d; i++) {
-                PvhssMult(tb_temp, params, modulus, tb_temp, C_X[ind_var[i]]);
-                prf_key = (prf_key + 1) % 10;
-                if (b == 1) {
-                    tb_temp[0] = tb_temp[0] + PRF[prf_key][0];
-                    tb_temp[1] = tb_temp[1] + PRF[prf_key][1];
-                } else {
-                    tb_temp[0] = tb_temp[0] - PRF[prf_key][0];
-                    tb_temp[1] = tb_temp[1] - PRF[prf_key][1];
-                }
-            }
-            tb[0] = tb[0] + tb_temp[0];
-            tb[1] = tb[1] + tb_temp[1];
-        }
-    } else {
-        int next_loop = loop + 1;
-        for (int i = beg_ind; i < num_data; i++) {
-            ind_var[next_loop - 1] = i;
-            EvaluateRecursive(tb, b, d, num_data, next_loop, i, ind_var,
-                              params, modulus, ek, C_X, PRF);
-        }
-    }
-}
-
-inline void PvhssAdd(NTL::vec_ZZ_pX &tb, NTL::vec_ZZ_pX &tb1, NTL::vec_ZZ_pX &tb2) {
-    tb.SetLength(2);
-    tb[0] = tb1[0] + tb2[0];
-    tb[1] = tb1[1] + tb2[1];
-}
-
 inline void PvhssAddInPlace(NTL::vec_ZZ_pX &acc, const NTL::vec_ZZ_pX &x) {
     acc[0] += x[0];
     acc[1] += x[1];
@@ -202,16 +131,14 @@ inline void PvhssEval(NTL::ZZ_pX &tby, ep_t g1T1, ep2_t g2T2, int b,
                       const NTL::vec_ZZ_pX &ek,
                       const NTL::vec_ZZ_pX &C_alpha,
                       const NTL::Vec<NTL::vec_ZZ_pX> &C_X,
-                      const NTL::Vec<NTL::vec_ZZ_pX> &PRF,
-                      const std::vector<std::vector<int>> &F_TEST,
-                      int degree_f, const NTL::vec_ZZ_pX &C_1) {
+                      int degree_f, const NTL::vec_ZZ_pX &M1) {
     int k = C_X.length();
 
     PvhssEvalWorkspace ws;
     InitPvhssEvalWorkspace(ws, degree_f);
 
-    // Base case: dp_prev[0] = M1 = decrypt(C_1)
-    PvhssMult(ws.dp_prev[0], params, modulus, ek, C_1);
+    // Base case: M1 is the precomputed HSS share of the constant input 1.
+    ws.dp_prev[0] = M1;
     for (int s = 1; s <= degree_f; s++) {
         ws.dp_prev[s].SetLength(2);
         ws.dp_prev[s][0] = 0;
@@ -265,28 +192,6 @@ inline void PvhssEval(NTL::ZZ_pX &tby, ep_t g1T1, ep2_t g2T2, int b,
         ZZtoBn(Tb_bn, Tb);
         ep2_mul_gen(g2T2, Tb_bn);
     }
-}
-
-inline void PvhssDecode(NTL::ZZ &y, PvhssParams pvhss_params,
-                        const PkeParams params, const NTL::ZZ_pX &y1,
-                        const NTL::ZZ_pX &y2) {
-    // Convert to ZZX first to avoid ZZ_p modulus conflict
-    NTL::ZZX y1_zzx, y2_zzx, y_zzx;
-    NTL::conv(y1_zzx, y1);
-    NTL::conv(y2_zzx, y2);
-    NTL::add(y_zzx, y1_zzx, y2_zzx);
-    // Evaluate at x=2 using Horner, modulo group order
-    NTL::ZZ_p::init(pvhss_params.g1_order_ZZ);
-    NTL::ZZ_p result(0);
-    NTL::ZZ_p two(2);
-    NTL::ZZ_p power(1);
-    for (long i = 0; i <= NTL::deg(y_zzx); i++) {
-        NTL::ZZ coeff;
-        NTL::GetCoeff(coeff, y_zzx, i);
-        result += NTL::conv<NTL::ZZ_p>(coeff) * power;
-        power *= two;
-    }
-    NTL::conv(y, result);
 }
 
 inline bool PvhssVerify(const NTL::ZZ_pX &y1, const NTL::ZZ_pX &y2,
