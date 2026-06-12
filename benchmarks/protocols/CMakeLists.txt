@@ -1,144 +1,126 @@
-function(add_protocol_benchmark_target target backend scheme include_dir time_function)
-    add_executable(${target}
-        protocol_bench_main.cpp
-        ${ARGN}
+# Root source dir
+set(ROOT ${CMAKE_SOURCE_DIR})
+# Schemes base
+set(S ${ROOT}/schemes)
+
+# ---- Helper macro for new RMS benchmarks ----
+macro(add_rms_bench NAME PROTO_DIR SRC_FILES EXTRA_INCLUDES)
+    add_executable(${NAME} ${ARGN})
+    target_include_directories(${NAME} PRIVATE
+        ${ROOT}
+        ${ROOT}/common/include
+        ${ROOT}/programs/include
+        ${ROOT}/benchmarks/common
+        ${PROTO_DIR}
+        ${EXTRA_INCLUDES}
     )
+    target_link_libraries(${NAME} PRIVATE common pvhss_programs)
+    # Add source files
+    foreach(f ${SRC_FILES})
+        target_sources(${NAME} PRIVATE ${f})
+    endforeach()
+endmacro()
 
-    target_compile_definitions(${target} PRIVATE
-        PVHSS_PROTOCOL_HEADER="tester.h"
-        PVHSS_PROTOCOL_TIME_TEST=${time_function}
-        PVHSS_PROTOCOL_BACKEND="${backend}"
-        PVHSS_PROTOCOL_SCHEME="${scheme}"
-    )
-
-    target_include_directories(${target} PRIVATE
-        ${include_dir}
-    )
-
-    target_link_libraries(${target}
-        PRIVATE
-            common
-    )
-endfunction()
-
-add_protocol_benchmark_target(protocol_group_hss_bench group hss
-    ${CMAKE_SOURCE_DIR}/schemes/group/hss/include
-    ::pvhss::group::hss::HSS_TIME_TEST
-    ${CMAKE_SOURCE_DIR}/schemes/group/hss/src/HSSElg.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/group/hss/src/tester.cpp
+# ============================================================
+# 1. Group HSS
+# ============================================================
+add_rms_bench(protocol_hss_rms_bench
+    "${S}/hss/group_hss/include"
+    "${S}/hss/group_hss/src/HSSElg.cpp"
+    "${S}/hss/group_hss/include;${ROOT}/backends/group_hss/include"
+    protocol_bench_hss.cpp
 )
 
-add_protocol_benchmark_target(protocol_group_vhss_bench group vhss
-    ${CMAKE_SOURCE_DIR}/schemes/group/vhss/include
-    ::pvhss::group::vhss::VHSSElg_TIME_TEST
-    ${CMAKE_SOURCE_DIR}/schemes/group/vhss/src/tester.cpp
+# ============================================================
+# 2. Group VHSS
+# ============================================================
+add_rms_bench(protocol_vhss_rms_bench
+    "${S}/vhss/group_vhss/include"
+    "${S}/hss/group_hss/src/HSSElg.cpp"
+    "${S}/vhss/group_vhss/include;${ROOT}/backends/group_vhss/include;${S}/hss/group_hss/include"
+    protocol_bench_vhss.cpp
 )
 
-add_protocol_benchmark_target(protocol_group_ot_bench group ot
-    ${CMAKE_SOURCE_DIR}/schemes/group/ot/include
-    ::pvhss::group::ot::PVHSSElg1_TIME_TEST
-    ${CMAKE_SOURCE_DIR}/schemes/group/ot/src/Ped.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/group/ot/src/PiOTGroup.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/group/ot/src/tester.cpp
+# ============================================================
+# 3. Group OT
+# ============================================================
+add_rms_bench(protocol_ot_rms_bench
+    "${S}/ot/group_ot/include"
+    "${S}/ot/group_ot/src/Ped.cpp;${S}/ot/group_ot/src/PiOTGroup.cpp"
+    "${S}/ot/group_ot/include;${S}/hss/group_hss/include;${ROOT}/backends/group_vhss/include"
+    protocol_bench_ot.cpp
 )
 
-add_protocol_benchmark_target(protocol_group_dc_bench group dc
-    ${CMAKE_SOURCE_DIR}/schemes/group/dc/include
-    ::pvhss::group::dc::PVHSSElg2_TIME_TEST
-    ${CMAKE_SOURCE_DIR}/schemes/group/dc/src/DecPed.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/group/dc/src/PiDCGroup.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/group/dc/src/tester.cpp
+# ============================================================
+# 4. Group DC
+# ============================================================
+add_rms_bench(protocol_dc_rms_bench
+    "${S}/dc/group_dc/include"
+    "${S}/dc/group_dc/src/DecPed.cpp;${S}/dc/group_dc/src/PiDCGroup.cpp"
+    "${S}/dc/group_dc/include;${S}/hss/group_hss/include;${ROOT}/backends/group_vhss/include"
+    protocol_bench_dc.cpp
 )
 
-add_protocol_benchmark_target(protocol_group_tcc25_bench group tcc25
-    ${CMAKE_SOURCE_DIR}/schemes/group/tcc25/include
-    ::pvhss::group::tcc25::Tcc25_TIME_TEST
-    ${CMAKE_SOURCE_DIR}/schemes/group/tcc25/src/Tcc25Group.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/group/tcc25/src/tester.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/group/hss/src/HSSElg.cpp
-)
-target_include_directories(protocol_group_tcc25_bench PRIVATE
-    ${CMAKE_SOURCE_DIR}/schemes/group/hss/include
-)
-
-add_protocol_benchmark_target(protocol_rlwe_hss_bench rlwe hss
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/hss/include
-    ::pvhss::rlwe::hss::HSS_TIME_TEST
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/hss/src/HSSRLWE.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/hss/src/tester.cpp
+# ============================================================
+# 5. Group TCC25
+# ============================================================
+add_rms_bench(protocol_tcc25_rms_bench
+    "${S}/tcc25/include"
+    "${S}/tcc25/src/Tcc25Group.cpp;${S}/hss/group_hss/src/HSSElg.cpp"
+    "${S}/tcc25/include;${S}/hss/group_hss/include"
+    protocol_bench_tcc25.cpp
 )
 
-add_protocol_benchmark_target(protocol_rlwe_vhss_bench rlwe vhss
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/vhss/include
-    ::pvhss::rlwe::vhss::VHSSRLWE_TIME_TEST
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/vhss/src/VHSSRLWE.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/vhss/src/tester.cpp
+# ============================================================
+# 6. CZ
+# ============================================================
+add_rms_bench(protocol_cz_rms_bench
+    "${S}/cz"
+    ""
+    "${S}/cz;${ROOT}/backends/cz/include"
+    protocol_bench_cz_new.cpp
 )
 
-add_protocol_benchmark_target(protocol_rlwe_ot_bench rlwe ot
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/include
-    ::pvhss::rlwe::ot::PVHSS_TIME_TEST
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/src/Ped.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/src/PiOTRLWE.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/src/VHSSRLWE.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/ot/src/tester.cpp
+# ============================================================
+# 7. RLWE HSS
+# ============================================================
+add_rms_bench(protocol_rlwe_hss_rms_bench
+    "${S}/hss/rlwe_hss/include"
+    "${S}/hss/rlwe_hss/src/HSSRLWE.cpp"
+    "${S}/hss/rlwe_hss/include"
+    protocol_bench_rlwe_hss.cpp
 )
 
-add_protocol_benchmark_target(protocol_rlwe_dc_bench rlwe dc
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/include
-    ::pvhss::rlwe::dc::PVHSS_TIME_TEST
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/src/DecPed.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/src/PiDCRLWE.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/src/VHSSRLWE.cpp
-    ${CMAKE_SOURCE_DIR}/schemes/rlwe/dc/src/tester.cpp
+# ============================================================
+# 8. RLWE VHSS
+# ============================================================
+add_rms_bench(protocol_rlwe_vhss_rms_bench
+    "${S}/vhss/rlwe_vhss/include"
+    "${S}/vhss/rlwe_vhss/src/VHSSRLWE.cpp"
+    "${S}/vhss/rlwe_vhss/include"
+    protocol_bench_rlwe_vhss.cpp
 )
 
-add_executable(protocol_cz_bench
-    protocol_bench_cz.cpp
+# ============================================================
+# 9. RLWE OT
+# ============================================================
+add_rms_bench(protocol_rlwe_ot_rms_bench
+    "${S}/ot/rlwe_ot/include"
+    "${S}/ot/rlwe_ot/src/Ped.cpp;${S}/ot/rlwe_ot/src/PiOTRLWE.cpp;${S}/ot/rlwe_ot/src/VHSSRLWE.cpp"
+    "${S}/ot/rlwe_ot/include;${S}/vhss/rlwe_vhss/include"
+    protocol_bench_rlwe_ot.cpp
 )
 
-target_include_directories(protocol_cz_bench PRIVATE
-    ${CMAKE_SOURCE_DIR}/schemes/cz
+# ============================================================
+# 10. RLWE DC
+# ============================================================
+add_rms_bench(protocol_rlwe_dc_rms_bench
+    "${S}/dc/rlwe_dc/include"
+    "${S}/dc/rlwe_dc/src/DecPed.cpp;${S}/dc/rlwe_dc/src/PiDCRLWE.cpp;${S}/dc/rlwe_dc/src/VHSSRLWE.cpp"
+    "${S}/dc/rlwe_dc/include;${S}/vhss/rlwe_vhss/include"
+    protocol_bench_rlwe_dc.cpp
 )
 
-target_link_libraries(protocol_cz_bench
-    PRIVATE
-        common
-)
-
-add_executable(protocol_benchmark_runner
-    protocol_benchmark_runner.cpp
-)
-
-set(PVHSS_PROTOCOL_BENCH_TARGETS
-    protocol_group_hss_bench
-    protocol_group_vhss_bench
-    protocol_group_ot_bench
-    protocol_group_dc_bench
-    protocol_group_tcc25_bench
-    protocol_rlwe_hss_bench
-    protocol_rlwe_vhss_bench
-    protocol_rlwe_ot_bench
-    protocol_rlwe_dc_bench
-    protocol_cz_bench
-)
-
-add_custom_target(protocol_benchmarks_p5
-    COMMAND $<TARGET_FILE:protocol_benchmark_runner>
-        --build-dir ${CMAKE_BINARY_DIR}
-        --out-dir ${CMAKE_SOURCE_DIR}/benchmarks/results/protocols
-        --degrees 5
-        --cyctimes 1
-    DEPENDS ${PVHSS_PROTOCOL_BENCH_TARGETS} protocol_benchmark_runner
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-)
-
-add_custom_target(protocol_benchmarks
-    COMMAND $<TARGET_FILE:protocol_benchmark_runner>
-        --build-dir ${CMAKE_BINARY_DIR}
-        --out-dir ${CMAKE_SOURCE_DIR}/benchmarks/results/protocols
-        --degrees 5,10,15
-        --cyctimes 1
-    DEPENDS ${PVHSS_PROTOCOL_BENCH_TARGETS} protocol_benchmark_runner
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-)
+# ---- Old benchmark runner (compatibility) ----
+add_executable(protocol_benchmark_runner protocol_benchmark_runner.cpp)
+target_link_libraries(protocol_benchmark_runner PRIVATE common)
