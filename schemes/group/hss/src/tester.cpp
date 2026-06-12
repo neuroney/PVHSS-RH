@@ -22,21 +22,6 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     }, cyctimes);
     PrintTimeMs("Setup algorithm time", timing);
 
-    ZZ X_single;
-    NTL::RandomBits(X_single, msg_bits);
-    HssCiphertext X_Input;
-    timing = MeasureTimeMs([&]() {
-        HssInput(X_Input, pk, X_single);
-    }, cyctimes);
-    PrintTimeMs("Input algorithm time", timing);
-
-    int prf_key = 0;
-
-    ZZ Y_single;
-
-    vector<vector<int>> F_TEST;
-    GenerateRandomFunc(F_TEST, msg_num, degree_f);
-
     Vec<ZZ> X;
     X.SetLength(msg_num);
     for (int i = 0; i < msg_num; ++i)
@@ -45,12 +30,22 @@ void HSS_TIME_TEST(int msg_num, int degree_f, int cyctimes)
     }
 
     vector<HssCiphertext> Ix;
-    HssCiphertext CTtmp;
-    for (int i = 0; i < X.length(); ++i)
-    {
-        HssInput(CTtmp, pk, X[i]);
-        Ix.push_back(CTtmp);
-    }
+    timing = MeasureTimeMs([&]() {
+        Ix.clear();
+        HssCiphertext CTtmp;
+        for (int j = 0; j < X.length(); ++j)
+        {
+            HssInput(CTtmp, pk, X[j]);
+            Ix.push_back(CTtmp);
+        }
+    }, cyctimes);
+    PrintTimeMs("Input algorithm time", timing);
+
+    int prf_key = 0;
+    ZZ Y_single;
+
+    vector<vector<int>> F_TEST;
+    GenerateRandomFunc(F_TEST, msg_num, degree_f);
 
     HssMemoryValue y0, y1;
     timing = MeasureTimeMs([&]() {
