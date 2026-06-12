@@ -68,6 +68,7 @@ static const Target kTargets[] = {
     {"group-vhss", "group", "vhss", "benchmarks/protocols/protocol_group_vhss_bench"},
     {"group-ot", "group", "ot", "benchmarks/protocols/protocol_group_ot_bench"},
     {"group-dc", "group", "dc", "benchmarks/protocols/protocol_group_dc_bench"},
+    {"group-tcc25", "group", "tcc25", "benchmarks/protocols/protocol_group_tcc25_bench"},
     {"rlwe-hss", "rlwe", "hss", "benchmarks/protocols/protocol_rlwe_hss_bench"},
     {"rlwe-vhss", "rlwe", "vhss", "benchmarks/protocols/protocol_rlwe_vhss_bench"},
     {"rlwe-ot", "rlwe", "ot", "benchmarks/protocols/protocol_rlwe_ot_bench"},
@@ -247,8 +248,10 @@ static int scheme_order(const string &scheme)
         return 2;
     if (scheme == "dc")
         return 3;
-    if (scheme == "cz")
+    if (scheme == "tcc25")
         return 4;
+    if (scheme == "cz")
+        return 5;
     return 99;
 }
 

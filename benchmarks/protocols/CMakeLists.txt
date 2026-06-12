@@ -50,6 +50,17 @@ add_protocol_benchmark_target(protocol_group_dc_bench group dc
     ${CMAKE_SOURCE_DIR}/schemes/group/dc/src/tester.cpp
 )
 
+add_protocol_benchmark_target(protocol_group_tcc25_bench group tcc25
+    ${CMAKE_SOURCE_DIR}/schemes/group/tcc25/include
+    ::pvhss::group::tcc25::Tcc25_TIME_TEST
+    ${CMAKE_SOURCE_DIR}/schemes/group/tcc25/src/Tcc25Group.cpp
+    ${CMAKE_SOURCE_DIR}/schemes/group/tcc25/src/tester.cpp
+    ${CMAKE_SOURCE_DIR}/schemes/group/hss/src/HSSElg.cpp
+)
+target_include_directories(protocol_group_tcc25_bench PRIVATE
+    ${CMAKE_SOURCE_DIR}/schemes/group/hss/include
+)
+
 add_protocol_benchmark_target(protocol_rlwe_hss_bench rlwe hss
     ${CMAKE_SOURCE_DIR}/schemes/rlwe/hss/include
     ::pvhss::rlwe::hss::HSS_TIME_TEST
@@ -104,6 +115,7 @@ set(PVHSS_PROTOCOL_BENCH_TARGETS
     protocol_group_vhss_bench
     protocol_group_ot_bench
     protocol_group_dc_bench
+    protocol_group_tcc25_bench
     protocol_rlwe_hss_bench
     protocol_rlwe_vhss_bench
     protocol_rlwe_ot_bench
