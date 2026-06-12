@@ -124,7 +124,8 @@ inline void PvhssAddInPlace(NTL::vec_ZZ_pX &acc, const NTL::vec_ZZ_pX &x) {
     acc[1] += x[1];
 }
 
-// Optimized chain-reuse DP: O(k*d^2) PvhssMult calls instead of O(k*d^3).
+// RMS-optimized recurrence: H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]
+// Reduces PvhssMult calls from O(k*d^2) to O(k*d).
 inline void PvhssEval(NTL::ZZ_pX &tby, ep_t g1T1, ep2_t g2T2, int b,
                       PvhssParams pvhss_params, const PkeParams &params,
                       const NTL::ZZ_pXModulus &modulus,
@@ -146,22 +147,19 @@ inline void PvhssEval(NTL::ZZ_pX &tby, ep_t g1T1, ep2_t g2T2, int b,
     }
 
     for (int i = 1; i <= k; i++) {
-        for (int s = 0; s <= degree_f; s++) {
+        // dp_curr[0] = constant 1 (inherited from dp_prev[0])
+        ws.dp_curr[0] = ws.dp_prev[0];
+
+        // H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]  for s = 1..degree_f
+        for (int s = 1; s <= degree_f; s++) {
             ws.dp_curr[s].SetLength(2);
             ws.dp_curr[s][0] = 0;
             ws.dp_curr[s][1] = 0;
+            // Start with H_{i-1}[s]
             PvhssAddInPlace(ws.dp_curr[s], ws.dp_prev[s]);
-        }
-
-        for (int r = 0; r < degree_f; r++) {
-            ws.chain[0] = ws.dp_prev[r][0];
-            ws.chain[1] = ws.dp_prev[r][1];
-
-            for (int j = 1; r + j <= degree_f; j++) {
-                PvhssMult(ws.next, params, modulus, ws.chain, C_X[i - 1]);
-                ws.chain.swap(ws.next);
-                PvhssAddInPlace(ws.dp_curr[r + j], ws.chain);
-            }
+            // Add x_i * H_i[s-1]
+            PvhssMult(ws.next, params, modulus, ws.dp_curr[s - 1], C_X[i - 1]);
+            PvhssAddInPlace(ws.dp_curr[s], ws.next);
         }
         ws.dp_prev.swap(ws.dp_curr);
     }

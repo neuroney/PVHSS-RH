@@ -140,9 +140,11 @@ void HssEvaluate(HssMemoryValue &y_b_res, int b, const vector<HssCiphertext> &Ix
 }
 
 
+// RMS-optimized recurrence: H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]
+// Reduces HssMul calls from O(k*d^3) to O(k*d).
 void HssEvaluatePolyD2(HssMemoryValue &y_b_res, int b, const vector<HssCiphertext> &Ix, const HssPublicKey &pk, const HssEvalKey &ekb, int &prf_key, int degree_f)
 {
-    HssMemoryValue tmp1, tmp2;
+    HssMemoryValue tmp;
 
     int k = Ix.size();
     Vec<HssMemoryValue> dp_prev, dp_curr;
@@ -152,20 +154,21 @@ void HssEvaluatePolyD2(HssMemoryValue &y_b_res, int b, const vector<HssCiphertex
     dp_prev[0][0] = b;
     dp_prev[0][1] = ekb;
 
-    // 动态规划填表
-    for (int i = 1; i <= k; i++) { // 依次加入 x1, x2, ..., x5
-        for (int s = 0; s <= degree_f; s++) { // 目标和从 0 到 d
+    for (int i = 1; i <= k; i++) {
+        // dp_curr[0] = constant 1 (inherited from dp_prev[0])
+        dp_curr[0][0] = 0;
+        dp_curr[0][1] = 0;
+        HssAddMemory(dp_curr[0], pk, dp_curr[0], dp_prev[0]);
+
+        // H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]  for s = 1..degree_f
+        for (int s = 1; s <= degree_f; s++) {
             dp_curr[s][0] = 0;
             dp_curr[s][1] = 0;
+            // Start with H_{i-1}[s]
             HssAddMemory(dp_curr[s], pk, dp_curr[s], dp_prev[s]);
-            for (int j = 1; j <= s; j++) {
-                copy(begin(dp_prev[s - j]), end(dp_prev[s - j]), begin(tmp1));
-                for (int h=0; h < j;++h) {
-                    HssMul(tmp2, b, pk, Ix[i - 1], tmp1, prf_key);
-                    copy(begin(tmp2), end(tmp2), begin(tmp1));
-                }
-                HssAddMemory(dp_curr[s], pk, dp_curr[s], tmp1);
-            }
+            // Add x_i * H_i[s-1]
+            HssMul(tmp, b, pk, Ix[i - 1], dp_curr[s - 1], prf_key);
+            HssAddMemory(dp_curr[s], pk, dp_curr[s], tmp);
         }
         dp_prev.swap(dp_curr);
     }

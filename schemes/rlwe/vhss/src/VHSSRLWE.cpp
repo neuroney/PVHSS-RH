@@ -194,7 +194,8 @@ void HssAddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX &C_Y)
     tb[1] = C_X[1] + C_Y[1];
 }
 
-// Optimized chain reuse DP: O(k*d^2) VHSS_Mult calls instead of O(k*d^3)
+// RMS-optimized recurrence: H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]
+// Reduces VHSS_Mult calls from O(k*d^2) to O(k*d).
 void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, const PKE_Para &pkePara, ZZ_pXModulus modulus, const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f, const vec_ZZ_pX &M1)
 {
     int k = Ix.size();
@@ -210,31 +211,25 @@ void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, c
         dp_prev[s][1] = 0;
     }
 
-    vec_ZZ_pX chain, next;
-    chain.SetLength(2);
-    next.SetLength(2);
+    vec_ZZ_pX product;
+    product.SetLength(2);
 
     for (int i = 1; i <= k; i++)
     {
-        for (int s = 0; s <= degree_f; s++) {
+        // dp_curr[0] = constant 1 (inherited from dp_prev[0])
+        dp_curr[0] = dp_prev[0];
+
+        // H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]  for s = 1..degree_f
+        for (int s = 1; s <= degree_f; s++)
+        {
             dp_curr[s].SetLength(2);
             dp_curr[s][0] = 0;
             dp_curr[s][1] = 0;
+            // Start with H_{i-1}[s]
             HssAddMemoryInPlace(dp_curr[s], dp_prev[s]);
-        }
-
-        for (int r = 0; r < degree_f; r++)
-        {
-            chain[0] = dp_prev[r][0];
-            chain[1] = dp_prev[r][1];
-
-            for (int j = 1; r + j <= degree_f; j++)
-            {
-                VHSS_Mult(next, pkePara, modulus, chain, Ix[i - 1]);
-                chain.swap(next);
-
-                HssAddMemoryInPlace(dp_curr[r + j], chain);
-            }
+            // Add x_i * H_i[s-1]
+            VHSS_Mult(product, pkePara, modulus, dp_curr[s - 1], Ix[i - 1]);
+            HssAddMemoryInPlace(dp_curr[s], product);
         }
         dp_prev.swap(dp_curr);
     }
