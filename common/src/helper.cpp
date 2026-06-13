@@ -155,31 +155,42 @@ TimingResult MeasureTimeMs(const std::function<void()> &fn, int samples,
         sample_ms[i] = elapsed_ms / iters;
     }
 
-    double mean = 0.0;
-    for (int i = 0; i < samples; ++i)
-    {
-        mean += sample_ms[i];
-    }
-    mean /= samples;
-
-    double variance = 0.0;
-    for (int i = 0; i < samples; ++i)
-    {
-        const double diff = sample_ms[i] - mean;
-        variance += diff * diff;
-    }
-    variance /= samples;
-
     vector<double> sorted = sample_ms;
     sort(sorted.begin(), sorted.end());
-    double median = sorted[samples / 2];
+
+    // Trim one min and one max when we have enough samples.
+    int start = 0;
+    int end   = samples;
+    if (samples >= 3)
+    {
+        ++start;
+        --end;
+    }
+    const int trimmed_count = end - start;
+
+    double mean = 0.0;
+    for (int i = start; i < end; ++i)
+    {
+        mean += sorted[i];
+    }
+    mean /= trimmed_count;
+
+    double variance = 0.0;
+    for (int i = start; i < end; ++i)
+    {
+        const double diff = sorted[i] - mean;
+        variance += diff * diff;
+    }
+    variance /= trimmed_count;
+
+    double median = sorted[(samples - 1) / 2];
     if (samples % 2 == 0)
     {
         median = (sorted[samples / 2 - 1] + sorted[samples / 2]) / 2.0;
     }
 
     TimingResult result;
-    result.samples = samples;
+    result.samples = trimmed_count;
     result.iterations_per_sample = measured_iters;
     result.adaptive = adaptive;
     result.mean_ms = mean;

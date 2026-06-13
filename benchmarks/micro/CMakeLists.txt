@@ -15,12 +15,3 @@ target_link_libraries(microbench
     PRIVATE
         common
 )
-
-add_custom_target(microbenchmark_results
-    COMMAND bash
-        ${CMAKE_CURRENT_SOURCE_DIR}/run_microbenchmarks.sh
-        --build-dir ${CMAKE_BINARY_DIR}
-        --out-dir ${CMAKE_SOURCE_DIR}/benchmarks/results/micro
-    DEPENDS microbench
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-)

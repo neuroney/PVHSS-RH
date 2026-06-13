@@ -25,36 +25,30 @@ cmake --build build
 
 ## Benchmarks
 
-The benchmark layer writes two final CSV tables:
+The benchmark layer writes two CSV tables:
 
 - `benchmarks/results/micro/micro_timing.csv`
 - `benchmarks/results/schemes/scheme_timing.csv`
 
-Recommended entry points:
+### Running benchmarks
 
 ```bash
-# Primitive-level timings.
-cmake --build build --target microbenchmark_results
+# 1. Build binaries
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
 
-# Scheme timings for degree 5 only.
-cmake --build build --target scheme_benchmarks_p5
+# 2. Micro-benchmarks (primitive-level timings)
+./run_micro.sh
 
-# Scheme timings for the default degree set.
-cmake --build build --target scheme_benchmarks
-
-# Both final tables.
-cmake --build build --target benchmark_tables
+# 3. Scheme benchmarks — 10 schemes × degrees 5,10,15
+./run_schemes.sh
 ```
 
-For custom scheme runs, call the scheme runner directly:
+### Scheme targets
 
-```bash
-bash benchmarks/schemes/run_scheme_benchmarks.sh \
-  --build-dir build \
-  --degrees 5,10,15 \
-  --cyctimes 5 \
-  --msg-num 5 \
-  --msg-bits 32
-```
-
-See [benchmarks/README.md](benchmarks/README.md) for details.
+| Family  | Targets |
+|---------|---------|
+| Group   | 
+`scheme_group_tcc25` `scheme_group_hss` `scheme_group_vhss` `scheme_group_ot` `scheme_group_dc` |
+| RLWE    | 
+`scheme_rlwe_cz` `scheme_rlwe_hss` `scheme_rlwe_vhss` `scheme_rlwe_ot` `scheme_rlwe_dc` |

@@ -671,7 +671,9 @@ static void bench_rlwe_hss(const BenchConfig &cfg)
     my.SetLength(2);
     mz.SetLength(2);
 
-    rlwe_hss::HSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
+    ZZ_pX test_val = conv<ZZ_pX>(ZZ(12345));
+
+    rlwe_hss::HSS_Enc(ct, pke_para, modulus, pke_pk, test_val);
     rlwe_hss::HSS_Mult(mx, pke_para, modulus, hss_ek0, ct);
     rlwe_hss::HSS_Mult(my, pke_para, modulus, hss_ek0, ct);
 
@@ -681,7 +683,7 @@ static void bench_rlwe_hss(const BenchConfig &cfg)
                  cfg);
 
     print_result(run_bench("hss-rlwe", "HSS Enc/OKDM", cfg.samples, cfg.iters, false, cfg, [&]() {
-                     rlwe_hss::HSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
+                     rlwe_hss::HSS_Enc(ct, pke_para, modulus, pke_pk, test_val);
                  }),
                  cfg);
 
@@ -717,7 +719,9 @@ static void bench_rlwe_vhss(const BenchConfig &cfg)
     my.SetLength(2);
     mz.SetLength(2);
 
-    rlwe_vhss::VHSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
+    ZZ_pX test_val = conv<ZZ_pX>(ZZ(12345));
+
+    rlwe_vhss::VHSS_Enc(ct, pke_para, modulus, pke_pk, test_val);
     rlwe_vhss::HssConvertInput(mx, pke_para, modulus, vhss_para.vhssEk_1, ct);
     rlwe_vhss::HssConvertInput(my, pke_para, modulus, vhss_para.vhssEk_1, ct);
 
@@ -727,7 +731,7 @@ static void bench_rlwe_vhss(const BenchConfig &cfg)
                  cfg);
 
     print_result(run_bench("vhss-rlwe", "VHSS Enc/OKDM", cfg.samples, cfg.iters, false, cfg, [&]() {
-                     rlwe_vhss::VHSS_Enc(ct, pke_para, modulus, pke_pk, ZZ(12345));
+                     rlwe_vhss::VHSS_Enc(ct, pke_para, modulus, pke_pk, test_val);
                  }),
                  cfg);
 

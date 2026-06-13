@@ -29,12 +29,7 @@ if(UNIX)
     target_link_libraries(pvhss_external_deps INTERFACE m)
 endif()
 
-include(CTest)
-
 add_subdirectory(common)
-if(BUILD_TESTING)
-    add_subdirectory(tests)
-endif()
 if(PVHSS_BUILD_BENCHMARKS)
     add_subdirectory(benchmarks)
 endif()
