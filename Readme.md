@@ -48,7 +48,5 @@ cmake --build build
 
 | Family  | Targets |
 |---------|---------|
-| Group   | 
-`scheme_group_tcc25` `scheme_group_hss` `scheme_group_vhss` `scheme_group_ot` `scheme_group_dc` |
-| RLWE    | 
-`scheme_rlwe_cz` `scheme_rlwe_hss` `scheme_rlwe_vhss` `scheme_rlwe_ot` `scheme_rlwe_dc` |
+| Group   | `scheme_group_tcc25` `scheme_group_hss` `scheme_group_vhss` `scheme_group_ot` `scheme_group_dc` |
+| RLWE    | `scheme_rlwe_cz` `scheme_rlwe_hss` `scheme_rlwe_vhss` `scheme_rlwe_ot` `scheme_rlwe_dc` |
