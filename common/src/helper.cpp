@@ -207,28 +207,6 @@ void PrintTimeMs(const std::string &label, const TimingResult &result)
 }
 
 
-void NativeEvaluate(NTL::ZZ &y, int d, int num_data, const NTL::vec_ZZ &X,
-                     const NTL::ZZ &mmod, const std::vector<std::vector<int>> &F_TEST)
-{
-    (void)d;
-    y = 0;
-    for (size_t i = 0; i < F_TEST.size(); ++i)
-    {
-        NTL::ZZ monotmp(1);
-        for (int j = 0; j < num_data; ++j)
-        {
-            if (F_TEST[i][j] == 0)
-            {
-                continue;
-            }
-            NTL::ZZ tmp;
-            NTL::PowerMod(tmp, X[j], F_TEST[i][j], mmod);
-            NTL::MulMod(monotmp, monotmp, tmp, mmod);
-        }
-        NTL::AddMod(y, y, monotmp, mmod);
-    }
-}
-
 NTL::ZZ PrfZZ(int prf_key, const NTL::ZZ &mmod)
 {
     NTL::ZZ res;

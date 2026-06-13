@@ -24,10 +24,6 @@ void HssMul(HssMemoryValue &Mz, int idx, const HssPublicKey &pk,
 void HssDdlog(NTL::ZZ &z, const HssPublicKey &pk, const NTL::ZZ &g);
 void HssAddMemory(HssMemoryValue &Mz, const HssPublicKey &pk,
                   const HssMemoryValue &Mx, const HssMemoryValue &My);
-void HssEvaluate(HssMemoryValue &y_b_res, int b,
-                 const std::vector<HssCiphertext> &Ix, const HssPublicKey &pk,
-                 const HssEvalKey &ekb, int &prf_key,
-                 std::vector<std::vector<int>> F_TEST);
 void HssEvaluateMPE(HssMemoryValue &y_b_res, int b,
                        const std::vector<HssCiphertext> &Ix,
                        const HssPublicKey &pk, const HssEvalKey &ekb,

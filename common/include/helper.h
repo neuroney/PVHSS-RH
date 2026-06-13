@@ -64,9 +64,6 @@ void PrintTimeMs(const std::string &label, const TimingResult &result);
 
 // === Cryptographic helpers ===
 
-void NativeEvaluate(NTL::ZZ &y, int d, int num_data, const NTL::vec_ZZ &X,
-                     const NTL::ZZ &mmod, const std::vector<std::vector<int>> &F_TEST);
-
 NTL::ZZ PrfZZ(int prf_key, const NTL::ZZ &mmod);
 void PrfZZ(NTL::ZZ &res, int prf_key, const NTL::ZZ &mmod);
 

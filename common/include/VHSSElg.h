@@ -20,14 +20,6 @@ void VhssElgamalMul(VhssElgamalMv &Mz, int idx, const VhssElgamalPk &pk,
 void VhssElgamalDdlog(NTL::ZZ &z, const VhssElgamalPk &pk, const NTL::ZZ &g);
 void VhssElgamalAddMemory(VhssElgamalMv &Mz, const VhssElgamalPk &pk,
                           const VhssElgamalMv &Mx, const VhssElgamalMv &My);
-void VhssElgamalEvaluate(VhssElgamalMv &y_b_res, int b,
-                         const std::vector<VhssElgamalCt> &Ix,
-                         const VhssElgamalPk &pk, const VhssElgamalEk &ekb,
-                         int &prf_key, std::vector<std::vector<int>> F_TEST);
-void VhssElgamalEvaluatePD(VhssElgamalMv &y_b_res, int b,
-                           const std::vector<VhssElgamalCt> &Ix,
-                           const VhssElgamalPk &pk, const VhssElgamalEk &ekb,
-                           int &prf_key, int degree_f);
 void VhssElgamalEvaluateMPE(VhssElgamalMv &y_b_res, int b,
                             const std::vector<VhssElgamalCt> &Ix,
                             const VhssElgamalPk &pk, const VhssElgamalEk &ekb,

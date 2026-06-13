@@ -114,32 +114,6 @@ void HssAddMemory(HssMemoryValue &Mz, const HssPublicKey &pk, const HssMemoryVal
     add(Mz[1], Mx[1], My[1]);
 }
 
-void HssEvaluate(HssMemoryValue &y_b_res, int b, const vector<HssCiphertext> &Ix, const HssPublicKey &pk, const HssEvalKey &ekb, int &prf_key, vector<vector<int>> F_TEST)
-{
-    HssMemoryValue M1, Monomial, tmp;
-    M1[0] = b;
-    M1[1] = ekb;
-
-    y_b_res[0] = 0;
-    y_b_res[1] = 0;
-
-    int i, j, k;
-    for (i = 0; i < F_TEST.size(); ++i)
-    {
-        copy(begin(M1), end(M1), begin(Monomial));
-        for (j = 0; j < Ix.size(); ++j)
-        {
-            for (k = 0; k < F_TEST[i][j]; ++k)
-            {
-                HssMul(tmp, b, pk, Ix[j], Monomial, prf_key);
-                copy(begin(tmp), end(tmp), begin(Monomial));
-            }
-        }
-        HssAddMemory(y_b_res, pk, y_b_res, Monomial);
-    }
-}
-
-
 // RMS-optimized recurrence: H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]
 // Reduces HssMul calls from O(k*d^3) to O(k*d).
 void HssEvaluateMPE(HssMemoryValue &y_b_res, int b, const vector<HssCiphertext> &Ix, const HssPublicKey &pk, const HssEvalKey &ekb, int &prf_key, int degree_f)

@@ -81,7 +81,6 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, 
     int prf_key = 0;
     PVHSS_MV y_b_res, Y_b_res, sk_b, SK_b;
 
-    // HssEvaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
     if (b == 0)
     {
         HssEvaluateMPE(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_1, prf_key, param.pkePara.d, M1);

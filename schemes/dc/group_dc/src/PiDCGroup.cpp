@@ -77,7 +77,6 @@ void PVHSSElg2_Compute(PROOF &proof, int b, const PVHSSElg2_Para &param, const P
 {
     int prf_key = 0;
     VhssElgamalMv y_b_res;
-    //VhssElgamalEvaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
     VhssElgamalEvaluateMPE(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
     PVHSSElg2_Prove(proof, b, y_b_res[0], y_b_res[2], param, ekpb);
 }
@@ -199,7 +198,6 @@ bool PVHSSElg2_ACC_TEST(int msg_num, int degree_f)
     PVHSSElg2_Decode(y_dig, pi0, pi1, sk);
 
 
-    // NativeEvaluate(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);
     y_native = MPE(X,degree_f) % param.ck.g1_order_ZZ;
     cout << "True result: " << y_native << endl;
     cout << "Eval result: " << y_dig << endl;
