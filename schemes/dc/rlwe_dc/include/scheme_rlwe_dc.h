@@ -3,7 +3,17 @@
 #include "scheme_bench_runner.h"
 #include "helper.h"
 #include <NTL/ZZ.h>
+#include <NTL/ZZX.h>
 #include <vector>
+
+static inline void DecimalToBinary(NTL::ZZ_pX &out, NTL::ZZ in, int bits) {
+    NTL::ZZ rem; NTL::ZZX out_zzx;
+    for (int i = 0; i < bits; i++) {
+        rem = in % 2; NTL::SetCoeff(out_zzx, i, rem); in = (in - rem) / 2;
+    }
+    NTL::conv(out, out_zzx);
+}
+
 namespace pvhss { namespace scheme {
 struct SchemeRlweDc {
     struct SetupOutput {
@@ -25,7 +35,8 @@ struct SchemeRlweDc {
         bn_copy(pp.ekp0_0,ekp0[0]);bn_copy(pp.ekp0_1,ekp0[1]);bn_copy(pp.ekp1_0,ekp1[0]);bn_copy(pp.ekp1_1,ekp1[1]);
         pp.M1_0.SetLength(2);pp.M1_1.SetLength(2);pp.M3_0.SetLength(2);pp.M3_1.SetLength(2);
         NTL::vec_ZZ_pX C1;C1.SetLength(4);
-        pvhss::rlwe::dc::PKE_OKDM(C1,pp.param.pkePara,pp.modulus,pp.pkePk,NTL::ZZ(1));
+        NTL::ZZ_pX one; DecimalToBinary(one,NTL::ZZ(1),1);
+        pvhss::rlwe::dc::PKE_OKDM(C1,pp.param.pkePara,pp.modulus,pp.pkePk,one);
         pvhss::rlwe::dc::HssConvertInput(pp.M1_0,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_1,C1);
         pvhss::rlwe::dc::HssConvertInput(pp.M1_1,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_2,C1);
         pvhss::rlwe::dc::HssConvertInput(pp.M3_0,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_3,C1);
@@ -33,9 +44,9 @@ struct SchemeRlweDc {
         return pp;
     }
     static ProbGenOutput ProbGen(const SetupOutput& pp, const std::vector<NTL::ZZ>& x) {
-        ProbGenOutput t; NTL::vec_ZZ X;X.SetLength(x.size());
-        for(size_t i=0;i<x.size();++i)X[i]=x[i];
-        pvhss::rlwe::dc::ProbGen(t.Ix,pp.param,X,pp.modulus,pp.pkePk); return t;
+        ProbGenOutput t; NTL::vec_ZZ_pX Xp;Xp.SetLength(x.size());
+        for(size_t i=0;i<x.size();++i)DecimalToBinary(Xp[i],x[i],pp.param.pkePara.msg_bit);
+        pvhss::rlwe::dc::ProbGen(t.Ix,pp.param,Xp,pp.modulus,pp.pkePk); return t;
     }
     static ServerOutput Compute(const SetupOutput& pp, const ProbGenOutput& task, int sid) {
         ServerOutput o; bn_t ekpb[2];bn_new(ekpb[0]);bn_new(ekpb[1]);

@@ -6,7 +6,7 @@ using namespace std;
 
 namespace pvhss { namespace rlwe { namespace ot {
 
-static void EncodeBinaryPolynomial(ZZ_pX &out, ZZ value, int bits)
+void EncodeBinaryPolynomial(ZZ_pX &out, ZZ value, int bits)
 {
     ZZX encoded;
     clear(out);
@@ -28,7 +28,9 @@ void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk)
     for (int i = 0; i < pkePara.num_data; i++)
     {
         NTL::RandomBits(data.X[i], pkePara.msg_bit);
-        VHSS_Enc(C_x, pkePara, modulus, pkePk, data.X[i]);
+        ZZ_pX xp;
+        EncodeBinaryPolynomial(xp, data.X[i], pkePara.msg_bit);
+        VHSS_Enc(C_x, pkePara, modulus, pkePk, xp);
         data.C_X.append(C_x);
     }
     for (int i = 0; i < 10; i++)
@@ -69,40 +71,36 @@ void PKE_Gen(PKE_Para &pkePara, vec_ZZ_pX &pkePk, vec_ZZ_pX &pkeSk)
     pkeSk[1] = hat_s;
 }
 
-void PKE_Enc(vec_ZZ_pX &c, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ &x)
+void PKE_Enc(vec_ZZ_pX &c, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ_pX &x)
 {
-    ZZ_pX v, e1, e2, x_ZZ_pX;
+    ZZ_pX v, e1, e2, temp;
     ZZ q_div_p = pkePara.q / pkePara.p;
-    ZZ_p coeff;
     RlweSecretKey(v, pkePara.N, pkePara.hsk);
     GaussRandom(e1, pkePara.N);
     GaussRandom(e2, pkePara.N);
     MulMod(c[0], pkePk[1], v, modulus);
     c[0] = c[0] + e1;
-    conv(coeff, q_div_p * x);
-    SetCoeff(x_ZZ_pX, 0, coeff);
-    c[0] = c[0] + x_ZZ_pX;
+    ZZpxScaleMul(temp, x, q_div_p);
+    c[0] = c[0] + temp;
     MulMod(c[1], pkePk[0], v, modulus);
     c[1] = e2 - c[1];
 }
 
-void PKE_OKDM(vec_ZZ_pX &C, const PKE_Para &pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ &x)
+void PKE_OKDM(vec_ZZ_pX &C, const PKE_Para &pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ_pX &x)
 {
     C.SetLength(4);
-    ZZ zero;
+    ZZ_pX zero;
     zero = 0;
     ZZ q_div_p = pkePara.q / pkePara.p;
     vec_ZZ_pX c_xs1, c_xs2;
-    ZZ_p coeff;
-    ZZ_pX x_ZZ_pX;
+    ZZ_pX temp;
     c_xs1.SetLength(2);
     c_xs2.SetLength(2);
 
     PKE_Enc(c_xs1, pkePara, modulus, pkePk, x);
     PKE_Enc(c_xs2, pkePara, modulus, pkePk, zero);
-    conv(coeff, q_div_p * x);
-    SetCoeff(x_ZZ_pX, 0, coeff);
-    c_xs2[1] = c_xs2[1] + x_ZZ_pX;
+    ZZpxScaleMul(temp, x, q_div_p);
+    c_xs2[1] = c_xs2[1] + temp;
     C[0] = c_xs1[0];
     C[1] = c_xs1[1];
     C[2] = c_xs2[0];
@@ -170,7 +168,7 @@ void HssGen(vec_ZZ_pX &hssEk_1, vec_ZZ_pX &hssEk_2,
     hssEk_2[1] = pkeSk[1] - hssEk_1[1];
 }
 
-void VHSS_Enc(vec_ZZ_pX &C, const PKE_Para &pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ &x)
+void VHSS_Enc(vec_ZZ_pX &C, const PKE_Para &pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ_pX &x)
 {
     C.SetLength(4);
     PKE_OKDM(C, pkePara, modulus, pkePk, x);

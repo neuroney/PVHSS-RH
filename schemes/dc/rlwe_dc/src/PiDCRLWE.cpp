@@ -76,7 +76,7 @@ void KeyGen(PVHSSPara &param, PVHSS_SK &sk, ZZ_pXModulus modulus, vec_ZZ_pX pkeP
     fp12_mul(param.aux1, tmp, param.aux1);
 }
 
-void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ &x, ZZ_pXModulus modulus, vec_ZZ_pX pkePk)
+void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ_pX &x, ZZ_pXModulus modulus, vec_ZZ_pX pkePk)
 {
     Ix.clear();
     int i;
@@ -191,7 +191,9 @@ bool PVHSS_ACC_TEST(int msg_num, int degree_f)
 
     vector<PVHSS_CT> Ix;
     timing = MeasureTimeMs([&]() {
-        ProbGen(Ix, param, X, modulus, pkePk);
+        vec_ZZ_pX Xp; Xp.SetLength(msg_num);
+        for (int i = 0; i < msg_num; ++i) EncodeBinaryPolynomial(Xp[i], X[i], param.pkePara.msg_bit);
+        ProbGen(Ix, param, Xp, modulus, pkePk);
     }, 1);
     PrintTimeMs("ProbGen algo time", timing);
 
@@ -201,7 +203,8 @@ bool PVHSS_ACC_TEST(int msg_num, int degree_f)
     // M1-M4: encrypt constant "1" and convert
     PVHSS_CT C1;
     PVHSS_MV M1, M2, M3, M4;
-    VHSS_Enc(C1, param.pkePara, modulus, pkePk, ZZ(1));
+    ZZ_pX one; EncodeBinaryPolynomial(one, ZZ(1), 1);
+    VHSS_Enc(C1, param.pkePara, modulus, pkePk, one);
     HssConvertInput(M1, param.pkePara, modulus, param.vhssPara.vhssEk_1, C1);
     HssConvertInput(M2, param.pkePara, modulus, param.vhssPara.vhssEk_2, C1);
     HssConvertInput(M3, param.pkePara, modulus, param.vhssPara.vhssEk_3, C1);

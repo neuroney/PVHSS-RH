@@ -33,7 +33,9 @@ void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
 void KeyGen(PVHSSPara &param, PVHSS_SK &sk, ZZ_pXModulus modulus, vec_ZZ_pX pkePk,  bn_t ekp0, bn_t ekp1)
 {
     NTL::RandomBnd(sk, param.ck.g1_order_ZZ);
-    VHSS_Enc(param.pk_f, param.pkePara, modulus, pkePk, sk);
+    ZZ_pX sk_pX;
+    EncodeBinaryPolynomial(sk_pX, sk, param.pkePara.msg_bit);
+    VHSS_Enc(param.pk_f, param.pkePara, modulus, pkePk, sk_pX);
 
      bn_rand_mod(ekp0, param.ck.g1_order); // u_0
     bn_rand_mod(ekp1, param.ck.g1_order); // u_1
@@ -52,7 +54,7 @@ void KeyGen(PVHSSPara &param, PVHSS_SK &sk, ZZ_pXModulus modulus, vec_ZZ_pX pkeP
     pp_map_oatep_k12(param.ck.aux, hu, g2); // e(hu, vk)
 }
 
-void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ &x, ZZ_pXModulus modulus, vec_ZZ_pX pkePk)
+void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ_pX &x, ZZ_pXModulus modulus, vec_ZZ_pX pkePk)
 {
     Ix.clear();
     int i;
@@ -164,7 +166,9 @@ bool PVHSS_ACC_TEST(int msg_num, int degree_f)
 
     vector<PVHSS_CT> Ix;
     timing = MeasureTimeMs([&]() {
-        ProbGen(Ix, param, X, modulus, pkePk);
+        vec_ZZ_pX Xp; Xp.SetLength(msg_num);
+        for (int i = 0; i < msg_num; ++i) EncodeBinaryPolynomial(Xp[i], X[i], param.pkePara.msg_bit);
+        ProbGen(Ix, param, Xp, modulus, pkePk);
     }, 1);
     PrintTimeMs("ProbGen algo time", timing);
 
@@ -173,7 +177,8 @@ bool PVHSS_ACC_TEST(int msg_num, int degree_f)
 
     PVHSS_CT C1;
     vec_ZZ_pX M1_0, M1_1, M3_0, M3_1;
-    VHSS_Enc(C1, param.pkePara, modulus, pkePk, ZZ(1));
+    ZZ_pX one; EncodeBinaryPolynomial(one, ZZ(1), 1);
+    VHSS_Enc(C1, param.pkePara, modulus, pkePk, one);
     HssConvertInput(M1_0, param.pkePara, modulus, param.vhssPara.vhssEk_1, C1);
     HssConvertInput(M1_1, param.pkePara, modulus, param.vhssPara.vhssEk_2, C1);
     HssConvertInput(M3_0, param.pkePara, modulus, param.vhssPara.vhssEk_3, C1);
