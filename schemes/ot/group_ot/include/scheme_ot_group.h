@@ -1,13 +1,13 @@
 #pragma once
 #include "PiOTGroup.h"
-#include "protocol_bench_runner.h"
+#include "scheme_bench_runner.h"
 #include "helper.h"
 #include <NTL/ZZ.h>
 #include <vector>
 
-namespace pvhss { namespace protocol {
+namespace pvhss { namespace scheme {
 
-struct ProtocolOtGroup
+struct SchemeOtGroup
 {
     struct SetupOutput {
         pvhss::group::ot::PVHSSElg1_Para param;
@@ -55,5 +55,5 @@ struct ProtocolOtGroup
     }
     static bench::BenchCounters GetCounters() { return counters; }
 };
-inline bench::BenchCounters ProtocolOtGroup::counters;
+inline bench::BenchCounters SchemeOtGroup::counters;
 }} 

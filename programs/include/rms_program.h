@@ -42,7 +42,7 @@ struct RmsGate {
 };
 
 /// Copy initialisation: before gate evaluation, memory[dst] = memory[src].
-/// Used by PD2 to copy H_{i-1}[*] into H_i[*] slots before accumulation.
+/// Used by MPE to copy H_{i-1}[*] into H_i[*] slots before accumulation.
 struct MemCopy {
     int dst;
     int src;

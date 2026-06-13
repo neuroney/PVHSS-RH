@@ -1,13 +1,13 @@
 #pragma once
 #include "PiDCGroup.h"
-#include "protocol_bench_runner.h"
+#include "scheme_bench_runner.h"
 #include "helper.h"
 #include <NTL/ZZ.h>
 #include <vector>
 
-namespace pvhss { namespace protocol {
+namespace pvhss { namespace scheme {
 
-struct ProtocolDcGroup
+struct SchemeDcGroup
 {
     struct SetupOutput {
         pvhss::group::dc::PVHSSElg2_Para param;
@@ -54,7 +54,10 @@ struct ProtocolDcGroup
         dig_t y; pvhss::group::dc::PVHSSElg2_Decode(y,o0.proof,o1.proof,pp.sk);
         return NTL::conv<NTL::ZZ>((long)y);
     }
+    static bool CanDecodeReference(const SetupOutput&, const NTL::ZZ& reference) {
+        return reference >= 0 && reference < NTL::conv<NTL::ZZ>(PVHSS_M_MAX);
+    }
     static bench::BenchCounters GetCounters(){return counters;}
 };
-inline bench::BenchCounters ProtocolDcGroup::counters;
+inline bench::BenchCounters SchemeDcGroup::counters;
 }}

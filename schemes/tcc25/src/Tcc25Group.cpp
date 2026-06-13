@@ -178,6 +178,116 @@ void InitProof(Tcc25Proof &proof)
     ep_new(proof.c_g1);
 }
 
+void InitG1Point(Tcc25G1Point &point)
+{
+    ep_null(point.value);
+    ep_new(point.value);
+}
+
+void InitG2Point(Tcc25G2Point &point)
+{
+    ep2_null(point.value);
+    ep2_new(point.value);
+}
+
+void InitG1Vector(vector<Tcc25G1Point> &points, size_t n)
+{
+    points.clear();
+    points.resize(n);
+    for (size_t i = 0; i < points.size(); ++i)
+    {
+        InitG1Point(points[i]);
+    }
+}
+
+void InitG2Vector(vector<Tcc25G2Point> &points, size_t n)
+{
+    points.clear();
+    points.resize(n);
+    for (size_t i = 0; i < points.size(); ++i)
+    {
+        InitG2Point(points[i]);
+    }
+}
+
+void G1MulPointZZ(ep_t out, const ep_t base, const ZZ &scalar, const ZZ &q)
+{
+    const ZZ s = ModQ(scalar, q);
+    if (s == 0)
+    {
+        ep_set_infty(out);
+        return;
+    }
+    bn_t s_bn;
+    ZZtoBn(s_bn, s);
+    ep_mul(out, base, s_bn);
+    ep_norm(out, out);
+}
+
+void G2MulPointZZ(ep2_t out, const ep2_t base, const ZZ &scalar, const ZZ &q)
+{
+    const ZZ s = ModQ(scalar, q);
+    if (s == 0)
+    {
+        ep2_set_infty(out);
+        return;
+    }
+    bn_t s_bn;
+    ZZtoBn(s_bn, s);
+    ep2_mul(out, base, s_bn);
+    ep2_norm(out, out);
+}
+
+void G1AddScaledPoint(ep_t acc, const ep_t base, const ZZ &scalar, const ZZ &q)
+{
+    if (ModQ(scalar, q) == 0)
+    {
+        return;
+    }
+    ep_t term;
+    ep_null(term);
+    ep_new(term);
+    G1MulPointZZ(term, base, scalar, q);
+    ep_add(acc, acc, term);
+    ep_norm(acc, acc);
+}
+
+void G2AddScaledPoint(ep2_t acc, const ep2_t base, const ZZ &scalar, const ZZ &q)
+{
+    if (ModQ(scalar, q) == 0)
+    {
+        return;
+    }
+    ep2_t term;
+    ep2_null(term);
+    ep2_new(term);
+    G2MulPointZZ(term, base, scalar, q);
+    ep2_add(acc, acc, term);
+    ep2_norm(acc, acc);
+}
+
+void G1Msm(ep_t out, const vector<ZZ> &scalars, const vector<Tcc25G1Point> &bases,
+           const ZZ &q)
+{
+    ep_set_infty(out);
+    const size_t n = min(scalars.size(), bases.size());
+    for (size_t i = 0; i < n; ++i)
+    {
+        G1AddScaledPoint(out, bases[i].value, scalars[i], q);
+    }
+}
+
+void G2Msm(ep2_t out, const vector<ZZ> &scalars, const vector<Tcc25G2Point> &bases,
+           const ZZ &q)
+{
+    ep2_set_infty(out);
+    const size_t n = min(scalars.size(), bases.size());
+    for (size_t i = 0; i < n; ++i)
+    {
+        G2AddScaledPoint(out, bases[i].value, scalars[i], q);
+    }
+}
+
 Tcc25Term Term(int index, long coeff)
 {
     return Tcc25Term{index, ZZ(coeff)};
@@ -601,17 +711,6 @@ void EvaluateQapH(vector<ZZ> &h_shares, const Tcc25Param &param, int server_id,
     }
 }
 
-ZZ DotScalars(const vector<ZZ> &left, const vector<ZZ> &right, const ZZ &q)
-{
-    ZZ acc(0);
-    const size_t n = min(left.size(), right.size());
-    for (size_t i = 0; i < n; ++i)
-    {
-        acc = AddQ(acc, MulQ(left[i], right[i], q), q);
-    }
-    return acc;
-}
-
 struct Tcc25Blinders
 {
     ZZ r_share;
@@ -643,23 +742,6 @@ void FinalizeProofShare(Tcc25ProofShare &proof, int server_id, const Tcc25Param 
 {
     const Tcc25Blinders blinders = DeriveBlinders(server_id, param.order_ZZ);
 
-    const ZZ dot_a = DotScalars(input_shares, param.a_query_scalars, param.order_ZZ);
-    const ZZ dot_b = DotScalars(witness_shares, param.b_query_scalars, param.order_ZZ);
-
-    ZZ a_scalar = AddQ(dot_a, MulQ(param.delta, blinders.r_share, param.order_ZZ),
-                       param.order_ZZ);
-    if (server_id == 1)
-    {
-        a_scalar = AddQ(a_scalar, param.alpha, param.order_ZZ);
-    }
-
-    ZZ b_scalar = AddQ(dot_b, MulQ(param.delta, blinders.s_share, param.order_ZZ),
-                       param.order_ZZ);
-    if (server_id == 1)
-    {
-        b_scalar = AddQ(b_scalar, param.beta, param.order_ZZ);
-    }
-
     vector<ZZ> hidden_terms = witness_shares;
     for (size_t i = 0; i < hidden_terms.size(); ++i)
     {
@@ -668,25 +750,54 @@ void FinalizeProofShare(Tcc25ProofShare &proof, int server_id, const Tcc25Param 
             hidden_terms[i] = ZZ(0);
         }
     }
-    const ZZ hidden_scalar = DotScalars(hidden_terms, param.hidden_over_delta_scalars,
-                                        param.order_ZZ);
-    const ZZ h_scalar = DotScalars(h_shares, param.h_lagrange_over_delta_scalars,
-                                   param.order_ZZ);
-
-    ZZ c_scalar = AddQ(hidden_scalar, h_scalar, param.order_ZZ);
-    c_scalar = AddQ(c_scalar, MulQ(param.alpha, blinders.s_share, param.order_ZZ),
-                    param.order_ZZ);
-    c_scalar = AddQ(c_scalar, MulQ(param.beta, blinders.r_share, param.order_ZZ),
-                    param.order_ZZ);
-    c_scalar = AddQ(c_scalar, MulQ(param.delta, blinders.rs_share, param.order_ZZ),
-                    param.order_ZZ);
-    c_scalar = AddQ(c_scalar, MulQ(blinders.s, dot_a, param.order_ZZ), param.order_ZZ);
-    c_scalar = AddQ(c_scalar, MulQ(blinders.r, dot_b, param.order_ZZ), param.order_ZZ);
 
     InitProofShare(proof);
-    G1MulGenZZ(proof.a_g1, a_scalar, param.order_ZZ);
-    G2MulGenZZ(proof.b_g2, b_scalar, param.order_ZZ);
-    G1MulGenZZ(proof.c_g1, c_scalar, param.order_ZZ);
+
+    ep_t dot_a_g1, dot_b_g1, hidden_g1, h_g1;
+    ep_null(dot_a_g1);
+    ep_null(dot_b_g1);
+    ep_null(hidden_g1);
+    ep_null(h_g1);
+    ep_new(dot_a_g1);
+    ep_new(dot_b_g1);
+    ep_new(hidden_g1);
+    ep_new(h_g1);
+
+    ep2_t dot_b_g2;
+    ep2_null(dot_b_g2);
+    ep2_new(dot_b_g2);
+
+    G1Msm(dot_a_g1, input_shares, param.a_query_g1, param.order_ZZ);
+    G1Msm(dot_b_g1, witness_shares, param.b_query_g1, param.order_ZZ);
+    G2Msm(dot_b_g2, witness_shares, param.b_query_g2, param.order_ZZ);
+    G1Msm(hidden_g1, hidden_terms, param.hidden_query_g1, param.order_ZZ);
+    G1Msm(h_g1, h_shares, param.h_query_g1, param.order_ZZ);
+
+    ep_copy(proof.a_g1, dot_a_g1);
+    G1AddScaledPoint(proof.a_g1, param.delta_g1, blinders.r_share, param.order_ZZ);
+    if (server_id == 1)
+    {
+        ep_add(proof.a_g1, proof.a_g1, param.alpha_g1);
+        ep_norm(proof.a_g1, proof.a_g1);
+    }
+
+    ep2_copy(proof.b_g2, dot_b_g2);
+    G2AddScaledPoint(proof.b_g2, param.delta_g2, blinders.s_share, param.order_ZZ);
+    if (server_id == 1)
+    {
+        ep2_add(proof.b_g2, proof.b_g2, param.beta_g2);
+        ep2_norm(proof.b_g2, proof.b_g2);
+    }
+
+    ep_set_infty(proof.c_g1);
+    ep_add(proof.c_g1, proof.c_g1, hidden_g1);
+    ep_add(proof.c_g1, proof.c_g1, h_g1);
+    ep_norm(proof.c_g1, proof.c_g1);
+    G1AddScaledPoint(proof.c_g1, param.alpha_g1, blinders.s_share, param.order_ZZ);
+    G1AddScaledPoint(proof.c_g1, param.beta_g1, blinders.r_share, param.order_ZZ);
+    G1AddScaledPoint(proof.c_g1, param.delta_g1, blinders.rs_share, param.order_ZZ);
+    G1AddScaledPoint(proof.c_g1, dot_a_g1, blinders.s, param.order_ZZ);
+    G1AddScaledPoint(proof.c_g1, dot_b_g1, blinders.r, param.order_ZZ);
 
     proof.y_share.assign(1, witness_shares[param.r1cs.output_witness - 1]);
 }
@@ -694,32 +805,21 @@ void FinalizeProofShare(Tcc25ProofShare &proof, int server_id, const Tcc25Param 
 bool PairingCheck(const Tcc25Proof &proof, const Tcc25Param &param,
                   const vector<ZZ> &public_inputs, const vector<ZZ> &claimed_outputs)
 {
-    ZZ commitment_scalar(0);
-    for (size_t i = 0; i < public_inputs.size(); ++i)
-    {
-        commitment_scalar = AddQ(
-            commitment_scalar,
-            MulQ(public_inputs[i], param.public_u_scalars[i], param.order_ZZ),
-            param.order_ZZ);
-    }
-    for (size_t i = 0; i < claimed_outputs.size(); ++i)
-    {
-        commitment_scalar = AddQ(
-            commitment_scalar,
-            MulQ(claimed_outputs[i], param.output_u_scalars[i], param.order_ZZ),
-            param.order_ZZ);
-    }
-
-    ep_t commitment, neg_alpha, neg_c, neg_commitment;
+    ep_t commitment, output_commitment, neg_alpha, neg_c, neg_commitment;
     ep_null(commitment);
+    ep_null(output_commitment);
     ep_null(neg_alpha);
     ep_null(neg_c);
     ep_null(neg_commitment);
     ep_new(commitment);
+    ep_new(output_commitment);
     ep_new(neg_alpha);
     ep_new(neg_c);
     ep_new(neg_commitment);
-    G1MulGenZZ(commitment, commitment_scalar, param.order_ZZ);
+    G1Msm(commitment, public_inputs, param.public_input_g1, param.order_ZZ);
+    G1Msm(output_commitment, claimed_outputs, param.output_g1, param.order_ZZ);
+    ep_add(commitment, commitment, output_commitment);
+    ep_norm(commitment, commitment);
     ep_neg(neg_alpha, param.alpha_g1);
     ep_neg(neg_c, proof.c_g1);
     ep_neg(neg_commitment, commitment);
@@ -767,52 +867,70 @@ void Tcc25_Setup(Tcc25Param &param, Tcc25Server &server0, Tcc25Server &server1)
     server0.id = 0;
     server1.id = 1;
 
+    ZZ tau;
     do
     {
-        RandomBnd(param.tau, param.order_ZZ);
-    } while (VanishingAt(param.qap.base_points, param.tau, param.order_ZZ) == 0);
-    param.alpha = RandomNonZeroScalar(param.order_ZZ);
-    param.beta = RandomNonZeroScalar(param.order_ZZ);
-    param.delta = RandomNonZeroScalar(param.order_ZZ);
-    const ZZ delta_inv = InvQ(param.delta, param.order_ZZ);
+        RandomBnd(tau, param.order_ZZ);
+    } while (VanishingAt(param.qap.base_points, tau, param.order_ZZ) == 0);
+    const ZZ alpha = RandomNonZeroScalar(param.order_ZZ);
+    const ZZ beta = RandomNonZeroScalar(param.order_ZZ);
+    const ZZ delta = RandomNonZeroScalar(param.order_ZZ);
+    const ZZ delta_inv = InvQ(delta, param.order_ZZ);
 
     vector<ZZ> u_in, v_wit, w_wit;
-    EvaluateQapAtTau(param.qap, param.tau, param.order_ZZ, u_in, v_wit, w_wit);
-    const ZZ t_tau = VanishingAt(param.qap.base_points, param.tau, param.order_ZZ);
+    EvaluateQapAtTau(param.qap, tau, param.order_ZZ, u_in, v_wit, w_wit);
+    const ZZ t_tau = VanishingAt(param.qap.base_points, tau, param.order_ZZ);
 
-    param.a_query_scalars = u_in;
-    param.b_query_scalars = v_wit;
-    param.public_u_scalars.assign(u_in.size(), ZZ(0));
+    InitG1Vector(param.a_query_g1, u_in.size());
+    InitG1Vector(param.public_input_g1, u_in.size());
     for (size_t i = 0; i < u_in.size(); ++i)
     {
-        param.public_u_scalars[i] = MulQ(param.beta, u_in[i], param.order_ZZ);
+        G1MulGenZZ(param.a_query_g1[i].value, u_in[i], param.order_ZZ);
+        G1MulGenZZ(param.public_input_g1[i].value, MulQ(beta, u_in[i], param.order_ZZ),
+                   param.order_ZZ);
     }
 
-    param.output_u_scalars.assign(1, ZZ(0));
-    const int output_idx = param.r1cs.output_witness - 1;
-    param.output_u_scalars[0] = AddQ(MulQ(param.alpha, v_wit[output_idx], param.order_ZZ),
-                                     w_wit[output_idx], param.order_ZZ);
+    InitG1Vector(param.b_query_g1, v_wit.size());
+    InitG2Vector(param.b_query_g2, v_wit.size());
+    for (size_t i = 0; i < v_wit.size(); ++i)
+    {
+        G1MulGenZZ(param.b_query_g1[i].value, v_wit[i], param.order_ZZ);
+        G2MulGenZZ(param.b_query_g2[i].value, v_wit[i], param.order_ZZ);
+    }
 
-    param.hidden_over_delta_scalars.assign(v_wit.size(), ZZ(0));
+    InitG1Vector(param.output_g1, 1);
+    const int output_idx = param.r1cs.output_witness - 1;
+    G1MulGenZZ(param.output_g1[0].value,
+               AddQ(MulQ(alpha, v_wit[output_idx], param.order_ZZ),
+                    w_wit[output_idx], param.order_ZZ),
+               param.order_ZZ);
+
+    InitG1Vector(param.hidden_query_g1, v_wit.size());
     param.hidden_present.assign(v_wit.size(), true);
     param.hidden_present[output_idx] = false;
     for (size_t i = 0; i < v_wit.size(); ++i)
     {
         if (param.hidden_present[i])
         {
-            const ZZ scalar = AddQ(MulQ(param.alpha, v_wit[i], param.order_ZZ), w_wit[i],
+            const ZZ scalar = AddQ(MulQ(alpha, v_wit[i], param.order_ZZ), w_wit[i],
                                    param.order_ZZ);
-            param.hidden_over_delta_scalars[i] = MulQ(scalar, delta_inv, param.order_ZZ);
+            G1MulGenZZ(param.hidden_query_g1[i].value,
+                       MulQ(scalar, delta_inv, param.order_ZZ), param.order_ZZ);
+        }
+        else
+        {
+            ep_set_infty(param.hidden_query_g1[i].value);
         }
     }
 
-    param.h_lagrange_over_delta_scalars.assign(param.qap.h_points.size(), ZZ(0));
+    InitG1Vector(param.h_query_g1, param.qap.h_points.size());
     for (size_t i = 0; i < param.qap.h_points.size(); ++i)
     {
-        const ZZ l_h = LagrangeAt(param.qap.h_points, static_cast<int>(i), param.tau,
+        const ZZ l_h = LagrangeAt(param.qap.h_points, static_cast<int>(i), tau,
                                   param.order_ZZ);
-        param.h_lagrange_over_delta_scalars[i] = MulQ(MulQ(l_h, t_tau, param.order_ZZ),
-                                                      delta_inv, param.order_ZZ);
+        G1MulGenZZ(param.h_query_g1[i].value,
+                   MulQ(MulQ(l_h, t_tau, param.order_ZZ), delta_inv, param.order_ZZ),
+                   param.order_ZZ);
     }
 
     ep_null(param.alpha_g1);
@@ -828,11 +946,11 @@ void Tcc25_Setup(Tcc25Param &param, Tcc25Server &server0, Tcc25Server &server1)
     ep2_null(param.g2);
     ep2_new(param.g2);
 
-    G1MulGenZZ(param.alpha_g1, param.alpha, param.order_ZZ);
-    G1MulGenZZ(param.beta_g1, param.beta, param.order_ZZ);
-    G1MulGenZZ(param.delta_g1, param.delta, param.order_ZZ);
-    G2MulGenZZ(param.beta_g2, param.beta, param.order_ZZ);
-    G2MulGenZZ(param.delta_g2, param.delta, param.order_ZZ);
+    G1MulGenZZ(param.alpha_g1, alpha, param.order_ZZ);
+    G1MulGenZZ(param.beta_g1, beta, param.order_ZZ);
+    G1MulGenZZ(param.delta_g1, delta, param.order_ZZ);
+    G2MulGenZZ(param.beta_g2, beta, param.order_ZZ);
+    G2MulGenZZ(param.delta_g2, delta, param.order_ZZ);
     ep2_curve_get_gen(param.g2);
 }
 

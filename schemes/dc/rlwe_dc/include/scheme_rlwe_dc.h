@@ -1,14 +1,14 @@
 #pragma once
 #include "PiDCRLWE.h"
-#include "protocol_bench_runner.h"
+#include "scheme_bench_runner.h"
 #include "helper.h"
 #include <NTL/ZZ.h>
 #include <vector>
-namespace pvhss { namespace protocol {
-struct ProtocolRlweDc {
+namespace pvhss { namespace scheme {
+struct SchemeRlweDc {
     struct SetupOutput {
         pvhss::rlwe::dc::PVHSSPara param; NTL::vec_ZZ_pX pkePk; NTL::ZZ_pXModulus modulus;
-        NTL::vec_ZZ_pX M1,M2; pvhss::rlwe::dc::PVHSS_SK sk; bn_t ekp0_0,ekp0_1,ekp1_0,ekp1_1;
+        NTL::vec_ZZ_pX M1_0,M1_1,M3_0,M3_1; pvhss::rlwe::dc::PVHSS_SK sk; bn_t ekp0_0,ekp0_1,ekp1_0,ekp1_1;
     };
     struct ProbGenOutput { std::vector<NTL::vec_ZZ_pX> Ix; };
     struct ServerOutput { pvhss::rlwe::dc::PROOF proof; };
@@ -24,10 +24,13 @@ struct ProtocolRlweDc {
         bn_t ekp0[2],ekp1[2]; bn_new(ekp0[0]);bn_new(ekp0[1]);bn_new(ekp1[0]);bn_new(ekp1[1]);
         pvhss::rlwe::dc::KeyGen(pp.param,pp.sk,pp.modulus,pp.pkePk,ekp0,ekp1);
         bn_copy(pp.ekp0_0,ekp0[0]);bn_copy(pp.ekp0_1,ekp0[1]);bn_copy(pp.ekp1_0,ekp1[0]);bn_copy(pp.ekp1_1,ekp1[1]);
-        pp.M1.SetLength(2);pp.M2.SetLength(2);NTL::vec_ZZ_pX C1;C1.SetLength(4);
+        pp.M1_0.SetLength(2);pp.M1_1.SetLength(2);pp.M3_0.SetLength(2);pp.M3_1.SetLength(2);
+        NTL::vec_ZZ_pX C1;C1.SetLength(4);
         pvhss::rlwe::dc::PKE_OKDM(C1,pp.param.pkePara,pp.modulus,pp.pkePk,NTL::ZZ(1));
-        pvhss::rlwe::dc::HssConvertInput(pp.M1,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_1,C1);
-        pvhss::rlwe::dc::HssConvertInput(pp.M2,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_3,C1);
+        pvhss::rlwe::dc::HssConvertInput(pp.M1_0,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_1,C1);
+        pvhss::rlwe::dc::HssConvertInput(pp.M1_1,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_2,C1);
+        pvhss::rlwe::dc::HssConvertInput(pp.M3_0,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_3,C1);
+        pvhss::rlwe::dc::HssConvertInput(pp.M3_1,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_4,C1);
         return pp;
     }
     static ProbGenOutput ProbGen(const SetupOutput& pp, const std::vector<NTL::ZZ>& x) {
@@ -39,8 +42,8 @@ struct ProtocolRlweDc {
         ServerOutput o; bn_t ekpb[2];bn_new(ekpb[0]);bn_new(ekpb[1]);
         if(sid==0){bn_copy(ekpb[0],pp.ekp0_0);bn_copy(ekpb[1],pp.ekp0_1);}
         else{bn_copy(ekpb[0],pp.ekp1_0);bn_copy(ekpb[1],pp.ekp1_1);}
-        auto Ix=task.Ix; auto M2=pp.M2; std::vector<std::vector<int>> F;
-        pvhss::rlwe::dc::Compute(o.proof,sid,pp.param,pp.param.vhssPara.vhssEk_1,pp.param.vhssPara.vhssEk_2,Ix,pp.modulus,pp.M1,M2,F,ekpb);
+        auto Ix=task.Ix; auto M3=(sid==0)?pp.M3_0:pp.M3_1; std::vector<std::vector<int>> F;
+        pvhss::rlwe::dc::Compute(o.proof,sid,pp.param,pp.param.vhssPara.vhssEk_1,pp.param.vhssPara.vhssEk_2,Ix,pp.modulus,(sid==0)?pp.M1_0:pp.M1_1,M3,F,ekpb);
         counters.witness_mul_count=pp.param.pkePara.num_data*pp.param.pkePara.d;
         counters.total_mul_count=counters.witness_mul_count+4; counters.pairing_count=4; return o;
     }
@@ -48,9 +51,12 @@ struct ProtocolRlweDc {
         return {pvhss::rlwe::dc::Verify(o0.proof,o1.proof,pp.param)};
     }
     static NTL::ZZ Decode(const SetupOutput& pp, const ServerOutput& o0, const ServerOutput& o1) {
-        dig_t y; pvhss::rlwe::dc::Decode(y,o0.proof,o1.proof,pp.sk); return NTL::conv<NTL::ZZ>((long)y);
+        dig_t y; pvhss::rlwe::dc::Decode(y,o0.proof,o1.proof,pp.param.f_sk); return NTL::conv<NTL::ZZ>((long)y);
+    }
+    static bool CanDecodeReference(const SetupOutput&, const NTL::ZZ& reference) {
+        return reference >= 0 && reference < NTL::conv<NTL::ZZ>(PVHSS_M_MAX);
     }
     static bench::BenchCounters GetCounters(){return counters;}
 };
-inline bench::BenchCounters ProtocolRlweDc::counters;
+inline bench::BenchCounters SchemeRlweDc::counters;
 }}

@@ -3,18 +3,18 @@
 #include "VHSSElg.h"
 #include "group_vhss_backend.h"
 #include "rms_program.h"
-#include "pd2_program.h"
+#include "mpe_program.h"
 #include "rms_evaluator.h"
-#include "plaintext_pd2.h"
-#include "protocol_bench_runner.h"
+#include "plaintext_mpe.h"
+#include "scheme_bench_runner.h"
 #include "helper.h"
 
 #include <NTL/ZZ.h>
 #include <vector>
 
-namespace pvhss { namespace protocol {
+namespace pvhss { namespace scheme {
 
-struct ProtocolVhss
+struct SchemeVhss
 {
     using Backend = pvhss::backend::GroupVhssBackend;
 
@@ -61,7 +61,7 @@ struct ProtocolVhss
         using namespace pvhss::programs;
         int msg_num  = static_cast<int>(task.inputs.size());
         int degree_f = pp.degree_f;
-        auto program = BuildPd2RmsProgram(msg_num, degree_f);
+        auto program = BuildMpeRmsProgram(msg_num, degree_f);
         const auto& ek = (server_id == 0) ? pp.ek0 : pp.ek1;
         int prf_key = 0;
         ServerOutput out;
@@ -82,6 +82,6 @@ struct ProtocolVhss
 
     static bench::BenchCounters GetCounters() { return counters; }
 };
-inline bench::BenchCounters ProtocolVhss::counters;
+inline bench::BenchCounters SchemeVhss::counters;
 
-}} // namespace pvhss::protocol
+}} // namespace pvhss::scheme

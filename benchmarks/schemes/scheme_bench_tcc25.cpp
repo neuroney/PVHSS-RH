@@ -1,7 +1,7 @@
-/// TCC25 protocol benchmark (scalar-debug mode).
+/// TCC25 scheme benchmark.
 
-#include "protocol_bench_runner.h"
-#include "protocol_tcc25.h"
+#include "scheme_bench_runner.h"
+#include "scheme_tcc25.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -23,9 +23,10 @@ int main(int argc, char** argv)
         if(arg=="--msg-num"&&i+1<argc)cfg.msg_num=atoi(argv[++i]);
         else if(arg=="--cyctimes"&&i+1<argc)cfg.cyctimes=atoi(argv[++i]);
         else if(arg=="--degree"&&i+1<argc)cfg.degree_f=atoi(argv[++i]);
+        else if(arg=="--msg-bits"&&i+1<argc)cfg.msg_bits=atoi(argv[++i]);
         else if(arg=="--verbose")cfg.verbose=true;
     }
-    cout << "NOTE: TCC25 running in scalar-debug mode (trapdoor scalars known to servers)\n\n";
-    bench::RunProtocolBench<protocol::ProtocolTcc25>(cfg);
+    cout << "NOTE: TCC25 running with CRS group elements; trapdoor scalars are setup-local only\n\n";
+    bench::RunSchemeBench<scheme::SchemeTcc25>(cfg);
     return 0;
 }

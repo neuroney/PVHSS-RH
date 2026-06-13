@@ -2,9 +2,9 @@
 
 /// CZ backend: low-level PKE and pairing primitives.
 ///
-/// The CZ protocol uses a dual-Regev PKE scheme combined with bilinear pairings.
-/// This backend exposes the low-level operations; the protocol flow lives in
-/// protocols/cz.
+/// The CZ scheme uses a dual-Regev PKE scheme combined with bilinear pairings.
+/// This backend exposes the low-level operations; the scheme flow lives in
+/// schemes/cz.
 
 #include "PKE.h"
 #include "PVHSS.h"

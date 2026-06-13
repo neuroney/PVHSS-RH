@@ -4,7 +4,7 @@
 #include <NTL/ZZX.h>
 #include <NTL/ZZ_pX.h>
 
-// Encoded dataset used by the CZ protocol benchmark.
+// Encoded dataset used by the CZ scheme benchmark.
 struct EncodedData {
     NTL::vec_ZZ X_decimal;
     NTL::Vec<NTL::ZZ_pX> X;

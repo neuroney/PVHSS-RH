@@ -1,7 +1,7 @@
 add_library(pvhss_programs STATIC
     src/rms_program.cpp
-    src/pd2_program.cpp
-    src/plaintext_pd2.cpp
+    src/mpe_program.cpp
+    src/plaintext_mpe.cpp
 )
 
 target_include_directories(pvhss_programs PUBLIC

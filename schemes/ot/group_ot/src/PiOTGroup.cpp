@@ -56,7 +56,7 @@ void PVHSSElg1_Compute(PROOF &proof, int b, const PVHSSElg1_Para &param, const P
     int prf_key = 0;
     VhssElgamalMv y_b_res;
     // VhssElgamalEvaluate(y_b_res, b, Ix, param.pk, ekb, prf_key, F_TEST);
-    VhssElgamalEvaluatePD2(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
+    VhssElgamalEvaluateMPE(y_b_res, b, Ix, param.pk, ekb, prf_key, param.degree_f);
 
     VhssElgamalMv sk_b;
     VhssElgamalConvertInput(sk_b, b, param.pk, ekb, param.pk_f, prf_key);

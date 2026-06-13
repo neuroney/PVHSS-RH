@@ -1,7 +1,7 @@
-/// OT Group protocol benchmark using unified interface.
+/// OT Group scheme benchmark using unified interface.
 
-#include "protocol_bench_runner.h"
-#include "protocol_ot_group.h"
+#include "scheme_bench_runner.h"
+#include "scheme_ot_group.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -24,8 +24,9 @@ int main(int argc, char** argv)
         if (arg == "--msg-num" && i+1<argc) cfg.msg_num = atoi(argv[++i]);
         else if (arg == "--cyctimes" && i+1<argc) cfg.cyctimes = atoi(argv[++i]);
         else if (arg == "--degree" && i+1<argc) cfg.degree_f = atoi(argv[++i]);
+        else if (arg == "--msg-bits" && i+1<argc) cfg.msg_bits = atoi(argv[++i]);
         else if (arg == "--verbose") cfg.verbose = true;
     }
-    bench::RunProtocolBench<protocol::ProtocolOtGroup>(cfg);
+    bench::RunSchemeBench<scheme::SchemeOtGroup>(cfg);
     return 0;
 }

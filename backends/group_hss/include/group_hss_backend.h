@@ -84,13 +84,13 @@ struct GroupHssBackend
     }
 
     /// Evaluate an input-linear-combination at the ciphertext level.
-    /// For single-term PD2 gates this simply returns the raw ciphertext.
+    /// For single-term MPE gates this simply returns the raw ciphertext.
     static Ciphertext EvalInputLinComb(
         const PublicKey& pk,
         const std::vector<Ciphertext>& inputs,
         const programs::InputLinComb& lc)
     {
-        // Single-term fast path (the common PD2 case)
+        // Single-term fast path (the common MPE case)
         if (lc.terms.size() == 1 && lc.terms[0].coeff == 1 && lc.terms[0].index >= 1)
         {
             return inputs[lc.terms[0].index - 1];  // x_index

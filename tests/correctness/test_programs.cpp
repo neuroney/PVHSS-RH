@@ -1,6 +1,6 @@
 #include "rms_program.h"
-#include "pd2_program.h"
-#include "plaintext_pd2.h"
+#include "mpe_program.h"
+#include "plaintext_mpe.h"
 
 #include <NTL/ZZ.h>
 #include <vector>
@@ -26,9 +26,9 @@ static void test_rms_program_validation()
 {
     cout << "\n--- RMS Program Validation Tests ---\n";
 
-    // Valid PD2 program
-    auto prog = BuildPd2RmsProgram(2, 3);
-    check(ValidateRmsProgram(prog), "BuildPd2RmsProgram(2,3) is valid");
+    // Valid MPE program
+    auto prog = BuildMpeRmsProgram(2, 3);
+    check(ValidateRmsProgram(prog), "BuildMpeRmsProgram(2,3) is valid");
 
     // Multiplication count
     check(static_cast<int>(prog.mul_gates.size()) == 2 * 3,
@@ -54,51 +54,51 @@ static void test_rms_program_validation()
     {
         for (int d : {1, 3, 5, 15})
         {
-            auto p = BuildPd2RmsProgram(m, d);
+            auto p = BuildMpeRmsProgram(m, d);
             check(static_cast<int>(p.mul_gates.size()) == m * d,
                   "mul_gates.size() == " + to_string(m) + "*" + to_string(d));
         }
     }
 }
 
-// Test PlaintextPd2 against direct computation
-static void test_plaintext_pd2()
+// Test PlaintextMpe against direct computation
+static void test_plaintext_mpe()
 {
-    cout << "\n--- Plaintext PD2 Tests ---\n";
+    cout << "\n--- Plaintext MPE Tests ---\n";
 
     ZZ modulus(0); // exact integer
 
     // m=1, d=1: F_{1,1} = x_1
     {
         vector<ZZ> x = { ZZ(5) };
-        ZZ result = PlaintextPd2(x, 1, modulus);
-        check(result == ZZ(5), "PlaintextPd2 m=1,d=1: x_1 = 5");
+        ZZ result = PlaintextMpe(x, 1, modulus);
+        check(result == ZZ(5), "PlaintextMpe m=1,d=1: x_1 = 5");
     }
 
     // m=1, d=3: F_{1,3} = x_1 + x_1^2 + x_1^3
     {
         vector<ZZ> x = { ZZ(2) };
-        ZZ result = PlaintextPd2(x, 3, modulus);
+        ZZ result = PlaintextMpe(x, 3, modulus);
         // 2 + 4 + 8 = 14
-        check(result == ZZ(14), "PlaintextPd2 m=1,d=3: x_1=2 -> 14");
+        check(result == ZZ(14), "PlaintextMpe m=1,d=3: x_1=2 -> 14");
     }
 
     // m=2, d=3: F_{2,3} = x_1+x_2 + x_1^2+x_1x_2+x_2^2 + x_1^3+x_1^2x_2+x_1x_2^2+x_2^3
     {
         vector<ZZ> x = { ZZ(2), ZZ(3) };
-        ZZ result = PlaintextPd2(x, 3, modulus);
+        ZZ result = PlaintextMpe(x, 3, modulus);
         // x1+x2 = 5, x1^2+x1x2+x2^2 = 4+6+9=19, x1^3+x1^2x2+x1x2^2+x2^3 = 8+12+18+27=65
         // Total: 5+19+65 = 89
-        check(result == ZZ(89), "PlaintextPd2 m=2,d=3: [2,3] -> 89");
+        check(result == ZZ(89), "PlaintextMpe m=2,d=3: [2,3] -> 89");
     }
 
     // m=5, d=5: spot check with small values
     {
         vector<ZZ> x = { ZZ(1), ZZ(1), ZZ(1), ZZ(1), ZZ(1) };
-        ZZ result = PlaintextPd2(x, 5, modulus);
+        ZZ result = PlaintextMpe(x, 5, modulus);
         // For all inputs = 1, H_i[s] = C(i+s-1, s) binomial coefficients
         // The sum for m=5,d=5 should be a known value
-        check(result > 0, "PlaintextPd2 m=5,d=5 all-1 produces positive result");
+        check(result > 0, "PlaintextMpe m=5,d=5 all-1 produces positive result");
     }
 
     // m=2, d=3 against direct expanded sum (from spec)
@@ -113,16 +113,16 @@ static void test_plaintext_pd2()
         // degree 3: x1^3 + x1^2*x2 + x1*x2^2 + x2^3
         direct += x[0]*x[0]*x[0] + x[0]*x[0]*x[1] + x[0]*x[1]*x[1] + x[1]*x[1]*x[1];
 
-        ZZ result = PlaintextPd2(x, 3, modulus);
-        check(result == direct, "PlaintextPd2 matches expanded sum for m=2,d=3");
+        ZZ result = PlaintextMpe(x, 3, modulus);
+        check(result == direct, "PlaintextMpe matches expanded sum for m=2,d=3");
     }
 
     // m=5, d=15: verify result is not trivially zero
     {
         vector<ZZ> x;
         for (int i = 0; i < 5; ++i) x.push_back(ZZ(i + 1));
-        ZZ result = PlaintextPd2(x, 15, modulus);
-        check(result > 0, "PlaintextPd2 m=5,d=15 produces non-zero result");
+        ZZ result = PlaintextMpe(x, 15, modulus);
+        check(result > 0, "PlaintextMpe m=5,d=15 produces non-zero result");
     }
 }
 
@@ -131,7 +131,7 @@ int main()
     cout << "=== PVHSS-RH Program Layer Tests ===\n";
 
     test_rms_program_validation();
-    test_plaintext_pd2();
+    test_plaintext_mpe();
 
     cout << "\n=== Results: " << pass_count << "/" << test_count << " passed ===\n";
     return (pass_count == test_count) ? 0 : 1;

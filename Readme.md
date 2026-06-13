@@ -5,7 +5,7 @@ This repository contains the implementation for *Publicly Verifiable Homomorphic
 
 
 ### Features
-- C++11 implementation of PVHSS-RH
+- C++17 implementation of PVHSS-RH
 - Benchmarking utilities
 
 > **Note:** This codebase is for academic and research purposes only. It is not intended for production use and has not been extensively tested for security vulnerabilities.
@@ -18,43 +18,43 @@ The PVHSS-RH implementation requires the following libraries:
 
 ## Build
 
-1. Download the repository and navigate to the project directory:
-    ```bash
-    cd PVHSS-RH
-    ```
-2. Install the dependencies [GMP](https://gmplib.org/), [NTL](https://libntl.org/doc/tour-unix.html) and [RELIC](https://github.com/relic-toolkit/relic/wiki/Building) required by PVHSS-RH. On several Ubuntu systems this can be done directly through links above.
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
 
-3. Build library and executables:
-    ```bash
-    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-    cmake --build build
-    ```
+## Benchmarks
 
-4. To run an example:
-    ```bash
-    build/schemes/group/ot/PiOTGroup
-    build/schemes/rlwe/ot/PiOTRLWE
-    build/schemes/group/dc/PiDCGroup
-    build/schemes/rlwe/dc/PiDCRLWE
-    build/schemes/group/vhss/PiVHSSGroup
-    build/schemes/rlwe/vhss/PiVHSSRLWE
-    build/schemes/group/hss/PiHSSGroup
-    build/schemes/rlwe/hss/PiHSSRLWE
-    build/schemes/cz/PiCZ
-    ```
-
-Benchmarks are enabled by default.  Use `-DPVHSS_BUILD_BENCHMARKS=OFF` when
-only the protocol example binaries are needed.  The benchmark layer produces
-two final CSV tables:
+The benchmark layer writes two final CSV tables:
 
 - `benchmarks/results/micro/micro_timing.csv`
-- `benchmarks/results/protocols/protocol_timing.csv`
+- `benchmarks/results/schemes/scheme_timing.csv`
 
-Run `cmake --build build --target benchmark_tables` to regenerate the full
-benchmark tables.
-
-The convenience script runs the full benchmark flow:
+Recommended entry points:
 
 ```bash
-./runall.sh
+# Primitive-level timings.
+cmake --build build --target microbenchmark_results
+
+# Scheme timings for degree 5 only.
+cmake --build build --target scheme_benchmarks_p5
+
+# Scheme timings for the default degree set.
+cmake --build build --target scheme_benchmarks
+
+# Both final tables.
+cmake --build build --target benchmark_tables
 ```
+
+For custom scheme runs, call the scheme runner directly:
+
+```bash
+bash benchmarks/schemes/run_scheme_benchmarks.sh \
+  --build-dir build \
+  --degrees 5,10,15 \
+  --cyctimes 5 \
+  --msg-num 5 \
+  --msg-bits 32
+```
+
+See [benchmarks/README.md](benchmarks/README.md) for details.

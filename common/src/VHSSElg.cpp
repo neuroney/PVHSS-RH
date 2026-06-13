@@ -189,7 +189,7 @@ void VhssElgamalEvaluatePD(VhssElgamalMv &y_b_res, int b, const vector<VhssElgam
 
 // RMS-optimized recurrence: H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]
 // Reduces VhssElgamalMul calls from O(k*d^3) to O(k*d).
-void VhssElgamalEvaluatePD2(VhssElgamalMv &y_b_res, int b, const vector<VhssElgamalCt> &Ix, const VhssElgamalPk &pk, const VhssElgamalEk &ekb, int &prf_key, int degree_f)
+void VhssElgamalEvaluateMPE(VhssElgamalMv &y_b_res, int b, const vector<VhssElgamalCt> &Ix, const VhssElgamalPk &pk, const VhssElgamalEk &ekb, int &prf_key, int degree_f)
 {
     VhssElgamalMv tmp;
     

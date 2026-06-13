@@ -28,7 +28,7 @@ void VhssElgamalEvaluatePD(VhssElgamalMv &y_b_res, int b,
                            const std::vector<VhssElgamalCt> &Ix,
                            const VhssElgamalPk &pk, const VhssElgamalEk &ekb,
                            int &prf_key, int degree_f);
-void VhssElgamalEvaluatePD2(VhssElgamalMv &y_b_res, int b,
+void VhssElgamalEvaluateMPE(VhssElgamalMv &y_b_res, int b,
                             const std::vector<VhssElgamalCt> &Ix,
                             const VhssElgamalPk &pk, const VhssElgamalEk &ekb,
                             int &prf_key, int degree_f);

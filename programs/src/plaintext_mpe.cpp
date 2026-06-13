@@ -1,10 +1,10 @@
-#include "plaintext_pd2.h"
+#include "plaintext_mpe.h"
 #include <NTL/ZZ.h>
 #include <vector>
 
 namespace pvhss { namespace programs {
 
-NTL::ZZ PlaintextPd2(
+NTL::ZZ PlaintextMpe(
     const std::vector<NTL::ZZ>& x,
     int degree_f,
     const NTL::ZZ& modulus)

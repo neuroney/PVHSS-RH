@@ -105,7 +105,7 @@ struct RlweHssBackend
             if (t.index == 0)
             {
                 // Constant term — not fully supported in RLWE without context;
-                // for PD2 this path is never taken
+                // for MPE this path is never taken
                 continue;
             }
             Ciphertext ct = inputs[t.index - 1];

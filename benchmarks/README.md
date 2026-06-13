@@ -1,60 +1,79 @@
 # Benchmarks
 
-This directory contains evaluation artifacts.  Correctness checks live under
-`tests/` so benchmark targets can focus on performance measurement and result
-generation.
+This directory contains the performance runners and result tables.  Correctness
+checks live under `tests/correctness`; benchmark targets focus on timing.
 
-## Final Tables
+## Outputs
 
-The benchmark layer produces two presentation-ready CSV tables:
+The final benchmark artifacts are:
 
 - `benchmarks/results/micro/micro_timing.csv`
-- `benchmarks/results/protocols/protocol_timing.csv`
+- `benchmarks/results/schemes/scheme_timing.csv`
 
-Protocol logs and component-level parser output are kept under
-`benchmarks/results/protocols/logs/`.
+Per-run scheme logs are written under
+`benchmarks/results/schemes/logs/`.
 
-## Microbenchmark
+## Recommended Commands
 
-Build:
+Build everything:
 
-```sh
+```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+Run primitive-level microbenchmarks:
+
+```bash
 cmake --build build --target microbenchmark_results
 ```
 
-Fast smoke test:
+Run scheme benchmarks:
 
-```sh
+```bash
+# Degree 5 smoke/presentation subset.
+cmake --build build --target scheme_benchmarks_p5
+
+# Default scheme degree set from the runner.
+cmake --build build --target scheme_benchmarks
+```
+
+Run both final benchmark tables:
+
+```bash
+cmake --build build --target benchmark_tables
+```
+
+## Direct Runners
+
+Use the runner scripts when you need custom parameters without editing CMake:
+
+```bash
 bash benchmarks/micro/run_microbenchmarks.sh \
   --build-dir build \
-  --samples 1 \
+  --samples 5 \
   --iters 1
 ```
 
-See `benchmarks/micro/README.md` for the measured primitives and output schema.
-
-## Protocol benchmarks
-
-Protocol benchmarks measure each implemented scheme at the protocol phase
-level and write the compact timing table:
-
-```sh
-cmake --build build --target protocol_benchmarks_p5
+```bash
+bash benchmarks/schemes/run_scheme_benchmarks.sh \
+  --build-dir build \
+  --degrees 5,10,15 \
+  --cyctimes 5 \
+  --msg-num 5 \
+  --msg-bits 32
 ```
 
-For the full paper configuration:
+See [micro/README.md](micro/README.md) and
+[schemes/README.md](schemes/README.md) for detailed scheme-benchmark options.
 
-```sh
-cmake --build build --target protocol_benchmarks
-```
+## `runall.sh`
 
-The normalized result is written to
-`benchmarks/results/protocols/protocol_timing.csv`.
-See `benchmarks/protocols/README.md` for target selection and runner options.
+`runall.sh` is an optional local convenience wrapper.  It remains useful for
+long `nohup` runs or one-command local reproduction, but it is not required:
 
-To regenerate the final tables on the fast P5 protocol subset:
-
-```sh
-cmake --build build --target benchmark_tables_p5
-```
+- CMake targets can run the benchmark tables directly.
+- `benchmarks/micro/run_microbenchmarks.sh` accepts CLI flags and environment
+  variables.
+- `benchmarks/schemes/run_scheme_benchmarks.sh` accepts CLI flags and
+  environment variables.

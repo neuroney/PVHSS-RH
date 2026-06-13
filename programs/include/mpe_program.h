@@ -6,7 +6,7 @@
 
 namespace pvhss { namespace programs {
 
-/// Build an RMS program for the PD2 (Power-sum Degree-2) computation.
+/// Build an RMS program for MPE (Multivariate Polynomial Evaluation).
 ///
 /// Uses the optimized complete-homogeneous recurrence:
 ///   H_0[0] = 1,  H_0[s] = 0 for s > 0
@@ -24,6 +24,6 @@ namespace pvhss { namespace programs {
 ///
 /// The evaluator pre-copies H_prev[*] into H_curr[*] at the start of each
 /// input iteration via init_copies, then gates accumulate into H_curr[*].
-RmsProgram BuildPd2RmsProgram(int msg_num, int degree_f);
+RmsProgram BuildMpeRmsProgram(int msg_num, int degree_f);
 
 }} // namespace pvhss::programs

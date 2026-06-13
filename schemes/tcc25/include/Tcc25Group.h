@@ -62,6 +62,16 @@ struct Tcc25Proof
     ep_t c_g1;
 };
 
+struct Tcc25G1Point
+{
+    ep_t value;
+};
+
+struct Tcc25G2Point
+{
+    ep2_t value;
+};
+
 struct Tcc25Param
 {
     pvhss::group::hss::HssPublicKey pk;
@@ -76,11 +86,6 @@ struct Tcc25Param
     bn_t order;
     NTL::ZZ order_ZZ;
 
-    NTL::ZZ tau;
-    NTL::ZZ alpha;
-    NTL::ZZ beta;
-    NTL::ZZ delta;
-
     ep_t alpha_g1;
     ep_t beta_g1;
     ep_t delta_g1;
@@ -88,13 +93,14 @@ struct Tcc25Param
     ep2_t delta_g2;
     ep2_t g2;
 
-    std::vector<NTL::ZZ> public_u_scalars;
-    std::vector<NTL::ZZ> output_u_scalars;
-    std::vector<NTL::ZZ> a_query_scalars;
-    std::vector<NTL::ZZ> b_query_scalars;
-    std::vector<NTL::ZZ> hidden_over_delta_scalars;
+    std::vector<Tcc25G1Point> public_input_g1;
+    std::vector<Tcc25G1Point> output_g1;
+    std::vector<Tcc25G1Point> a_query_g1;
+    std::vector<Tcc25G1Point> b_query_g1;
+    std::vector<Tcc25G2Point> b_query_g2;
+    std::vector<Tcc25G1Point> hidden_query_g1;
     std::vector<bool> hidden_present;
-    std::vector<NTL::ZZ> h_lagrange_over_delta_scalars;
+    std::vector<Tcc25G1Point> h_query_g1;
 };
 
 void Tcc25_Setup(Tcc25Param &param, Tcc25Server &server0, Tcc25Server &server1);

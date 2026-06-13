@@ -19,7 +19,7 @@ namespace pvhss { namespace programs {
 ///   - AddInPlace(acc, rhs, pk) -> void
 ///
 /// Multiplication results are accumulated into the destination memory slot
-/// (i.e. memory[out] += mul_result). This supports the PD2 recurrence:
+/// (i.e. memory[out] += mul_result). This supports the MPE recurrence:
 ///   H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]
 /// where slots are updated in reverse-s order in-place.
 ///

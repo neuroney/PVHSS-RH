@@ -1,11 +1,12 @@
-/// VHSS protocol benchmark — uses the unified RMS pipeline.
+/// HSS scheme benchmark using the unified RMS pipeline.
 
-#include "protocol_bench_runner.h"
-#include "protocol_vhss.h"
+#include "scheme_bench_runner.h"
+#include "scheme_hss.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -31,11 +32,13 @@ int main(int argc, char** argv)
             cfg.cyctimes = atoi(argv[++i]);
         else if (arg == "--degree" && i + 1 < argc)
             cfg.degree_f = atoi(argv[++i]);
+        else if (arg == "--msg-bits" && i + 1 < argc)
+            cfg.msg_bits = atoi(argv[++i]);
         else if (arg == "--verbose")
             cfg.verbose = true;
     }
 
-    bench::RunProtocolBench<protocol::ProtocolVhss>(cfg);
+    bench::RunSchemeBench<scheme::SchemeHss>(cfg);
 
     return 0;
 }

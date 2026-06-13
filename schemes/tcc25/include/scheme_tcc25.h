@@ -1,13 +1,13 @@
 #pragma once
 #include "Tcc25Group.h"
-#include "protocol_bench_runner.h"
+#include "scheme_bench_runner.h"
 #include "helper.h"
 #include <NTL/ZZ.h>
 #include <vector>
 
-namespace pvhss { namespace protocol {
+namespace pvhss { namespace scheme {
 
-struct ProtocolTcc25
+struct SchemeTcc25
 {
     struct SetupOutput {
         pvhss::group::tcc25::Tcc25Param param;
@@ -44,5 +44,5 @@ struct ProtocolTcc25
     }
     static bench::BenchCounters GetCounters(){return counters;}
 };
-inline bench::BenchCounters ProtocolTcc25::counters;
+inline bench::BenchCounters SchemeTcc25::counters;
 }}

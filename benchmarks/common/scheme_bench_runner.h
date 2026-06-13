@@ -1,7 +1,7 @@
 #pragma once
 
 #include "helper.h"
-#include "plaintext_pd2.h"
+#include "plaintext_mpe.h"
 #include "rms_evaluator.h"
 
 #include <NTL/ZZ.h>
@@ -11,8 +11,35 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+#include <type_traits>
+#include <utility>
 
 namespace pvhss { namespace bench {
+
+template <class Scheme, class = void>
+struct HasCanDecodeReference : std::false_type {};
+
+template <class Scheme>
+struct HasCanDecodeReference<Scheme, std::void_t<decltype(
+    Scheme::CanDecodeReference(
+        std::declval<const typename Scheme::SetupOutput&>(),
+        std::declval<const NTL::ZZ&>()))>> : std::true_type {};
+
+template <class Scheme>
+bool CanDecodeReference(const typename Scheme::SetupOutput& pp,
+                        const NTL::ZZ& reference)
+{
+    if constexpr (HasCanDecodeReference<Scheme>::value)
+    {
+        return Scheme::CanDecodeReference(pp, reference);
+    }
+    else
+    {
+        (void)pp;
+        (void)reference;
+        return true;
+    }
+}
 
 /// Benchmark configuration.
 struct BenchConfig {
@@ -64,9 +91,9 @@ TimingResult Measure(const std::string& label, F&& fn, int cyctimes)
     return result;
 }
 
-/// Generic protocol benchmark runner.
+/// Generic scheme benchmark runner.
 ///
-/// Protocol must expose:
+/// Scheme must expose:
 ///   struct SetupOutput;
 ///   struct ProbGenOutput;
 ///   struct ServerOutput;
@@ -79,21 +106,21 @@ TimingResult Measure(const std::string& label, F&& fn, int cyctimes)
 ///   static NTL::ZZ       Decode(const SetupOutput& pp,
 ///                               const ServerOutput& out0, const ServerOutput& out1);
 ///   static BenchCounters GetCounters();
-template <class Protocol>
-void RunProtocolBench(const BenchConfig& cfg)
+template <class Scheme>
+void RunSchemeBench(const BenchConfig& cfg)
 {
     using namespace pvhss::programs;
 
     std::cout << "=======================================================\n";
-    std::cout << "  Protocol Benchmark\n";
+    std::cout << "  Scheme Benchmark\n";
     std::cout << "  msg_num = " << cfg.msg_num << "  degree_f = " << cfg.degree_f
               << "  cyctimes = " << cfg.cyctimes << "\n";
     std::cout << "-------------------------------------------------------\n";
 
     // --- Setup ---
-    typename Protocol::SetupOutput setup_val;
+    typename Scheme::SetupOutput setup_val;
     Measure("Setup", [&]() {
-        setup_val = Protocol::Setup(cfg);
+        setup_val = Scheme::Setup(cfg);
     }, cfg.cyctimes);
 
     // --- Sample inputs ---
@@ -104,48 +131,64 @@ void RunProtocolBench(const BenchConfig& cfg)
     }
 
     // --- ProbGen ---
-    typename Protocol::ProbGenOutput task_val;
+    typename Scheme::ProbGenOutput task_val;
     Measure("ProbGen", [&]() {
-        task_val = Protocol::ProbGen(setup_val, x);
+        task_val = Scheme::ProbGen(setup_val, x);
     }, cfg.cyctimes);
 
     // --- Compute server 0 ---
-    typename Protocol::ServerOutput out0_val;
+    typename Scheme::ServerOutput out0_val;
     Measure("Compute0", [&]() {
-        out0_val = Protocol::Compute(setup_val, task_val, 0);
+        out0_val = Scheme::Compute(setup_val, task_val, 0);
     }, cfg.cyctimes);
 
     // --- Compute server 1 ---
-    typename Protocol::ServerOutput out1_val;
+    typename Scheme::ServerOutput out1_val;
     Measure("Compute1", [&]() {
-        out1_val = Protocol::Compute(setup_val, task_val, 1);
+        out1_val = Scheme::Compute(setup_val, task_val, 1);
     }, cfg.cyctimes);
 
     // --- Verify ---
-    typename Protocol::VerifyOutput verify_val;
+    typename Scheme::VerifyOutput verify_val;
     Measure("Verify", [&]() {
-        verify_val = Protocol::Verify(setup_val, task_val, out0_val, out1_val);
-    }, std::max(1, cfg.cyctimes / 2));
+        verify_val = Scheme::Verify(setup_val, task_val, out0_val, out1_val);
+    }, cfg.cyctimes);
+
+    // --- Correctness reference ---
+    NTL::ZZ reference = PlaintextMpe(x, cfg.degree_f, cfg.modulus);
+    const bool can_decode_reference = CanDecodeReference<Scheme>(setup_val, reference);
 
     // --- Decode ---
     NTL::ZZ decoded;
     Measure("Decode", [&]() {
-        decoded = Protocol::Decode(setup_val, out0_val, out1_val);
+        decoded = Scheme::Decode(setup_val, out0_val, out1_val);
     }, cfg.cyctimes);
 
     // --- Correctness check ---
-    NTL::ZZ reference = PlaintextPd2(x, cfg.degree_f, cfg.modulus);
-    bool correct = (decoded == reference);
-    std::cout << "\n  Correctness: " << (correct ? "PASS" : "FAIL") << "\n";
-    if (!correct)
+    bool correct = verify_val.accepted && (!can_decode_reference || decoded == reference);
+    std::cout << "\n  Correctness: " << (correct ? "PASS" : "FAIL");
+    if (correct && !can_decode_reference)
+    {
+        std::cout << " (relaxed)";
+    }
+    std::cout << "\n";
+    if (!verify_val.accepted)
+    {
+        std::cout << "  verification rejected\n";
+    }
+    if (!correct && can_decode_reference)
     {
         std::cout << "  decoded   = " << decoded   << "\n";
+        std::cout << "  reference = " << reference << "\n";
+    }
+    else if (!can_decode_reference)
+    {
         std::cout << "  reference = " << reference << "\n";
     }
 
     // --- Counters ---
     std::cout << "\n  --- Operation Counters ---\n";
-    BenchCounters counters = Protocol::GetCounters();
+    BenchCounters counters = Scheme::GetCounters();
     counters.print();
 
     std::cout << "=======================================================\n";

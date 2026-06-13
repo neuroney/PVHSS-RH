@@ -1,9 +1,9 @@
-#include "pd2_program.h"
+#include "mpe_program.h"
 #include <cassert>
 
 namespace pvhss { namespace programs {
 
-RmsProgram BuildPd2RmsProgram(int msg_num, int degree_f)
+RmsProgram BuildMpeRmsProgram(int msg_num, int degree_f)
 {
     assert(msg_num >= 1);
     assert(degree_f >= 1);
