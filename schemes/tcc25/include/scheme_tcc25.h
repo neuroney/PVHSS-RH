@@ -9,6 +9,8 @@ namespace pvhss { namespace scheme {
 
 struct SchemeTcc25
 {
+    static constexpr bool ReportDecodeTime = false;
+
     struct SetupOutput {
         pvhss::group::tcc25::Tcc25Param param;
         pvhss::group::tcc25::Tcc25Server s0, s1;

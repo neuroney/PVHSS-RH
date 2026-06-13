@@ -9,6 +9,8 @@
 #include <vector>
 namespace pvhss { namespace scheme {
 struct SchemeCz {
+    static constexpr bool ReportDecodeTime = false;
+
     struct SetupOutput { PkeParams params; PvhssParams pvhss; NTL::vec_ZZ_pX pk,sk,ek1,ek2,C_alpha; NTL::ZZ_pXModulus mod; NTL::vec_ZZ_pX M1_0,M1_1; int df; };
     struct ProbGenOutput { NTL::Vec<NTL::vec_ZZ_pX> CX; };
     struct ServerOutput { NTL::ZZ_pX y; ep_t g1; ep2_t g2; };

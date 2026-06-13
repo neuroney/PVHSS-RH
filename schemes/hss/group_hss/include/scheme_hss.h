@@ -11,6 +11,8 @@ namespace pvhss { namespace scheme {
 
 struct SchemeHss
 {
+    static constexpr bool ReportDecodeTime = false;
+
     struct SetupOutput {
         pvhss::group::hss::HssPublicKey pk;
         pvhss::group::hss::HssEvalKey ek0;

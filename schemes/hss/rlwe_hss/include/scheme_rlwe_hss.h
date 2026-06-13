@@ -33,6 +33,8 @@ namespace pvhss { namespace scheme {
 
 struct SchemeRlweHss
 {
+    static constexpr bool ReportDecodeTime = false;
+
     struct SetupOutput {
         pvhss::rlwe::hss::PKE_Para pkePara; NTL::vec_ZZ_pX pkePk, pkeSk, hssEk1, hssEk2;
         NTL::ZZ_pXModulus modulus; NTL::vec_ZZ_pX M1_0, M1_1; int degree_f;

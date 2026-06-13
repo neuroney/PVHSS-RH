@@ -11,6 +11,8 @@ namespace pvhss { namespace scheme {
 
 struct SchemeVhss
 {
+    static constexpr bool ReportDecodeTime = false;
+
     struct SetupOutput {
         VhssElgamalPk pk;
         VhssElgamalVk vk;

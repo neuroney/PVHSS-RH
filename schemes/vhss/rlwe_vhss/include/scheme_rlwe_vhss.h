@@ -23,6 +23,8 @@ static inline void EvalZZX(NTL::ZZ &y, NTL::ZZX f) {
 
 namespace pvhss { namespace scheme {
 struct SchemeRlweVhss {
+    static constexpr bool ReportDecodeTime = false;
+
     struct SetupOutput {
         pvhss::rlwe::vhss::PKE_Para pkePara; pvhss::rlwe::vhss::VHSS_Para vhssPara;
         NTL::vec_ZZ_pX pkePk,pkeSk; NTL::ZZ_pXModulus modulus;

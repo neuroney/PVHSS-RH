@@ -76,6 +76,13 @@ struct HasModulus<Scheme, std::void_t<decltype(
     Scheme::Modulus(
         std::declval<const typename Scheme::SetupOutput&>()))>> : std::true_type {};
 
+template <class Scheme, class = void>
+struct ReportsDecodeTime : std::true_type {};
+
+template <class Scheme>
+struct ReportsDecodeTime<Scheme, std::void_t<decltype(Scheme::ReportDecodeTime)>>
+    : std::bool_constant<Scheme::ReportDecodeTime> {};
+
 template <class Scheme>
 NTL::ZZ GetModulus(const typename Scheme::SetupOutput& pp, const NTL::ZZ& fallback)
 {
@@ -160,9 +167,16 @@ void RunSchemeBench(const BenchConfig& cfg)
         }
 
         NTL::ZZ decoded;
-        Measure("Decode", [&]() {
+        if constexpr (ReportsDecodeTime<Scheme>::value)
+        {
+            Measure("Decode", [&]() {
+                decoded = Scheme::Decode(setup_val, out0_val, out1_val);
+            }, cfg.cyctimes);
+        }
+        else
+        {
             decoded = Scheme::Decode(setup_val, out0_val, out1_val);
-        }, cfg.cyctimes);
+        }
 
         // Normalise both sides modulo the scheme's modulus
         if (mod > 0)
