@@ -1,4 +1,4 @@
-/// HSS scheme benchmark using the unified RMS pipeline.
+/// HSS scheme benchmark using the scheme's native MPE evaluator.
 
 #include "scheme_bench_runner.h"
 #include "scheme_hss.h"

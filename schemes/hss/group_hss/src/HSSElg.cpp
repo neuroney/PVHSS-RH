@@ -142,7 +142,7 @@ void HssEvaluate(HssMemoryValue &y_b_res, int b, const vector<HssCiphertext> &Ix
 
 // RMS-optimized recurrence: H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]
 // Reduces HssMul calls from O(k*d^3) to O(k*d).
-void HssEvaluatePolyD2(HssMemoryValue &y_b_res, int b, const vector<HssCiphertext> &Ix, const HssPublicKey &pk, const HssEvalKey &ekb, int &prf_key, int degree_f)
+void HssEvaluateMPE(HssMemoryValue &y_b_res, int b, const vector<HssCiphertext> &Ix, const HssPublicKey &pk, const HssEvalKey &ekb, int &prf_key, int degree_f)
 {
     HssMemoryValue tmp;
 

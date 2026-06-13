@@ -38,7 +38,7 @@ struct SchemeRlweHss
     }
     static ServerOutput Compute(const SetupOutput& pp, const ProbGenOutput& task, int sid) {
         ServerOutput o; int prf=0;
-        pvhss::rlwe::hss::HssEvaluatePolyD2(o.y_share,sid,task.Ix,pp.pkePara,pp.modulus,
+        pvhss::rlwe::hss::HssEvaluateMPE(o.y_share,sid,task.Ix,pp.pkePara,pp.modulus,
             (sid==0)?pp.hssEk1:pp.hssEk2,prf,pp.degree_f,(sid==0)?pp.M1_0:pp.M1_1);
         counters.witness_mul_count=pp.pkePara.num_data*pp.degree_f;
         counters.total_mul_count=counters.witness_mul_count; return o;

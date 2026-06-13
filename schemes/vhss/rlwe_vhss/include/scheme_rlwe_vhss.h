@@ -40,10 +40,10 @@ struct SchemeRlweVhss {
     }
     static ServerOutput Compute(const SetupOutput& pp, const ProbGenOutput& task, int sid) {
         ServerOutput o; int prf=0;
-        pvhss::rlwe::vhss::HssEvaluatePolyD2(o.y_share,sid,task.Ix,pp.pkePara,pp.modulus,
+        pvhss::rlwe::vhss::HssEvaluateMPE(o.y_share,sid,task.Ix,pp.pkePara,pp.modulus,
             (sid==0)?pp.vhssPara.vhssEk_1:pp.vhssPara.vhssEk_2,prf,pp.degree_f,(sid==0)?pp.M1_0:pp.M1_1);
         prf=0;
-        pvhss::rlwe::vhss::HssEvaluatePolyD2(o.Y_share,sid,task.Ix,pp.pkePara,pp.modulus,
+        pvhss::rlwe::vhss::HssEvaluateMPE(o.Y_share,sid,task.Ix,pp.pkePara,pp.modulus,
             (sid==0)?pp.vhssPara.vhssEk_3:pp.vhssPara.vhssEk_4,prf,pp.degree_f,(sid==0)?pp.M3_0:pp.M3_1);
         counters.witness_mul_count=pp.pkePara.num_data*pp.degree_f;
         counters.total_mul_count=counters.witness_mul_count*2; return o;

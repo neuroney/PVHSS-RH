@@ -1,11 +1,6 @@
 #pragma once
 
 #include "HSSElg.h"
-#include "group_hss_backend.h"
-#include "rms_program.h"
-#include "mpe_program.h"
-#include "rms_evaluator.h"
-#include "plaintext_mpe.h"
 #include "scheme_bench_runner.h"
 #include "helper.h"
 
@@ -16,21 +11,19 @@ namespace pvhss { namespace scheme {
 
 struct SchemeHss
 {
-    using Backend = pvhss::backend::GroupHssBackend;
-
     struct SetupOutput {
-        typename Backend::PublicKey pk;
-        typename Backend::EvalKey    ek0;
-        typename Backend::EvalKey    ek1;
+        pvhss::group::hss::HssPublicKey pk;
+        pvhss::group::hss::HssEvalKey ek0;
+        pvhss::group::hss::HssEvalKey ek1;
         int degree_f;
     };
 
     struct ProbGenOutput {
-        std::vector<typename Backend::Ciphertext> inputs;
+        std::vector<pvhss::group::hss::HssCiphertext> inputs;
     };
 
     struct ServerOutput {
-        typename Backend::Memory y_share;
+        pvhss::group::hss::HssMemoryValue y_share;
     };
 
     struct VerifyOutput { bool accepted; };
@@ -40,7 +33,7 @@ struct SchemeHss
     static SetupOutput Setup(const bench::BenchConfig& cfg)
     {
         SetupOutput pp;
-        Backend::GenerateKeys(pp.pk, pp.ek0, pp.ek1, cfg.sk_len);
+        pvhss::group::hss::HssGen(pp.pk, pp.ek0, pp.ek1, cfg.sk_len);
         pp.degree_f = cfg.degree_f;
         return pp;
     }
@@ -49,23 +42,24 @@ struct SchemeHss
                                  const std::vector<NTL::ZZ>& x)
     {
         ProbGenOutput task;
-        for (const auto& xi : x)
-            task.inputs.push_back(Backend::EncodeInput(pp.pk, xi));
+        for (const auto& xi : x) {
+            pvhss::group::hss::HssCiphertext ct;
+            pvhss::group::hss::HssInput(ct, pp.pk, xi);
+            task.inputs.push_back(ct);
+        }
         return task;
     }
 
     static ServerOutput Compute(const SetupOutput& pp,
                                 const ProbGenOutput& task, int server_id)
     {
-        using namespace pvhss::programs;
         int msg_num  = static_cast<int>(task.inputs.size());
         int degree_f = pp.degree_f;
-        auto program = BuildMpeRmsProgram(msg_num, degree_f);
         const auto& ek = (server_id == 0) ? pp.ek0 : pp.ek1;
         int prf_key = 0;
         ServerOutput out;
-        out.y_share = EvalRmsProgram<Backend>(program, server_id, pp.pk, ek,
-                                              task.inputs, prf_key);
+        pvhss::group::hss::HssEvaluateMPE(out.y_share, server_id, task.inputs,
+                                          pp.pk, ek, prf_key, degree_f);
         counters.witness_mul_count = msg_num * degree_f;
         counters.total_mul_count   = counters.witness_mul_count;
         return out;
@@ -77,7 +71,11 @@ struct SchemeHss
 
     static NTL::ZZ Decode(const SetupOutput&, const ServerOutput& out0,
                           const ServerOutput& out1)
-    { return Backend::Decode(out0.y_share, out1.y_share); }
+    {
+        NTL::ZZ r;
+        pvhss::group::hss::HssDec(r, out0.y_share, out1.y_share);
+        return r;
+    }
 
     static bench::BenchCounters GetCounters() { return counters; }
 };

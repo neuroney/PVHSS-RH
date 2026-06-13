@@ -28,7 +28,7 @@ void HssEvaluate(HssMemoryValue &y_b_res, int b,
                  const std::vector<HssCiphertext> &Ix, const HssPublicKey &pk,
                  const HssEvalKey &ekb, int &prf_key,
                  std::vector<std::vector<int>> F_TEST);
-void HssEvaluatePolyD2(HssMemoryValue &y_b_res, int b,
+void HssEvaluateMPE(HssMemoryValue &y_b_res, int b,
                        const std::vector<HssCiphertext> &Ix,
                        const HssPublicKey &pk, const HssEvalKey &ekb,
                        int &prf_key, int degree_f);

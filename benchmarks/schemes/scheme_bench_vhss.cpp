@@ -1,4 +1,4 @@
-/// VHSS scheme benchmark — uses the unified RMS pipeline.
+/// VHSS scheme benchmark using the scheme's native MPE evaluator.
 
 #include "scheme_bench_runner.h"
 #include "scheme_vhss.h"

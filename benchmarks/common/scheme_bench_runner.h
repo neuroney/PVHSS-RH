@@ -1,8 +1,6 @@
 #pragma once
 
 #include "helper.h"
-#include "plaintext_mpe.h"
-#include "rms_evaluator.h"
 
 #include <NTL/ZZ.h>
 #include <vector>
@@ -109,8 +107,6 @@ TimingResult Measure(const std::string& label, F&& fn, int cyctimes)
 template <class Scheme>
 void RunSchemeBench(const BenchConfig& cfg)
 {
-    using namespace pvhss::programs;
-
     std::cout << "=======================================================\n";
     std::cout << "  Scheme Benchmark\n";
     std::cout << "  msg_num = " << cfg.msg_num << "  degree_f = " << cfg.degree_f
@@ -155,7 +151,7 @@ void RunSchemeBench(const BenchConfig& cfg)
     }, cfg.cyctimes);
 
     // --- Correctness reference ---
-    NTL::ZZ reference = PlaintextMpe(x, cfg.degree_f, cfg.modulus);
+    NTL::ZZ reference = MPE(x, cfg.degree_f, cfg.modulus);
     const bool can_decode_reference = CanDecodeReference<Scheme>(setup_val, reference);
 
     // --- Decode ---

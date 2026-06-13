@@ -1070,7 +1070,7 @@ bool Tcc25_ACC_TEST(int msg_num, int degree_f)
     }, 1);
     PrintTimeMs("Decryption algorithm time", timing);
 
-    ZZ expected = ModQ(PolyD2(X, degree_f), param.order_ZZ);
+    ZZ expected = ModQ(MPE(X, degree_f), param.order_ZZ);
     cout << "True result: " << expected << endl;
     cout << "Eval result: " << decoded << endl;
     if (verified)

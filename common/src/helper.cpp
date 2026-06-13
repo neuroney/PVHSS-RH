@@ -324,76 +324,40 @@ void ZZpxScaleMul(ZZ_pX &out, const ZZ_pX &in1, const ZZ &in2)
     out = in1 * a;
 }
 
-// 计算 P_d(x1, x2, x3, x4, x5) 的动态规划函数
-ZZ PolyD(const vec_ZZ& x, int degree_f) {
-    double start = SteadyTimeSeconds();
-    int k = x.length(); // 变量个数
+ZZ MPE(const vector<ZZ> &x, int degree_f, const ZZ &modulus) {
+    vector<ZZ> h(degree_f + 1, ZZ(0));
+    h[0] = ZZ(1);
 
-    // 定义 dp[k+1][d+1]，初始化为 0
-    Mat<ZZ> dp;
-    dp.SetDims(k + 1, degree_f + 1);
-    dp[0][0] = ZZ(1); 
-    
-    ZZ tmp;
-    // 动态规划填表
-    for (int i = 1; i <= k; i++) { // 依次加入 x1, x2, ..., x5
-        for (int s = 0; s <= degree_f; s++) { // 目标和从 0 到 d
-            dp[i][s] = ZZ(0);
-            for (int j = 0; j <= s; j++) { 
-                power(tmp, x[i - 1], j); 
-                mul(tmp, tmp, dp[i - 1][s - j]); 
-                add(dp[i][s], dp[i][s], tmp); 
+    const bool has_modulus = (modulus > 0);
+    for (const ZZ &xi : x) {
+        for (int s = 1; s <= degree_f; ++s) {
+            ZZ prod;
+            if (has_modulus) {
+                MulMod(prod, xi, h[s - 1], modulus);
+                AddMod(h[s], h[s], prod, modulus);
+            } else {
+                mul(prod, xi, h[s - 1]);
+                add(h[s], h[s], prod);
             }
         }
     }
 
-    // 计算最终结果 P_d(x1, ..., x5)
     ZZ result(0);
-    for (int s = 1; s <= degree_f; s++) {
-        add(result, result, dp[k][s]); 
+    for (int s = 1; s <= degree_f; ++s) {
+        if (has_modulus) {
+            AddMod(result, result, h[s], modulus);
+        } else {
+            add(result, result, h[s]);
+        }
     }
-
-    start = SteadyTimeSeconds() - start;
-    cout << "Time: " << start << " seconds" << endl;
     return result;
 }
 
-
-ZZ PolyD2(const vec_ZZ& x, int degree_f) {
-    double start = SteadyTimeSeconds();
-    int k = x.length();
-
-    // 使用一维数组而非二维矩阵，从而改善缓存命中率
-    vector<ZZ> dp_prev(degree_f + 1, ZZ(0));
-    vector<ZZ> dp_curr(degree_f + 1, ZZ(0));
-    vector<ZZ> powers(degree_f + 1, ZZ(1));
-    
-    dp_prev[0] = ZZ(1);
-    
-    for (int i = 0; i < k; i++) {
-        for (int j = 1; j <= degree_f; ++j) {
-            mul(powers[j], powers[j - 1], x[i]);
-        }
-
-        for (int s = 0; s <= degree_f; s++) {
-            dp_curr[s] = ZZ(0);
-            for (int j = 0; j <= s; j++) {
-                ZZ tmp;
-                mul(tmp, powers[j], dp_prev[s - j]);
-                add(dp_curr[s], dp_curr[s], tmp);
-            }
-        }
-        // Swap current and previous arrays
-        dp_prev.swap(dp_curr);
+ZZ MPE(const vec_ZZ &x, int degree_f) {
+    vector<ZZ> values;
+    values.reserve(x.length());
+    for (long i = 0; i < x.length(); ++i) {
+        values.push_back(x[i]);
     }
-    
-    // 计算最终结果
-    ZZ result(0);
-    for (int s = 1; s <= degree_f; s++) {
-        add(result, result, dp_prev[s]);
-    }
-    
-    start = SteadyTimeSeconds() - start;
-    cout << "Time: " << start * 1000 << " ms" << endl;
-    return result;
+    return MPE(values, degree_f, ZZ(0));
 }

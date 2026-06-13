@@ -105,13 +105,13 @@ void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, 
 
     if (b == 0)
     {
-        HssEvaluatePolyD2(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_1, prf_key, param.pkePara.d, M1);
-        HssEvaluatePolyD2(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_3, prf_key, param.pkePara.d, M2);
+        HssEvaluateMPE(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_1, prf_key, param.pkePara.d, M1);
+        HssEvaluateMPE(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_3, prf_key, param.pkePara.d, M2);
     }
     else
     {
-        HssEvaluatePolyD2(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_2, prf_key, param.pkePara.d, M1);
-        HssEvaluatePolyD2(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_4, prf_key, param.pkePara.d, M2);
+        HssEvaluateMPE(y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_2, prf_key, param.pkePara.d, M1);
+        HssEvaluateMPE(Y_b_res, b, Ix, param.pkePara, modulus, param.vhssPara.vhssEk_4, prf_key, param.pkePara.d, M2);
     }
     Prove(proof, b, y_b_res, Y_b_res, param, ekpb);
 }
@@ -232,7 +232,7 @@ bool PVHSS_ACC_TEST(int msg_num, int degree_f)
     dig_t y_eval_dig;
     Decode(y_eval_dig, pi0, pi1, param.f_sk);
     ZZ y_eval = to_ZZ(static_cast<long>(y_eval_dig));
-    ZZ y_native = to_ZZ(PolyD(X, degree_f) % param.ck.g1_order_ZZ);
+    ZZ y_native = to_ZZ(MPE(X, degree_f) % param.ck.g1_order_ZZ);
     cout << "True result: " << y_native << endl;
     cout << "Eval result: " << y_eval << endl;
     const ZZ decode_limit = conv<ZZ>(PVHSS_M_MAX);

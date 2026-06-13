@@ -191,7 +191,7 @@ void HssAddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX &C_Y)
 
 // RMS-optimized recurrence: H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]
 // Reduces HSS_Mult calls from O(k*d^2) to O(k*d).
-void HssEvaluatePolyD2(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix,
+void HssEvaluateMPE(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix,
                        const PKE_Para &pkePara, ZZ_pXModulus modulus,
                        const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f,
                        const vec_ZZ_pX &M1)

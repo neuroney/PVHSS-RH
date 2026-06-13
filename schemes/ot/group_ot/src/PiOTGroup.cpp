@@ -162,7 +162,7 @@ bool PVHSSElg1_ACC_TEST(int msg_num, int degree_f)
     ZZ y_native, y_eval;
     PVHSSElg1_Decode(y_eval, pi0, pi1, sk);
     y_eval = y_eval % param.ck.g1_order_ZZ;
-    y_native = PolyD(X, degree_f) % param.ck.g1_order_ZZ;
+    y_native = MPE(X, degree_f) % param.ck.g1_order_ZZ;
     // NativeEvaluate(y_native, param.degree_f, msg_num, X, param.ck.g1_order_ZZ, F_TEST);
     cout << "True result: " << y_native << endl;
     cout << "Eval result: " << y_eval << endl;

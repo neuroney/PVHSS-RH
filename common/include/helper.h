@@ -82,5 +82,5 @@ void RlweSecretKey(ZZ_pX &sk, int N, int hsk);
 void GaussRandom(ZZ_pX &e, int N);
 void ZZpxScaleMul(ZZ_pX &out, const ZZ_pX &in1, const ZZ &in2);
 
-ZZ PolyD(const vec_ZZ &x, int degree_f);
-ZZ PolyD2(const vec_ZZ &x, int degree_f);
+ZZ MPE(const vec_ZZ &x, int degree_f);
+ZZ MPE(const std::vector<ZZ> &x, int degree_f, const ZZ &modulus);
