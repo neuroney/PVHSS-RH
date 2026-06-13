@@ -14,31 +14,6 @@
 
 namespace pvhss { namespace bench {
 
-template <class Scheme, class = void>
-struct HasCanDecodeReference : std::false_type {};
-
-template <class Scheme>
-struct HasCanDecodeReference<Scheme, std::void_t<decltype(
-    Scheme::CanDecodeReference(
-        std::declval<const typename Scheme::SetupOutput&>(),
-        std::declval<const NTL::ZZ&>()))>> : std::true_type {};
-
-template <class Scheme>
-bool CanDecodeReference(const typename Scheme::SetupOutput& pp,
-                        const NTL::ZZ& reference)
-{
-    if constexpr (HasCanDecodeReference<Scheme>::value)
-    {
-        return Scheme::CanDecodeReference(pp, reference);
-    }
-    else
-    {
-        (void)pp;
-        (void)reference;
-        return true;
-    }
-}
-
 /// Benchmark configuration.
 struct BenchConfig {
     int msg_num   = 5;
@@ -49,32 +24,6 @@ struct BenchConfig {
     int cyctimes  = 3;     // timing samples
     NTL::ZZ modulus;       // modulus for plaintext reference
     bool verbose  = false;
-};
-
-/// Counter set for detailed operation counting.
-struct BenchCounters {
-    int witness_mul_count        = 0;
-    int proof_mul_count          = 0;
-    int total_mul_count          = 0;
-    int memory_add_count         = 0;
-    int memory_scalar_mul_count  = 0;
-    int input_lincomb_count      = 0;
-    int group_scalar_mul_count   = 0;
-    int msm_count                = 0;
-    int pairing_count            = 0;
-
-    void print() const
-    {
-        std::cout << "  witness_mul_count         = " << witness_mul_count        << "\n";
-        std::cout << "  proof_mul_count           = " << proof_mul_count          << "\n";
-        std::cout << "  total_mul_count           = " << total_mul_count          << "\n";
-        std::cout << "  memory_add_count          = " << memory_add_count         << "\n";
-        std::cout << "  memory_scalar_mul_count   = " << memory_scalar_mul_count  << "\n";
-        std::cout << "  input_lincomb_count       = " << input_lincomb_count      << "\n";
-        std::cout << "  group_scalar_mul_count    = " << group_scalar_mul_count   << "\n";
-        std::cout << "  msm_count                 = " << msm_count                << "\n";
-        std::cout << "  pairing_count             = " << pairing_count            << "\n";
-    }
 };
 
 /// Timing helper: measure a callable and return the TimingResult.
@@ -89,21 +38,65 @@ TimingResult Measure(const std::string& label, F&& fn, int cyctimes)
     return result;
 }
 
+template <class Scheme, class = void>
+struct HasDecode : std::false_type {};
+
+template <class Scheme>
+struct HasDecode<Scheme, std::void_t<decltype(
+    Scheme::Decode(
+        std::declval<const typename Scheme::SetupOutput&>(),
+        std::declval<const typename Scheme::ServerOutput&>(),
+        std::declval<const typename Scheme::ServerOutput&>()))>> : std::true_type {};
+
+template <class Scheme, class = void>
+struct HasVerify : std::false_type {};
+
+template <class Scheme>
+struct HasVerify<Scheme, std::void_t<decltype(
+    Scheme::Verify(
+        std::declval<const typename Scheme::SetupOutput&>(),
+        std::declval<const typename Scheme::ProbGenOutput&>(),
+        std::declval<const typename Scheme::ServerOutput&>(),
+        std::declval<const typename Scheme::ServerOutput&>()))>> : std::true_type {};
+
+template <class Scheme, class = void>
+struct HasCanDecodeReference : std::false_type {};
+
+template <class Scheme>
+struct HasCanDecodeReference<Scheme, std::void_t<decltype(
+    Scheme::CanDecodeReference(
+        std::declval<const typename Scheme::SetupOutput&>(),
+        std::declval<const NTL::ZZ&>()))>> : std::true_type {};
+
+template <class Scheme, class = void>
+struct HasModulus : std::false_type {};
+
+template <class Scheme>
+struct HasModulus<Scheme, std::void_t<decltype(
+    Scheme::Modulus(
+        std::declval<const typename Scheme::SetupOutput&>()))>> : std::true_type {};
+
+template <class Scheme>
+NTL::ZZ GetModulus(const typename Scheme::SetupOutput& pp, const NTL::ZZ& fallback)
+{
+    if constexpr (HasModulus<Scheme>::value)
+        return Scheme::Modulus(pp);
+    else
+        return fallback;
+}
+
 /// Generic scheme benchmark runner.
 ///
 /// Scheme must expose:
 ///   struct SetupOutput;
 ///   struct ProbGenOutput;
 ///   struct ServerOutput;
-///   struct VerifyOutput;
 ///   static SetupOutput   Setup(const BenchConfig& cfg);
 ///   static ProbGenOutput ProbGen(const SetupOutput& pp, const std::vector<NTL::ZZ>& x);
 ///   static ServerOutput  Compute(const SetupOutput& pp, const ProbGenOutput& task, int server_id);
-///   static VerifyOutput  Verify(const SetupOutput& pp, const ProbGenOutput& task,
-///                               const ServerOutput& out0, const ServerOutput& out1);
+/// Optionally:
 ///   static NTL::ZZ       Decode(const SetupOutput& pp,
 ///                               const ServerOutput& out0, const ServerOutput& out1);
-///   static BenchCounters GetCounters();
 template <class Scheme>
 void RunSchemeBench(const BenchConfig& cfg)
 {
@@ -144,48 +137,51 @@ void RunSchemeBench(const BenchConfig& cfg)
         out1_val = Scheme::Compute(setup_val, task_val, 1);
     }, cfg.cyctimes);
 
-    // --- Verify ---
-    typename Scheme::VerifyOutput verify_val;
-    Measure("Verify", [&]() {
-        verify_val = Scheme::Verify(setup_val, task_val, out0_val, out1_val);
-    }, cfg.cyctimes);
-
-    // --- Correctness reference ---
-    NTL::ZZ reference = MPE(x, cfg.degree_f, cfg.modulus);
-    const bool can_decode_reference = CanDecodeReference<Scheme>(setup_val, reference);
-
-    // --- Decode ---
-    NTL::ZZ decoded;
-    Measure("Decode", [&]() {
-        decoded = Scheme::Decode(setup_val, out0_val, out1_val);
-    }, cfg.cyctimes);
-
-    // --- Correctness check ---
-    bool correct = verify_val.accepted && (!can_decode_reference || decoded == reference);
-    std::cout << "\n  Correctness: " << (correct ? "PASS" : "FAIL");
-    if (correct && !can_decode_reference)
+    // --- Verify (if scheme provides) ---
+    if constexpr (HasVerify<Scheme>::value)
     {
-        std::cout << " (relaxed)";
-    }
-    std::cout << "\n";
-    if (!verify_val.accepted)
-    {
-        std::cout << "  verification rejected\n";
-    }
-    if (!correct && can_decode_reference)
-    {
-        std::cout << "  decoded   = " << decoded   << "\n";
-        std::cout << "  reference = " << reference << "\n";
-    }
-    else if (!can_decode_reference)
-    {
-        std::cout << "  reference = " << reference << "\n";
+        typename Scheme::VerifyOutput verify_val;
+        Measure("Verify", [&]() {
+            verify_val = Scheme::Verify(setup_val, task_val, out0_val, out1_val);
+        }, cfg.cyctimes);
+        std::cout << "\n  Verification: " << (verify_val.accepted ? "PASS" : "FAIL") << "\n";
     }
 
-    // --- Counters ---
-    std::cout << "\n  --- Operation Counters ---\n";
-    BenchCounters counters = Scheme::GetCounters();
-    counters.print();
+    // --- Correctness check (if scheme provides Decode and can compare) ---
+    if constexpr (HasDecode<Scheme>::value)
+    {
+        NTL::ZZ mod = GetModulus<Scheme>(setup_val, cfg.modulus);
+        NTL::ZZ reference = MPE(x, cfg.degree_f, mod);
+
+        bool can_compare = true;
+        if constexpr (HasCanDecodeReference<Scheme>::value)
+        {
+            can_compare = Scheme::CanDecodeReference(setup_val, reference);
+        }
+
+        NTL::ZZ decoded;
+        Measure("Decode", [&]() {
+            decoded = Scheme::Decode(setup_val, out0_val, out1_val);
+        }, cfg.cyctimes);
+
+        // Normalise both sides modulo the scheme's modulus
+        if (mod > 0)
+        {
+            decoded %= mod;
+            if (decoded < 0) decoded += mod;
+        }
+
+        if (can_compare)
+        {
+            bool correct = (decoded == reference);
+            std::cout << "  Correctness: " << (correct ? "PASS" : "FAIL") << "\n";
+            if (!correct)
+            {
+                std::cout << "  decoded   = " << decoded   << "\n";
+                std::cout << "  reference = " << reference << "\n";
+            }
+        }
+    }
 
     std::cout << "=======================================================\n";
     std::cout.flush();

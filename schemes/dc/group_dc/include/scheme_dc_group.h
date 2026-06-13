@@ -18,7 +18,6 @@ struct SchemeDcGroup
     struct ProbGenOutput { std::vector<VhssElgamalCt> Ix; };
     struct ServerOutput { pvhss::group::dc::PROOF proof; };
     struct VerifyOutput { bool accepted; };
-    static bench::BenchCounters counters;
 
     static SetupOutput Setup(const bench::BenchConfig& cfg) {
         SetupOutput pp;
@@ -43,8 +42,6 @@ struct SchemeDcGroup
         else{bn_copy(ekpb[0],pp.ekp1_0);bn_copy(ekpb[1],pp.ekp1_1);}
         auto Ix=task.Ix; std::vector<std::vector<int>> F;
         pvhss::group::dc::PVHSSElg2_Compute(out.proof,sid,pp.param,(sid==0)?pp.ek0:pp.ek1,ekpb,Ix,F);
-        counters.witness_mul_count=pp.param.msg_num*pp.param.degree_f;
-        counters.total_mul_count=counters.witness_mul_count+4; counters.pairing_count=4;
         return out;
     }
     static VerifyOutput Verify(const SetupOutput& pp, const ProbGenOutput&, const ServerOutput& o0, const ServerOutput& o1) {
@@ -57,7 +54,5 @@ struct SchemeDcGroup
     static bool CanDecodeReference(const SetupOutput&, const NTL::ZZ& reference) {
         return reference >= 0 && reference < NTL::conv<NTL::ZZ>(PVHSS_M_MAX);
     }
-    static bench::BenchCounters GetCounters(){return counters;}
 };
-inline bench::BenchCounters SchemeDcGroup::counters;
 }}

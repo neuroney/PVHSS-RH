@@ -13,7 +13,7 @@ struct SchemeCz {
     struct ProbGenOutput { NTL::Vec<NTL::vec_ZZ_pX> CX; };
     struct ServerOutput { NTL::ZZ_pX y; ep_t g1; ep2_t g2; };
     struct VerifyOutput { bool accepted; };
-    static bench::BenchCounters counters;
+
     static SetupOutput Setup(const bench::BenchConfig& cfg) {
         SetupOutput pp; pp.pk.SetLength(2);pp.sk.SetLength(2);pp.df=cfg.degree_f;
         PkeGen(pp.params,pp.pk,pp.sk,cfg.degree_f); pp.params.msg_bit=cfg.msg_bits;
@@ -35,7 +35,7 @@ struct SchemeCz {
         PvhssEval(o.y,o.g1,o.g2,eval_id,pp.pvhss,pp.params,pp.mod,
                   (sid==0)?pp.ek1:pp.ek2,pp.C_alpha,task.CX,pp.df,
                   (sid==0)?pp.M1_0:pp.M1_1);
-        counters.witness_mul_count=k*pp.df;counters.total_mul_count=counters.witness_mul_count;counters.pairing_count=2; return o;
+        return o;
     }
     static VerifyOutput Verify(const SetupOutput& pp, const ProbGenOutput&, const ServerOutput& o0, const ServerOutput& o1) {
         ep_t g1;ep2_t g2;ep_new(g1);ep2_new(g2);ep_copy(g1,o0.g1);ep2_copy(g2,o1.g2);
@@ -47,7 +47,5 @@ struct SchemeCz {
     static NTL::ZZ Decode(const SetupOutput&, const ServerOutput& o0, const ServerOutput& o1) {
         NTL::ZZ_pX d=o0.y+o1.y;NTL::ZZX dzx;NTL::conv(dzx,d);NTL::ZZ r(0);EvalZZX(r,dzx);return r;
     }
-    static bench::BenchCounters GetCounters(){return counters;}
 };
-inline bench::BenchCounters SchemeCz::counters;
 }}

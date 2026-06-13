@@ -26,10 +26,6 @@ struct SchemeHss
         pvhss::group::hss::HssMemoryValue y_share;
     };
 
-    struct VerifyOutput { bool accepted; };
-
-    static bench::BenchCounters counters;
-
     static SetupOutput Setup(const bench::BenchConfig& cfg)
     {
         SetupOutput pp;
@@ -60,14 +56,8 @@ struct SchemeHss
         ServerOutput out;
         pvhss::group::hss::HssEvaluateMPE(out.y_share, server_id, task.inputs,
                                           pp.pk, ek, prf_key, degree_f);
-        counters.witness_mul_count = msg_num * degree_f;
-        counters.total_mul_count   = counters.witness_mul_count;
         return out;
     }
-
-    static VerifyOutput Verify(const SetupOutput&, const ProbGenOutput&,
-                               const ServerOutput&, const ServerOutput&)
-    { return {true}; }
 
     static NTL::ZZ Decode(const SetupOutput&, const ServerOutput& out0,
                           const ServerOutput& out1)
@@ -77,8 +67,6 @@ struct SchemeHss
         return r;
     }
 
-    static bench::BenchCounters GetCounters() { return counters; }
 };
-inline bench::BenchCounters SchemeHss::counters;
 
 }} // namespace pvhss::scheme

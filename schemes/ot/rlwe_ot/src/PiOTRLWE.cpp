@@ -19,7 +19,9 @@ void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     VHSS_Gen(param.vhssPara, param.pkePara, modulus, pkeSk);
     Ped_ComGen(param.ck);
     NTL::RandomBits(param.sk_alpha, 32);
-    ZZ A_ZZ = HssOutputPolyAtTwo(param.vhssPara.alpha, param.pkePara, param.ck.g1_order_ZZ);
+    ZZ_p A_ZZ_p;
+    eval(A_ZZ_p, param.vhssPara.alpha, conv<ZZ_p>(param.sk_alpha));
+    ZZ A_ZZ = conv<ZZ>(A_ZZ_p) % param.ck.g1_order_ZZ;
 
     bn_t A;
     bn_new(A);
@@ -65,11 +67,11 @@ void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ &x, ZZ_p
 void Prove(PROOF &pi, int b, const PVHSS_MV &y_b, const PVHSS_MV &Y_b, const PVHSSPara &param, bn_t ekpb)
 {
     (void)b;
-    const ZZ yb_zz = HssOutputCoeff(y_b[0][0], param.pkePara, param.ck.g1_order_ZZ);
-    const ZZ Yb_zz = HssOutputPolyAtTwo(Y_b[0], param.pkePara, param.ck.g1_order_ZZ);
-
-    pi.y = yb_zz;
-    Ped_Com(pi.D, ekpb, param.ck, Yb_zz);
+    ZZ_p yb, Yb;
+    eval(yb, y_b[0], conv<ZZ_p>(param.sk_alpha));
+    eval(Yb, Y_b[0], conv<ZZ_p>(param.sk_alpha));
+    pi.y = conv<ZZ>(yb) % param.ck.g1_order_ZZ;
+    Ped_Com(pi.D, ekpb, param.ck, conv<ZZ>(Yb) % param.ck.g1_order_ZZ);
 }
 
 void Compute(PROOF &proof, int b, const PVHSSPara &param, const vec_ZZ_pX &ek1, const vec_ZZ_pX &ek2, vector<PVHSS_CT> &Ix, ZZ_pXModulus modulus, const vec_ZZ_pX &M1, vec_ZZ_pX &M2, vector<vector<int>> F_TEST, bn_t ekpb)
@@ -131,7 +133,7 @@ bool Verify(const PROOF &pi0, const PROOF &pi1, const CK &ck)
 
 void Decode(ZZ& y, const PROOF &pi0, const PROOF &pi1, const PVHSS_SK sk)
 {
-    sub(y, pi1.y, pi0.y);
+    add(y, pi0.y, pi1.y);
     sub(y, y, sk);
 }
 

@@ -29,8 +29,6 @@ struct SchemeVhss
 
     struct VerifyOutput { bool accepted; };
 
-    static bench::BenchCounters counters;
-
     static SetupOutput Setup(const bench::BenchConfig& cfg)
     {
         SetupOutput pp;
@@ -61,8 +59,6 @@ struct SchemeVhss
         ServerOutput out;
         VhssElgamalEvaluateMPE(out.y_share, server_id, task.inputs, pp.pk, ek,
                                prf_key, degree_f);
-        counters.witness_mul_count = msg_num * degree_f;
-        counters.total_mul_count   = counters.witness_mul_count;
         return out;
     }
 
@@ -74,8 +70,6 @@ struct SchemeVhss
                           const ServerOutput& out1)
     { NTL::ZZ r; sub(r, out1.y_share[0], out0.y_share[0]); return r; }
 
-    static bench::BenchCounters GetCounters() { return counters; }
 };
-inline bench::BenchCounters SchemeVhss::counters;
 
 }} // namespace pvhss::scheme

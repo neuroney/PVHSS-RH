@@ -16,7 +16,6 @@ struct SchemeTcc25
     struct ProbGenOutput { std::vector<pvhss::group::tcc25::Tcc25Ciphertext> Ix; NTL::vec_ZZ x; };
     struct ServerOutput { pvhss::group::tcc25::Tcc25ProofShare ps; };
     struct VerifyOutput { bool accepted; };
-    static bench::BenchCounters counters;
 
     static SetupOutput Setup(const bench::BenchConfig& cfg) {
         SetupOutput pp; pp.param.skLen=cfg.sk_len; pp.param.msg_bits=cfg.msg_bits;
@@ -31,9 +30,7 @@ struct SchemeTcc25
     static ServerOutput Compute(const SetupOutput& pp, const ProbGenOutput& task, int sid) {
         ServerOutput out;
         pvhss::group::tcc25::Tcc25_Compute(out.ps, sid, pp.param, (sid==0)?pp.s0:pp.s1, task.Ix);
-        counters.witness_mul_count=pp.param.msg_num*pp.param.degree_f;
-        counters.total_mul_count=counters.witness_mul_count+20;
-        counters.msm_count=6; counters.pairing_count=4; return out;
+        return out;
     }
     static VerifyOutput Verify(const SetupOutput& pp, const ProbGenOutput& task, const ServerOutput& o0, const ServerOutput& o1) {
         pvhss::group::tcc25::Tcc25Proof proof;
@@ -42,7 +39,6 @@ struct SchemeTcc25
     static NTL::ZZ Decode(const SetupOutput& pp, const ServerOutput& o0, const ServerOutput& o1) {
         NTL::ZZ y; pvhss::group::tcc25::Tcc25_Decode(y, o0.ps, o1.ps, pp.param); return y;
     }
-    static bench::BenchCounters GetCounters(){return counters;}
+    static NTL::ZZ Modulus(const SetupOutput& pp) { return pp.param.order_ZZ; }
 };
-inline bench::BenchCounters SchemeTcc25::counters;
 }}

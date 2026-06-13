@@ -1,0 +1,113 @@
+nohup: 忽略输入
+===== PVHSS-RH runall ======
+Mode:     full
+Build:    build (Release), jobs=16
+Micro:    samples=1  iters=1
+Scheme:   degrees=5,10,15  cyctimes=5  msg_num=5
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/jinyuan/CodeSpace/PVHSS-RH/build
+[1/70] Building CXX object tests/correctness/CMakeFiles/p5_dc_group_acc.dir/p5_dc_group_acc.cpp.o
+[2/70] Building CXX object tests/correctness/CMakeFiles/p5_dc_group_acc.dir/__/__/schemes/dc/group_dc/src/DecPed.cpp.o
+[3/70] Building CXX object tests/correctness/CMakeFiles/p5_ot_group_acc.dir/__/__/schemes/ot/group_ot/src/Ped.cpp.o
+[4/70] Building CXX object tests/correctness/CMakeFiles/p5_ot_rlwe_acc.dir/p5_ot_rlwe_acc.cpp.o
+[5/70] Building CXX object tests/correctness/CMakeFiles/p5_tcc25_group_acc.dir/p5_tcc25_group_acc.cpp.o
+[6/70] Building CXX object tests/correctness/CMakeFiles/p5_ot_group_acc.dir/p5_ot_group_acc.cpp.o
+[7/70] Building CXX object common/CMakeFiles/common.dir/src/elgamal.cpp.o
+[8/70] Building CXX object tests/correctness/CMakeFiles/p5_tcc25_group_acc.dir/__/__/schemes/hss/group_hss/src/HSSElg.cpp.o
+[9/70] Building CXX object tests/correctness/CMakeFiles/test_programs.dir/test_programs.cpp.o
+[10/70] Building CXX object common/CMakeFiles/common.dir/src/VHSSElg.cpp.o
+[11/70] Building CXX object common/CMakeFiles/common.dir/src/relic_cp_decped.cpp.o
+[12/70] Building CXX object tests/correctness/CMakeFiles/p5_dc_group_acc.dir/__/__/schemes/dc/group_dc/src/PiDCGroup.cpp.o
+[13/70] Building CXX object tests/correctness/CMakeFiles/p5_ot_group_acc.dir/__/__/schemes/ot/group_ot/src/PiOTGroup.cpp.o
+[14/70] Building CXX object common/CMakeFiles/common.dir/src/helper.cpp.o
+[15/70] Linking CXX static library common/libcommon.a
+[16/70] Building CXX object tests/correctness/CMakeFiles/p5_ot_rlwe_acc.dir/__/__/schemes/ot/rlwe_ot/src/PiOTRLWE.cpp.o
+[17/70] Linking CXX executable tests/correctness/p5_ot_group_acc
+[18/70] Linking CXX executable tests/correctness/test_programs
+[19/70] Linking CXX executable tests/correctness/p5_dc_group_acc
+[20/70] Building CXX object tests/correctness/CMakeFiles/p5_dc_rlwe_acc.dir/__/__/schemes/dc/rlwe_dc/src/DecPed.cpp.o
+[21/70] Building CXX object tests/correctness/CMakeFiles/p5_dc_rlwe_acc.dir/p5_dc_rlwe_acc.cpp.o
+[22/70] Building CXX object tests/correctness/CMakeFiles/p5_ot_rlwe_acc.dir/__/__/schemes/ot/rlwe_ot/src/Ped.cpp.o
+[23/70] Building CXX object benchmarks/micro/CMakeFiles/microbench.dir/__/__/schemes/hss/group_hss/src/HSSElg.cpp.o
+[24/70] Building CXX object tests/correctness/CMakeFiles/p5_dc_rlwe_acc.dir/__/__/schemes/dc/rlwe_dc/src/VHSSRLWE.cpp.o
+[25/70] Building CXX object tests/correctness/CMakeFiles/p5_ot_rlwe_acc.dir/__/__/schemes/ot/rlwe_ot/src/VHSSRLWE.cpp.o
+[26/70] Building CXX object tests/correctness/CMakeFiles/p5_dc_rlwe_acc.dir/__/__/schemes/dc/rlwe_dc/src/PiDCRLWE.cpp.o
+[27/70] Building CXX object benchmarks/micro/CMakeFiles/microbench.dir/__/__/schemes/hss/rlwe_hss/src/HSSRLWE.cpp.o
+[28/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_hss_rms_bench.dir/__/__/schemes/hss/group_hss/src/HSSElg.cpp.o
+[29/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_hss_rms_bench.dir/scheme_bench_hss.cpp.o
+[30/70] Linking CXX executable tests/correctness/p5_ot_rlwe_acc
+[31/70] Building CXX object benchmarks/micro/CMakeFiles/microbench.dir/__/__/schemes/vhss/rlwe_vhss/src/VHSSRLWE.cpp.o
+[32/70] Linking CXX executable tests/correctness/p5_dc_rlwe_acc
+[33/70] Linking CXX executable benchmarks/schemes/scheme_hss_rms_bench
+[34/70] Building CXX object tests/correctness/CMakeFiles/p5_tcc25_group_acc.dir/__/__/schemes/tcc25/src/Tcc25Group.cpp.o
+[35/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_vhss_rms_bench.dir/__/__/schemes/hss/group_hss/src/HSSElg.cpp.o
+[36/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_vhss_rms_bench.dir/scheme_bench_vhss.cpp.o
+[37/70] Linking CXX executable tests/correctness/p5_tcc25_group_acc
+[38/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_ot_rms_bench.dir/__/__/schemes/ot/group_ot/src/Ped.cpp.o
+[39/70] Building CXX object benchmarks/micro/CMakeFiles/microbench.dir/microbench.cpp.o
+[40/70] Linking CXX executable benchmarks/schemes/scheme_vhss_rms_bench
+[41/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_ot_rms_bench.dir/scheme_bench_ot.cpp.o
+[42/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_dc_rms_bench.dir/__/__/schemes/dc/group_dc/src/DecPed.cpp.o
+[43/70] Linking CXX executable benchmarks/micro/microbench
+[44/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_ot_rms_bench.dir/__/__/schemes/ot/group_ot/src/PiOTGroup.cpp.o
+[45/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_dc_rms_bench.dir/scheme_bench_dc.cpp.o
+[46/70] Linking CXX executable benchmarks/schemes/scheme_ot_rms_bench
+[47/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_dc_rms_bench.dir/__/__/schemes/dc/group_dc/src/PiDCGroup.cpp.o
+[48/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_tcc25_rms_bench.dir/__/__/schemes/hss/group_hss/src/HSSElg.cpp.o
+[49/70] Linking CXX executable benchmarks/schemes/scheme_dc_rms_bench
+[50/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_tcc25_rms_bench.dir/scheme_bench_tcc25.cpp.o
+[51/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_hss_rms_bench.dir/__/__/schemes/hss/rlwe_hss/src/HSSRLWE.cpp.o
+[52/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_ot_rms_bench.dir/__/__/schemes/ot/rlwe_ot/src/Ped.cpp.o
+[53/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_hss_rms_bench.dir/scheme_bench_rlwe_hss.cpp.o
+[54/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_vhss_rms_bench.dir/__/__/schemes/vhss/rlwe_vhss/src/VHSSRLWE.cpp.o
+[55/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_cz_rms_bench.dir/scheme_bench_cz.cpp.o
+[56/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_dc_rms_bench.dir/__/__/schemes/dc/rlwe_dc/src/DecPed.cpp.o
+[57/70] Linking CXX executable benchmarks/schemes/scheme_rlwe_hss_rms_bench
+[58/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_vhss_rms_bench.dir/scheme_bench_rlwe_vhss.cpp.o
+[59/70] Linking CXX executable benchmarks/schemes/scheme_cz_rms_bench
+[60/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_ot_rms_bench.dir/scheme_bench_rlwe_ot.cpp.o
+[61/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_ot_rms_bench.dir/__/__/schemes/ot/rlwe_ot/src/VHSSRLWE.cpp.o
+[62/70] Linking CXX executable benchmarks/schemes/scheme_rlwe_vhss_rms_bench
+[63/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_ot_rms_bench.dir/__/__/schemes/ot/rlwe_ot/src/PiOTRLWE.cpp.o
+[64/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_dc_rms_bench.dir/scheme_bench_rlwe_dc.cpp.o
+[65/70] Linking CXX executable benchmarks/schemes/scheme_rlwe_ot_rms_bench
+[66/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_dc_rms_bench.dir/__/__/schemes/dc/rlwe_dc/src/PiDCRLWE.cpp.o
+[67/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_rlwe_dc_rms_bench.dir/__/__/schemes/dc/rlwe_dc/src/VHSSRLWE.cpp.o
+[68/70] Linking CXX executable benchmarks/schemes/scheme_rlwe_dc_rms_bench
+[69/70] Building CXX object benchmarks/schemes/CMakeFiles/scheme_tcc25_rms_bench.dir/__/__/schemes/tcc25/src/Tcc25Group.cpp.o
+[70/70] Linking CXX executable benchmarks/schemes/scheme_tcc25_rms_bench
+===== Micro-benchmarks =====
+Wrote benchmarks/results/micro/micro_timing.csv
+===== Scheme benchmarks =====
+Running group-hss degree=5
+Running group-hss degree=10
+Running group-hss degree=15
+Running group-vhss degree=5
+Running group-vhss degree=10
+Running group-vhss degree=15
+Running group-ot degree=5
+Running group-ot degree=10
+Running group-ot degree=15
+Running group-dc degree=5
+Running group-dc degree=10
+Running group-dc degree=15
+Running group-tcc25 degree=5
+Running group-tcc25 degree=10
+Running group-tcc25 degree=15
+Running rlwe-hss degree=5
+Running rlwe-hss degree=10
+Running rlwe-hss degree=15
+Running rlwe-vhss degree=5
+Running rlwe-vhss degree=10
+Running rlwe-vhss degree=15
+Running rlwe-ot degree=5
+Running rlwe-ot degree=10
+Running rlwe-ot degree=15
+Running rlwe-dc degree=5
+Running rlwe-dc degree=10
+Running rlwe-dc degree=15
+Running rlwe-cz degree=5
+Running rlwe-cz degree=10
+Running rlwe-cz degree=15
+Wrote 30 scheme timing rows to benchmarks/results/schemes/scheme_timing.csv

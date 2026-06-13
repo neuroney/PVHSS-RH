@@ -13,7 +13,6 @@ struct SchemeRlweOt {
     struct ProbGenOutput { std::vector<NTL::vec_ZZ_pX> Ix; };
     struct ServerOutput { pvhss::rlwe::ot::PROOF proof; };
     struct VerifyOutput { bool accepted; };
-    static bench::BenchCounters counters;
 
     static SetupOutput Setup(const bench::BenchConfig& cfg) {
         SetupOutput pp; pp.param.pkePara.msg_bit=cfg.msg_bits;
@@ -40,8 +39,7 @@ struct SchemeRlweOt {
         ServerOutput o; bn_t ekpb;bn_new(ekpb); if(sid==0)bn_copy(ekpb,pp.ekp0);else bn_copy(ekpb,pp.ekp1);
         auto Ix=task.Ix; auto M3=(sid==0)?pp.M3_0:pp.M3_1; std::vector<std::vector<int>> F;
         pvhss::rlwe::ot::Compute(o.proof,sid,pp.param,pp.param.vhssPara.vhssEk_1,pp.param.vhssPara.vhssEk_2,Ix,pp.modulus,(sid==0)?pp.M1_0:pp.M1_1,M3,F,ekpb);
-        counters.witness_mul_count=pp.param.pkePara.num_data*pp.param.pkePara.d;
-        counters.total_mul_count=counters.witness_mul_count+2; counters.pairing_count=2; return o;
+        return o;
     }
     static VerifyOutput Verify(const SetupOutput& pp, const ProbGenOutput&, const ServerOutput& o0, const ServerOutput& o1) {
         return {pvhss::rlwe::ot::Verify(o0.proof,o1.proof,pp.param.ck)};
@@ -50,7 +48,6 @@ struct SchemeRlweOt {
         NTL::ZZ y; pvhss::rlwe::ot::Decode(y,o0.proof,o1.proof,pp.sk);
         y%=pp.param.ck.g1_order_ZZ; if(y<0)y+=pp.param.ck.g1_order_ZZ; return y;
     }
-    static bench::BenchCounters GetCounters(){return counters;}
+    static NTL::ZZ Modulus(const SetupOutput& pp) { return pp.param.ck.g1_order_ZZ; }
 };
-inline bench::BenchCounters SchemeRlweOt::counters;
 }}

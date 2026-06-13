@@ -208,11 +208,8 @@ void HssAddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX& C_Y)
 
 ZZ HssOutputCoeff(const ZZ_p& coeff, const PKE_Para& pkePara, const ZZ& output_mod)
 {
+    (void)pkePara;
     ZZ value = rep(coeff);
-    if (value > pkePara.q / 2)
-    {
-        value -= pkePara.q;
-    }
     value %= output_mod;
     if (value < 0)
     {
@@ -223,20 +220,16 @@ ZZ HssOutputCoeff(const ZZ_p& coeff, const PKE_Para& pkePara, const ZZ& output_m
 
 ZZ HssOutputPolyAtTwo(const ZZ_pX& poly, const PKE_Para& pkePara, const ZZ& output_mod)
 {
+    (void)pkePara;
     ZZX coeffs;
     conv(coeffs, poly);
 
     ZZ result(0);
     ZZ power_of_two(1);
-    const ZZ half_q = pkePara.q / 2;
     for (long i = 0; i <= deg(coeffs); ++i)
     {
         ZZ value;
         GetCoeff(value, coeffs, i);
-        if (value > half_q)
-        {
-            value -= pkePara.q;
-        }
         value %= output_mod;
         if (value < 0)
         {

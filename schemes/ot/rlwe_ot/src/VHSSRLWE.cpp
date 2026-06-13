@@ -196,11 +196,8 @@ void HssAddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX& C_Y)
 
 ZZ HssOutputCoeff(const ZZ_p& coeff, const PKE_Para& pkePara, const ZZ& output_mod)
 {
+    (void)pkePara;
     ZZ value = rep(coeff);
-    if (value > pkePara.q / 2)
-    {
-        value -= pkePara.q;
-    }
     value %= output_mod;
     if (value < 0)
     {
@@ -211,20 +208,16 @@ ZZ HssOutputCoeff(const ZZ_p& coeff, const PKE_Para& pkePara, const ZZ& output_m
 
 ZZ HssOutputPolyAtTwo(const ZZ_pX& poly, const PKE_Para& pkePara, const ZZ& output_mod)
 {
+    (void)pkePara;
     ZZX coeffs;
     conv(coeffs, poly);
 
     ZZ result(0);
     ZZ power_of_two(1);
-    const ZZ half_q = pkePara.q / 2;
     for (long i = 0; i <= deg(coeffs); ++i)
     {
         ZZ value;
         GetCoeff(value, coeffs, i);
-        if (value > half_q)
-        {
-            value -= pkePara.q;
-        }
         value %= output_mod;
         if (value < 0)
         {
@@ -242,6 +235,7 @@ ZZ HssOutputPolyAtTwo(const ZZ_pX& poly, const PKE_Para& pkePara, const ZZ& outp
 // Reduces VHSS_Mult calls from O(k*d^2) to O(k*d).
 void HssEvaluateMPE(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, const PKE_Para &pkePara, ZZ_pXModulus modulus, const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f, const vec_ZZ_pX &M1)
 {
+    (void)b;
     int k = Ix.size();
 
     Mat<ZZ_pX> dp_prev, dp_curr;
@@ -260,19 +254,15 @@ void HssEvaluateMPE(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, cons
 
     for (int i = 1; i <= k; i++)
     {
-        // dp_curr[0] = constant 1 (inherited from dp_prev[0])
         dp_curr[0] = dp_prev[0];
 
-        // H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]  for s = 1..degree_f
         for (int s = 1; s <= degree_f; s++) {
             dp_curr[s].SetLength(2);
             dp_curr[s][0] = 0;
             dp_curr[s][1] = 0;
-            // Start with H_{i-1}[s]
-            HssAddMemoryInPlace(dp_curr[s], dp_prev[s]);
-            // Add x_i * H_i[s-1]
+            HssAddMemory(dp_curr[s], dp_curr[s], dp_prev[s]);
             VHSS_Mult(product, pkePara, modulus, dp_curr[s - 1], Ix[i - 1]);
-            HssAddMemoryInPlace(dp_curr[s], product);
+            HssAddMemory(dp_curr[s], dp_curr[s], product);
         }
         dp_prev.swap(dp_curr);
     }
@@ -280,16 +270,14 @@ void HssEvaluateMPE(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, cons
     y_b_res[0] = 0;
     y_b_res[1] = 0;
     for (int s = 1; s <= degree_f; s++) {
-        HssAddMemoryInPlace(y_b_res, dp_prev[s]);
+        HssAddMemory(y_b_res, y_b_res, dp_prev[s]);
     }
 }
 
 
 void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk)
 {
-    ZZ alpha_scalar;
-    do { RandomBits(alpha_scalar, 255); } while (IsZero(alpha_scalar));
-    EncodeBinaryPolynomial(vhssPara.alpha, alpha_scalar, 255);
+    RandomZZpx(vhssPara.alpha, pkePara.N, 1);
     vec_ZZ_pX alpha_pkeSk;
     alpha_pkeSk.SetLength(2);
     vhssPara.vhssEk_1.SetLength(2);
@@ -305,10 +293,10 @@ void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& 
     RandomZZpx(vhssPara.vhssEk_3[0], pkePara.N, pkePara.q_bit);
     RandomZZpx(vhssPara.vhssEk_3[1], pkePara.N, pkePara.q_bit);
 
-    vhssPara.vhssEk_2[0] = pkeSk[0] + vhssPara.vhssEk_1[0];
-    vhssPara.vhssEk_2[1] = pkeSk[1] + vhssPara.vhssEk_1[1];
-    vhssPara.vhssEk_4[0] = alpha_pkeSk[0] + vhssPara.vhssEk_3[0];
-    vhssPara.vhssEk_4[1] = alpha_pkeSk[1] + vhssPara.vhssEk_3[1];
+    vhssPara.vhssEk_2[0] = pkeSk[0] - vhssPara.vhssEk_1[0];
+    vhssPara.vhssEk_2[1] = pkeSk[1] - vhssPara.vhssEk_1[1];
+    vhssPara.vhssEk_4[0] = alpha_pkeSk[0] - vhssPara.vhssEk_3[0];
+    vhssPara.vhssEk_4[1] = alpha_pkeSk[1] - vhssPara.vhssEk_3[1];
 }
 
 }}} // namespace pvhss::rlwe::ot

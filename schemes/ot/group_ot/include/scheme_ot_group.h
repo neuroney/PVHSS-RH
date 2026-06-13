@@ -18,7 +18,6 @@ struct SchemeOtGroup
     struct ProbGenOutput { std::vector<VhssElgamalCt> Ix; };
     struct ServerOutput { pvhss::group::ot::PROOF proof; };
     struct VerifyOutput { bool accepted; };
-    static bench::BenchCounters counters;
 
     static SetupOutput Setup(const bench::BenchConfig& cfg) {
         SetupOutput pp;
@@ -41,9 +40,6 @@ struct SchemeOtGroup
         if(sid==0) bn_copy(ekpb, pp.ekp0); else bn_copy(ekpb, pp.ekp1);
         auto Ix_copy = task.Ix; std::vector<std::vector<int>> F_TEST;
         pvhss::group::ot::PVHSSElg1_Compute(out.proof, sid, pp.param, (sid==0)?pp.ek0:pp.ek1, Ix_copy, F_TEST, ekpb);
-        counters.witness_mul_count=pp.param.msg_num*pp.param.degree_f;
-        counters.proof_mul_count=2; counters.total_mul_count=counters.witness_mul_count+2;
-        counters.msm_count=2; counters.pairing_count=2;
         return out;
     }
     static VerifyOutput Verify(const SetupOutput& pp, const ProbGenOutput&, const ServerOutput& o0, const ServerOutput& o1) {
@@ -53,7 +49,6 @@ struct SchemeOtGroup
         NTL::ZZ y; pvhss::group::ot::PVHSSElg1_Decode(y, o0.proof, o1.proof, pp.sk);
         return y % pp.param.ck.g1_order_ZZ;
     }
-    static bench::BenchCounters GetCounters() { return counters; }
+    static NTL::ZZ Modulus(const SetupOutput& pp) { return pp.param.ck.g1_order_ZZ; }
 };
-inline bench::BenchCounters SchemeOtGroup::counters;
 }} 
