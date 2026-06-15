@@ -52,7 +52,7 @@ struct SchemeDcGroup
         return NTL::conv<NTL::ZZ>((long)y);
     }
     static bool CanDecodeReference(const SetupOutput&, const NTL::ZZ& reference) {
-        return reference >= 0 && reference < NTL::conv<NTL::ZZ>(PVHSS_M_MAX);
+        return reference >= 0 && reference < NTL::conv<NTL::ZZ>((unsigned long)PVHSS_M_MAX);
     }
 };
 }}
