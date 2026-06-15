@@ -51,17 +51,16 @@ struct SchemeRlweDc {
             ZZtoBn(A, A_ZZ);
             ep2_mul_gen(pp.param.vk, A);
         });
-        auto gen = bench::MeasureOnce([&]() {
-            bn_t ekp0[2],ekp1[2];
-            bn_new(ekp0[0]);bn_new(ekp0[1]);bn_new(ekp1[0]);bn_new(ekp1[1]);
-            pvhss::rlwe::dc::KeyGen(pp.param,pp.sk,pp.modulus,pp.pkePk,ekp0,ekp1);
-            bn_new(pp.ekp0_0);bn_new(pp.ekp0_1);bn_new(pp.ekp1_0);bn_new(pp.ekp1_1);
-            bn_copy(pp.ekp0_0,ekp0[0]);bn_copy(pp.ekp0_1,ekp0[1]);bn_copy(pp.ekp1_0,ekp1[0]);bn_copy(pp.ekp1_1,ekp1[1]);
-        });
         pp.profile.push_back({"SetupVhss", vhss});
         pp.profile.push_back({"SetupExtra", extra});
-        pp.profile.push_back({"Gen", gen});
         return pp;
+    }
+    static void KeyGen(SetupOutput& pp) {
+        bn_t ekp0[2],ekp1[2];
+        bn_new(ekp0[0]);bn_new(ekp0[1]);bn_new(ekp1[0]);bn_new(ekp1[1]);
+        pvhss::rlwe::dc::KeyGen(pp.param,pp.sk,pp.modulus,pp.pkePk,ekp0,ekp1);
+        bn_new(pp.ekp0_0);bn_new(pp.ekp0_1);bn_new(pp.ekp1_0);bn_new(pp.ekp1_1);
+        bn_copy(pp.ekp0_0,ekp0[0]);bn_copy(pp.ekp0_1,ekp0[1]);bn_copy(pp.ekp1_0,ekp1[0]);bn_copy(pp.ekp1_1,ekp1[1]);
     }
     static ProbGenOutput ProbGen(const SetupOutput& pp, const std::vector<NTL::ZZ>& x) {
         ProbGenOutput t; NTL::vec_ZZ_pX Xp;Xp.SetLength(x.size());

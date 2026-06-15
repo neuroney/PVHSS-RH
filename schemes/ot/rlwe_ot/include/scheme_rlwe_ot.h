@@ -50,14 +50,13 @@ struct SchemeRlweOt {
             ZZtoBn(A, A_ZZ);
             ep2_mul_gen(pp.param.ck.g2_A, A);
         });
-        auto gen = bench::MeasureOnce([&]() {
-            bn_new(pp.ekp0);bn_new(pp.ekp1);
-            pvhss::rlwe::ot::KeyGen(pp.param,pp.sk,pp.modulus,pp.pkePk,pp.ekp0,pp.ekp1);
-        });
         pp.profile.push_back({"SetupVhss", vhss});
         pp.profile.push_back({"SetupExtra", extra});
-        pp.profile.push_back({"Gen", gen});
         return pp;
+    }
+    static void KeyGen(SetupOutput& pp) {
+        bn_new(pp.ekp0);bn_new(pp.ekp1);
+        pvhss::rlwe::ot::KeyGen(pp.param,pp.sk,pp.modulus,pp.pkePk,pp.ekp0,pp.ekp1);
     }
     static ProbGenOutput ProbGen(const SetupOutput& pp, const std::vector<NTL::ZZ>& x) {
         ProbGenOutput t; NTL::vec_ZZ X;X.SetLength(x.size());

@@ -128,6 +128,14 @@ TimingResult Measure(const std::string& label, F&& fn, int cyctimes,
 }
 
 template <class Scheme, class = void>
+struct HasKeyGen : std::false_type {};
+
+template <class Scheme>
+struct HasKeyGen<Scheme, std::void_t<decltype(
+    Scheme::KeyGen(
+        std::declval<typename Scheme::SetupOutput&>()))>> : std::true_type {};
+
+template <class Scheme, class = void>
 struct HasDecode : std::false_type {};
 
 template <class Scheme>
@@ -300,6 +308,14 @@ void RunSchemeBench(const BenchConfig& cfg)
     MeasureWithRecordedProfile("Setup", setup_val, [&]() {
         setup_val = Scheme::Setup(cfg);
     }, cfg.cyctimes, "Setup");
+
+    // --- KeyGen (if scheme provides) ---
+    if constexpr (HasKeyGen<Scheme>::value)
+    {
+        Measure("Gen", [&]() {
+            Scheme::KeyGen(setup_val);
+        }, cfg.cyctimes, "Gen");
+    }
 
     // --- Sample inputs ---
     SeedBenchmarkRandomness("Inputs");
