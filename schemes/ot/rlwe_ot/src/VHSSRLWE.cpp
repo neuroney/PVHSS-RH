@@ -6,6 +6,27 @@ using namespace std;
 
 namespace pvhss { namespace rlwe { namespace ot {
 
+namespace {
+ZZ PlaintextCoeffToOutputMod(const ZZ& coeff, const PKE_Para& pkePara, const ZZ& output_mod)
+{
+    ZZ value = coeff % pkePara.p;
+    if (value < 0)
+    {
+        value += pkePara.p;
+    }
+    if (value > pkePara.half_p)
+    {
+        value -= pkePara.p;
+    }
+    value %= output_mod;
+    if (value < 0)
+    {
+        value += output_mod;
+    }
+    return value;
+}
+}
+
 void EncodeBinaryPolynomial(ZZ_pX &out, ZZ value, int bits)
 {
     ZZX encoded;
@@ -194,19 +215,11 @@ void HssAddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX& C_Y)
 
 ZZ HssOutputCoeff(const ZZ_p& coeff, const PKE_Para& pkePara, const ZZ& output_mod)
 {
-    (void)pkePara;
-    ZZ value = rep(coeff);
-    value %= output_mod;
-    if (value < 0)
-    {
-        value += output_mod;
-    }
-    return value;
+    return PlaintextCoeffToOutputMod(rep(coeff), pkePara, output_mod);
 }
 
 ZZ HssOutputPolyAtTwo(const ZZ_pX& poly, const PKE_Para& pkePara, const ZZ& output_mod)
 {
-    (void)pkePara;
     ZZX coeffs;
     conv(coeffs, poly);
 
@@ -216,11 +229,7 @@ ZZ HssOutputPolyAtTwo(const ZZ_pX& poly, const PKE_Para& pkePara, const ZZ& outp
     {
         ZZ value;
         GetCoeff(value, coeffs, i);
-        value %= output_mod;
-        if (value < 0)
-        {
-            value += output_mod;
-        }
+        value = PlaintextCoeffToOutputMod(value, pkePara, output_mod);
         result += value * power_of_two;
         result %= output_mod;
         power_of_two *= 2;
@@ -275,7 +284,9 @@ void HssEvaluateMPE(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, cons
 
 void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk)
 {
-    RandomZZpx(vhssPara.alpha, pkePara.N, 1);
+    ZZ alpha_scalar;
+    do { RandomBits(alpha_scalar, 255); } while (IsZero(alpha_scalar));
+    EncodeBinaryPolynomial(vhssPara.alpha, alpha_scalar, 255);
     vec_ZZ_pX alpha_pkeSk;
     alpha_pkeSk.SetLength(2);
     vhssPara.vhssEk_1.SetLength(2);
@@ -291,10 +302,10 @@ void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& 
     RandomZZpx(vhssPara.vhssEk_3[0], pkePara.N, pkePara.q_bit);
     RandomZZpx(vhssPara.vhssEk_3[1], pkePara.N, pkePara.q_bit);
 
-    vhssPara.vhssEk_2[0] = pkeSk[0] - vhssPara.vhssEk_1[0];
-    vhssPara.vhssEk_2[1] = pkeSk[1] - vhssPara.vhssEk_1[1];
-    vhssPara.vhssEk_4[0] = alpha_pkeSk[0] - vhssPara.vhssEk_3[0];
-    vhssPara.vhssEk_4[1] = alpha_pkeSk[1] - vhssPara.vhssEk_3[1];
+    vhssPara.vhssEk_2[0] = pkeSk[0] + vhssPara.vhssEk_1[0];
+    vhssPara.vhssEk_2[1] = pkeSk[1] + vhssPara.vhssEk_1[1];
+    vhssPara.vhssEk_4[0] = alpha_pkeSk[0] + vhssPara.vhssEk_3[0];
+    vhssPara.vhssEk_4[1] = alpha_pkeSk[1] + vhssPara.vhssEk_3[1];
 }
 
 }}} // namespace pvhss::rlwe::ot

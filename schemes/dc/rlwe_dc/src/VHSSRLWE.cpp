@@ -6,6 +6,27 @@ using namespace std;
 
 namespace pvhss { namespace rlwe { namespace dc {
 
+namespace {
+ZZ PlaintextCoeffToOutputMod(const ZZ& coeff, const PKE_Para& pkePara, const ZZ& output_mod)
+{
+    ZZ value = coeff % pkePara.p;
+    if (value < 0)
+    {
+        value += pkePara.p;
+    }
+    if (value > pkePara.half_p)
+    {
+        value -= pkePara.p;
+    }
+    value %= output_mod;
+    if (value < 0)
+    {
+        value += output_mod;
+    }
+    return value;
+}
+}
+
 void EncodeBinaryPolynomial(ZZ_pX &out, ZZ value, int bits)
 {
     ZZX encoded;
@@ -206,19 +227,11 @@ void HssAddMemory(vec_ZZ_pX &tb, const vec_ZZ_pX &C_X, const vec_ZZ_pX& C_Y)
 
 ZZ HssOutputCoeff(const ZZ_p& coeff, const PKE_Para& pkePara, const ZZ& output_mod)
 {
-    (void)pkePara;
-    ZZ value = rep(coeff);
-    value %= output_mod;
-    if (value < 0)
-    {
-        value += output_mod;
-    }
-    return value;
+    return PlaintextCoeffToOutputMod(rep(coeff), pkePara, output_mod);
 }
 
 ZZ HssOutputPolyAtTwo(const ZZ_pX& poly, const PKE_Para& pkePara, const ZZ& output_mod)
 {
-    (void)pkePara;
     ZZX coeffs;
     conv(coeffs, poly);
 
@@ -228,11 +241,7 @@ ZZ HssOutputPolyAtTwo(const ZZ_pX& poly, const PKE_Para& pkePara, const ZZ& outp
     {
         ZZ value;
         GetCoeff(value, coeffs, i);
-        value %= output_mod;
-        if (value < 0)
-        {
-            value += output_mod;
-        }
+        value = PlaintextCoeffToOutputMod(value, pkePara, output_mod);
         result += value * power_of_two;
         result %= output_mod;
         power_of_two *= 2;

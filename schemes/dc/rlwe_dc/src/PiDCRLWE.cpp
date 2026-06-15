@@ -91,7 +91,7 @@ void ProbGen(vector<PVHSS_CT> &Ix, const PVHSSPara &param, const vec_ZZ_pX &x, Z
 void Prove(PROOF &pi, int b, const PVHSS_MV &y_b, const PVHSS_MV &Y_b, const PVHSSPara &param, bn_t ekpb[2])
 {
     (void)b;
-    const ZZ yb_zz = HssOutputCoeff(y_b[0][0], param.pkePara, param.ck.g1_order_ZZ);
+    const ZZ yb_zz = HssOutputPolyAtTwo(y_b[0], param.pkePara, param.ck.g1_order_ZZ);
     const ZZ Yb_zz = HssOutputPolyAtTwo(Y_b[0], param.pkePara, param.ck.g1_order_ZZ);
 
     DecPed_Com(pi.C, ekpb[0], param.ck, yb_zz);
