@@ -7,6 +7,8 @@
 #include <string>
 #include <functional>
 #include <cassert>
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
@@ -33,6 +35,11 @@ struct PhaseTiming {
     TimingResult timing;
 };
 
+struct PhaseTimingSamples {
+    std::string label;
+    std::vector<double> sample_ms;
+};
+
 inline TimingResult TimingFromElapsedMs(double elapsed_ms)
 {
     TimingResult result;
@@ -43,6 +50,57 @@ inline TimingResult TimingFromElapsedMs(double elapsed_ms)
     result.median_ms = elapsed_ms;
     result.min_ms = elapsed_ms;
     result.rsd = 0.0;
+    return result;
+}
+
+inline TimingResult TimingFromSampleMs(std::vector<double> sample_ms)
+{
+    if (sample_ms.empty())
+    {
+        sample_ms.push_back(0.0);
+    }
+
+    const int samples = static_cast<int>(sample_ms.size());
+    std::sort(sample_ms.begin(), sample_ms.end());
+
+    int start = 0;
+    int end = samples;
+    if (samples >= 3)
+    {
+        ++start;
+        --end;
+    }
+    const int trimmed_count = end - start;
+
+    double mean = 0.0;
+    for (int i = start; i < end; ++i)
+    {
+        mean += sample_ms[i];
+    }
+    mean /= trimmed_count;
+
+    double variance = 0.0;
+    for (int i = start; i < end; ++i)
+    {
+        const double diff = sample_ms[i] - mean;
+        variance += diff * diff;
+    }
+    variance /= trimmed_count;
+
+    double median = sample_ms[(samples - 1) / 2];
+    if (samples % 2 == 0)
+    {
+        median = (sample_ms[samples / 2 - 1] + sample_ms[samples / 2]) / 2.0;
+    }
+
+    TimingResult result;
+    result.samples = trimmed_count;
+    result.iterations_per_sample = 1;
+    result.adaptive = false;
+    result.mean_ms = mean;
+    result.median_ms = median;
+    result.min_ms = sample_ms.front();
+    result.rsd = (mean == 0.0) ? 0.0 : std::sqrt(variance) / mean;
     return result;
 }
 
@@ -139,16 +197,81 @@ template <class Output>
 struct HasRecordedProfile<Output, std::void_t<decltype(
     std::declval<const Output&>().profile)>> : std::true_type {};
 
+inline void AddProfileSample(std::vector<PhaseTimingSamples>& samples,
+                             const PhaseTiming& phase)
+{
+    for (auto& existing : samples)
+    {
+        if (existing.label == phase.label)
+        {
+            existing.sample_ms.push_back(phase.timing.mean_ms);
+            return;
+        }
+    }
+
+    PhaseTimingSamples created;
+    created.label = phase.label;
+    created.sample_ms.push_back(phase.timing.mean_ms);
+    samples.push_back(std::move(created));
+}
+
 template <class Output>
-void PrintRecordedProfile(const Output& output)
+void AccumulateRecordedProfileSamples(std::vector<PhaseTimingSamples>& samples,
+                                      const Output& output)
 {
     if constexpr (HasRecordedProfile<Output>::value)
     {
         for (const auto& phase : output.profile)
         {
-            PrintTimeMs(phase.label, phase.timing);
+            AddProfileSample(samples, phase);
         }
     }
+}
+
+inline void PrintProfileSampleMeans(const std::vector<PhaseTimingSamples>& samples)
+{
+    for (const auto& phase : samples)
+    {
+        PrintTimeMs(phase.label, TimingFromSampleMs(phase.sample_ms));
+    }
+}
+
+template <class Output, class F>
+TimingResult MeasureWithRecordedProfile(const std::string& label, Output& output,
+                                        F&& fn, int cyctimes,
+                                        const std::string& random_domain = "")
+{
+    const std::string domain = random_domain.empty() ? label : random_domain;
+    if (cyctimes < 1)
+    {
+        cyctimes = 1;
+    }
+
+    std::vector<double> sample_ms(cyctimes);
+    std::vector<PhaseTimingSamples> profile_samples;
+
+    for (int i = 0; i < cyctimes; ++i)
+    {
+        if (BenchmarkRandomnessConfigured() && !domain.empty())
+        {
+            SeedBenchmarkRandomness(domain);
+        }
+
+        const double start = SteadyTimeSeconds();
+        std::forward<F>(fn)();
+        const double end = SteadyTimeSeconds();
+
+        sample_ms[i] = (end - start) * 1000.0;
+        AccumulateRecordedProfileSamples(profile_samples, output);
+    }
+
+    auto result = TimingFromSampleMs(sample_ms);
+    if (!label.empty())
+    {
+        PrintTimeMs(label, result);
+    }
+    PrintProfileSampleMeans(profile_samples);
+    return result;
 }
 
 /// Generic scheme benchmark runner.
@@ -183,10 +306,9 @@ void RunSchemeBench(const BenchConfig& cfg)
 
     // --- Setup ---
     typename Scheme::SetupOutput setup_val;
-    Measure("Setup", [&]() {
+    MeasureWithRecordedProfile("Setup", setup_val, [&]() {
         setup_val = Scheme::Setup(cfg);
     }, cfg.cyctimes, "Setup");
-    PrintRecordedProfile(setup_val);
 
     // --- Sample inputs ---
     SeedBenchmarkRandomness("Inputs");
@@ -204,17 +326,15 @@ void RunSchemeBench(const BenchConfig& cfg)
 
     // --- Compute server 0 ---
     typename Scheme::ServerOutput out0_val;
-    Measure("Compute0", [&]() {
+    MeasureWithRecordedProfile("Compute0", out0_val, [&]() {
         out0_val = Scheme::Compute(setup_val, task_val, 0);
     }, cfg.cyctimes, "Compute0");
-    PrintRecordedProfile(out0_val);
 
     // --- Compute server 1 ---
     typename Scheme::ServerOutput out1_val;
-    Measure("Compute1", [&]() {
+    MeasureWithRecordedProfile("Compute1", out1_val, [&]() {
         out1_val = Scheme::Compute(setup_val, task_val, 1);
     }, cfg.cyctimes, "Compute1");
-    PrintRecordedProfile(out1_val);
 
     // --- Verify (if scheme provides) ---
     if constexpr (HasVerify<Scheme>::value)
