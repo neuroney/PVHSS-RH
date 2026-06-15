@@ -63,29 +63,20 @@ inline TimingResult TimingFromSampleMs(std::vector<double> sample_ms)
     const int samples = static_cast<int>(sample_ms.size());
     std::sort(sample_ms.begin(), sample_ms.end());
 
-    int start = 0;
-    int end = samples;
-    if (samples >= 3)
-    {
-        ++start;
-        --end;
-    }
-    const int trimmed_count = end - start;
-
     double mean = 0.0;
-    for (int i = start; i < end; ++i)
+    for (int i = 0; i < samples; ++i)
     {
         mean += sample_ms[i];
     }
-    mean /= trimmed_count;
+    mean /= samples;
 
     double variance = 0.0;
-    for (int i = start; i < end; ++i)
+    for (int i = 0; i < samples; ++i)
     {
         const double diff = sample_ms[i] - mean;
         variance += diff * diff;
     }
-    variance /= trimmed_count;
+    variance /= samples;
 
     double median = sample_ms[(samples - 1) / 2];
     if (samples % 2 == 0)
@@ -94,7 +85,7 @@ inline TimingResult TimingFromSampleMs(std::vector<double> sample_ms)
     }
 
     TimingResult result;
-    result.samples = trimmed_count;
+    result.samples = samples;
     result.iterations_per_sample = 1;
     result.adaptive = false;
     result.mean_ms = mean;

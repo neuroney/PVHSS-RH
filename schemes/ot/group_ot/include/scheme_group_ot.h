@@ -7,7 +7,7 @@
 
 namespace pvhss { namespace scheme {
 
-struct SchemeOtGroup
+struct SchemeGroupOt
 {
     struct SetupOutput {
         pvhss::group::ot::PVHSSElg1_Para param;

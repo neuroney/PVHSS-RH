@@ -7,7 +7,7 @@
 
 namespace pvhss { namespace scheme {
 
-struct SchemeDcGroup
+struct SchemeGroupDc
 {
     struct SetupOutput {
         pvhss::group::dc::PVHSSElg2_Para param;

@@ -1,7 +1,7 @@
 /// OT Group scheme benchmark using unified interface.
 
 #include "scheme_bench_runner.h"
-#include "scheme_ot_group.h"
+#include "scheme_group_ot.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -28,6 +28,6 @@ int main(int argc, char** argv)
         else if (arg == "--seed" && i+1<argc) cfg.random_seed = argv[++i];
         else if (arg == "--verbose") cfg.verbose = true;
     }
-    bench::RunSchemeBench<scheme::SchemeOtGroup>(cfg);
+    bench::RunSchemeBench<scheme::SchemeGroupOt>(cfg);
     return 0;
 }

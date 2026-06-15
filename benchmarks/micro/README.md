@@ -8,24 +8,20 @@ performance discussion.
 Build and run through CMake:
 
 ```bash
-cmake --build build --target microbenchmark_results
+cmake --build build --target microbench
+./run_micro.sh
 ```
 
 Or call the runner directly:
 
 ```bash
-bash benchmarks/micro/run_microbenchmarks.sh \
-  --build-dir build \
-  --samples 5 \
-  --iters 1
+SAMPLES=5 ITERS=1 ./run_micro.sh
 ```
 
-The runner forwards unknown options to `microbench`, so knobs such as
-`--min-sample-ms` and `--max-adaptive-iters` can be passed through:
+For lower-level tuning, call the executable directly:
 
 ```bash
-bash benchmarks/micro/run_microbenchmarks.sh \
-  --build-dir build \
+build/benchmarks/micro/microbench \
   --samples 3 \
   --iters 1 \
   --min-sample-ms 25
@@ -33,8 +29,8 @@ bash benchmarks/micro/run_microbenchmarks.sh \
 
 Defaults can also be set with environment variables:
 
-- `MICRO_SAMPLES`
-- `MICRO_ITERS`
+- `SAMPLES`
+- `ITERS`
 
 Use CLI flags or environment variables for direct microbenchmark runs.
 

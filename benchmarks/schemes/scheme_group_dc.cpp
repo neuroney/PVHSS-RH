@@ -1,7 +1,7 @@
 /// DC Group scheme benchmark using unified interface.
 
 #include "scheme_bench_runner.h"
-#include "scheme_dc_group.h"
+#include "scheme_group_dc.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -27,6 +27,6 @@ int main(int argc, char** argv)
         else if(arg=="--seed"&&i+1<argc)cfg.random_seed=argv[++i];
         else if(arg=="--verbose")cfg.verbose=true;
     }
-    bench::RunSchemeBench<scheme::SchemeDcGroup>(cfg);
+    bench::RunSchemeBench<scheme::SchemeGroupDc>(cfg);
     return 0;
 }
