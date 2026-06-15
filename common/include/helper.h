@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <vector>
 #include <array>
 #include <cstdlib>
@@ -54,13 +55,21 @@ TimingResult MeasureTimeMs(const std::function<void()> &fn, int samples,
                            int iterations_per_sample = 1,
                            bool adaptive = false,
                            double min_sample_ms = 25.0,
-                           int max_adaptive_iters = 10000000);
+                           int max_adaptive_iters = 10000000,
+                           const std::function<void(int)> &before_sample = nullptr);
 
 TimingResult MeasureTimeMsAdaptive(const std::function<void()> &fn, int samples,
                                    double min_sample_ms = 25.0,
                                    int max_adaptive_iters = 10000000);
 
 void PrintTimeMs(const std::string &label, const TimingResult &result);
+
+// === Benchmark random seeding ===
+
+void ConfigureBenchmarkRandomness(const std::string &seed);
+bool BenchmarkRandomnessConfigured();
+void SeedBenchmarkRandomness(const std::string &domain);
+void ReseedRelicBenchmarkRandomness();
 
 // === Cryptographic helpers ===
 

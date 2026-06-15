@@ -24,6 +24,7 @@ int main(int argc, char** argv)
         else if(arg=="--cyctimes"&&i+1<argc)cfg.cyctimes=atoi(argv[++i]);
         else if(arg=="--degree"&&i+1<argc)cfg.degree_f=atoi(argv[++i]);
         else if(arg=="--msg-bits"&&i+1<argc)cfg.msg_bits=atoi(argv[++i]);
+        else if(arg=="--seed"&&i+1<argc)cfg.random_seed=argv[++i];
         else if(arg=="--verbose")cfg.verbose=true;
     }
     cout << "NOTE: TCC25 running with CRS group elements; trapdoor scalars are setup-local only\n\n";

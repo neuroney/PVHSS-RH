@@ -1,6 +1,7 @@
 #include "helper.h"
 #include <chrono>
 #include <cmath>
+#include <cstring>
 
 using namespace NTL;
 using namespace std;
@@ -49,6 +50,45 @@ void PRFBoundedZZ(NTL::ZZ &res, int prfkey, const NTL::ZZ &mmod)
         ZZFromBytes(res, buf.data(), nbytes);
     } while (res >= mmod);
 }
+
+bool g_bench_seed_configured = false;
+std::string g_bench_seed;
+std::array<uint8_t, RLC_RAND_SEED> g_relic_seed = {};
+
+uint64_t Fnv1a64(const std::string &text)
+{
+    uint64_t h = 1469598103934665603ULL;
+    for (unsigned char c : text)
+    {
+        h ^= static_cast<uint64_t>(c);
+        h *= 1099511628211ULL;
+    }
+    return h;
+}
+
+uint64_t SplitMix64(uint64_t &x)
+{
+    uint64_t z = (x += 0x9e3779b97f4a7c15ULL);
+    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+    return z ^ (z >> 31);
+}
+
+void FillSeedBytes(unsigned char *out, size_t size, const std::string &seed,
+                   const std::string &domain)
+{
+    uint64_t state = Fnv1a64(seed);
+    state ^= Fnv1a64(domain) + 0x9e3779b97f4a7c15ULL + (state << 6) + (state >> 2);
+
+    size_t offset = 0;
+    while (offset < size)
+    {
+        const uint64_t word = SplitMix64(state);
+        const size_t chunk = std::min<size_t>(sizeof(word), size - offset);
+        std::memcpy(out + offset, &word, chunk);
+        offset += chunk;
+    }
+}
 }
 
 void ZZtoBn(bn_t out, const NTL::ZZ &in)
@@ -89,7 +129,8 @@ TimingResult MeasureTimeMs(const std::function<void()> &fn, int samples,
                            int iterations_per_sample,
                            bool adaptive,
                            double min_sample_ms,
-                           int max_adaptive_iters)
+                           int max_adaptive_iters,
+                           const std::function<void(int)> &before_sample)
 {
     using Clock = std::chrono::steady_clock;
 
@@ -113,6 +154,11 @@ TimingResult MeasureTimeMs(const std::function<void()> &fn, int samples,
     {
         int iters = iterations_per_sample;
         double elapsed_ms = 0.0;
+
+        if (before_sample)
+        {
+            before_sample(i);
+        }
 
         while (true)
         {
@@ -217,6 +263,49 @@ void PrintTimeMs(const std::string &label, const TimingResult &result)
     std::cout << "\n";
 }
 
+void ConfigureBenchmarkRandomness(const std::string &seed)
+{
+    g_bench_seed = seed;
+    g_bench_seed_configured = !seed.empty();
+}
+
+bool BenchmarkRandomnessConfigured()
+{
+    return g_bench_seed_configured;
+}
+
+void SeedBenchmarkRandomness(const std::string &domain)
+{
+    if (!g_bench_seed_configured)
+    {
+        return;
+    }
+
+    std::array<unsigned char, 64> seed_bytes = {};
+    FillSeedBytes(seed_bytes.data(), seed_bytes.size(), g_bench_seed, domain);
+
+    NTL::SetSeed(seed_bytes.data(), static_cast<long>(seed_bytes.size()));
+
+    unsigned int c_seed = 0;
+    std::memcpy(&c_seed, seed_bytes.data(), sizeof(c_seed));
+    std::srand(c_seed);
+
+    for (size_t i = 0; i < g_relic_seed.size(); ++i)
+    {
+        g_relic_seed[i] = seed_bytes[i % seed_bytes.size()];
+    }
+}
+
+void ReseedRelicBenchmarkRandomness()
+{
+    if (!g_bench_seed_configured)
+    {
+        return;
+    }
+
+    rand_seed(g_relic_seed.data(), g_relic_seed.size());
+}
+
 
 NTL::ZZ PrfZZ(int prf_key, const NTL::ZZ &mmod)
 {
@@ -250,7 +339,10 @@ void GenerateRandomFunc(std::vector<std::vector<int>> &F_TEST, int msg_num, int 
         tmp.clear();
         int len = 0;
         GeneratePartitions(len, Combinations, i, msg_num, tmp, 0);
-        srand(static_cast<unsigned>(time(0)));
+        if (!BenchmarkRandomnessConfigured())
+        {
+            srand(static_cast<unsigned>(time(0)));
+        }
         tmp = Combinations[rand() % len];
         F_TEST.push_back(tmp);
     }

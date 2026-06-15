@@ -124,6 +124,7 @@ ZZ RandomNonZeroScalar(const ZZ &q)
 void InitPairing()
 {
     core_init();
+    ReseedRelicBenchmarkRandomness();
     ep_curve_init();
     ep_param_set(B12_P381);
     ep2_curve_init();

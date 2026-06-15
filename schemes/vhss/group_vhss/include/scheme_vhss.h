@@ -54,7 +54,6 @@ struct SchemeVhss
     static ServerOutput Compute(const SetupOutput& pp,
                                 const ProbGenOutput& task, int server_id)
     {
-        int msg_num  = static_cast<int>(task.inputs.size());
         int degree_f = pp.degree_f;
         const auto& ek = (server_id == 0) ? pp.ek0 : pp.ek1;
         int prf_key = 0;

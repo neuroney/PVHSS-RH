@@ -7,6 +7,7 @@
 #include <string>
 #include <functional>
 #include <cassert>
+#include <cstdlib>
 #include <iostream>
 #include <iomanip>
 #include <type_traits>
@@ -24,13 +25,52 @@ struct BenchConfig {
     int cyctimes  = 3;     // timing samples
     NTL::ZZ modulus;       // modulus for plaintext reference
     bool verbose  = false;
+    std::string random_seed;
 };
+
+struct PhaseTiming {
+    std::string label;
+    TimingResult timing;
+};
+
+inline TimingResult TimingFromElapsedMs(double elapsed_ms)
+{
+    TimingResult result;
+    result.samples = 1;
+    result.iterations_per_sample = 1;
+    result.adaptive = false;
+    result.mean_ms = elapsed_ms;
+    result.median_ms = elapsed_ms;
+    result.min_ms = elapsed_ms;
+    result.rsd = 0.0;
+    return result;
+}
+
+template <class F>
+TimingResult MeasureOnce(F&& fn)
+{
+    const double start = SteadyTimeSeconds();
+    std::forward<F>(fn)();
+    const double end = SteadyTimeSeconds();
+    return TimingFromElapsedMs((end - start) * 1000.0);
+}
 
 /// Timing helper: measure a callable and return the TimingResult.
 template <class F>
-TimingResult Measure(const std::string& label, F&& fn, int cyctimes)
+TimingResult Measure(const std::string& label, F&& fn, int cyctimes,
+                     const std::string& random_domain = "")
 {
-    auto result = MeasureTimeMs(std::forward<F>(fn), cyctimes);
+    const std::string domain = random_domain.empty() ? label : random_domain;
+    std::function<void(int)> before_sample;
+    if (BenchmarkRandomnessConfigured() && !domain.empty())
+    {
+        before_sample = [domain](int) {
+            SeedBenchmarkRandomness(domain);
+        };
+    }
+
+    auto result = MeasureTimeMs(std::forward<F>(fn), cyctimes, 1, false,
+                                25.0, 10000000, before_sample);
     if (!label.empty())
     {
         PrintTimeMs(label, result);
@@ -92,6 +132,25 @@ NTL::ZZ GetModulus(const typename Scheme::SetupOutput& pp, const NTL::ZZ& fallba
         return fallback;
 }
 
+template <class Output, class = void>
+struct HasRecordedProfile : std::false_type {};
+
+template <class Output>
+struct HasRecordedProfile<Output, std::void_t<decltype(
+    std::declval<const Output&>().profile)>> : std::true_type {};
+
+template <class Output>
+void PrintRecordedProfile(const Output& output)
+{
+    if constexpr (HasRecordedProfile<Output>::value)
+    {
+        for (const auto& phase : output.profile)
+        {
+            PrintTimeMs(phase.label, phase.timing);
+        }
+    }
+}
+
 /// Generic scheme benchmark runner.
 ///
 /// Scheme must expose:
@@ -107,19 +166,30 @@ NTL::ZZ GetModulus(const typename Scheme::SetupOutput& pp, const NTL::ZZ& fallba
 template <class Scheme>
 void RunSchemeBench(const BenchConfig& cfg)
 {
+    const char *env_seed = std::getenv("PVHSS_BENCH_SEED");
+    const std::string configured_seed =
+        !cfg.random_seed.empty() ? cfg.random_seed : (env_seed ? std::string(env_seed) : std::string());
+    ConfigureBenchmarkRandomness(configured_seed);
+
     std::cout << "=======================================================\n";
     std::cout << "  Scheme Benchmark\n";
     std::cout << "  msg_num = " << cfg.msg_num << "  degree_f = " << cfg.degree_f
               << "  cyctimes = " << cfg.cyctimes << "\n";
+    if (BenchmarkRandomnessConfigured())
+    {
+        std::cout << "  random_seed = " << configured_seed << "\n";
+    }
     std::cout << "-------------------------------------------------------\n";
 
     // --- Setup ---
     typename Scheme::SetupOutput setup_val;
     Measure("Setup", [&]() {
         setup_val = Scheme::Setup(cfg);
-    }, cfg.cyctimes);
+    }, cfg.cyctimes, "Setup");
+    PrintRecordedProfile(setup_val);
 
     // --- Sample inputs ---
+    SeedBenchmarkRandomness("Inputs");
     std::vector<NTL::ZZ> x(cfg.msg_num);
     for (int i = 0; i < cfg.msg_num; ++i)
     {
@@ -130,19 +200,21 @@ void RunSchemeBench(const BenchConfig& cfg)
     typename Scheme::ProbGenOutput task_val;
     Measure("ProbGen", [&]() {
         task_val = Scheme::ProbGen(setup_val, x);
-    }, cfg.cyctimes);
+    }, cfg.cyctimes, "ProbGen");
 
     // --- Compute server 0 ---
     typename Scheme::ServerOutput out0_val;
     Measure("Compute0", [&]() {
         out0_val = Scheme::Compute(setup_val, task_val, 0);
-    }, cfg.cyctimes);
+    }, cfg.cyctimes, "Compute0");
+    PrintRecordedProfile(out0_val);
 
     // --- Compute server 1 ---
     typename Scheme::ServerOutput out1_val;
     Measure("Compute1", [&]() {
         out1_val = Scheme::Compute(setup_val, task_val, 1);
-    }, cfg.cyctimes);
+    }, cfg.cyctimes, "Compute1");
+    PrintRecordedProfile(out1_val);
 
     // --- Verify (if scheme provides) ---
     if constexpr (HasVerify<Scheme>::value)
@@ -150,7 +222,7 @@ void RunSchemeBench(const BenchConfig& cfg)
         typename Scheme::VerifyOutput verify_val;
         Measure("Verify", [&]() {
             verify_val = Scheme::Verify(setup_val, task_val, out0_val, out1_val);
-        }, cfg.cyctimes);
+        }, cfg.cyctimes, "Verify");
         std::cout << "\n  Verification: " << (verify_val.accepted ? "PASS" : "FAIL") << "\n";
     }
 
@@ -171,7 +243,7 @@ void RunSchemeBench(const BenchConfig& cfg)
         {
             Measure("Decode", [&]() {
                 decoded = Scheme::Decode(setup_val, out0_val, out1_val);
-            }, cfg.cyctimes);
+            }, cfg.cyctimes, "Decode");
         }
         else
         {

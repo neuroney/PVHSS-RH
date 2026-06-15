@@ -8,6 +8,7 @@ namespace pvhss { namespace group { namespace ot {
 void Ped_ComGen(CK &ck)
 {
     core_init();
+    ReseedRelicBenchmarkRandomness();
     ep_curve_init();
     ep_param_set(B12_P381);
     ep2_curve_init();

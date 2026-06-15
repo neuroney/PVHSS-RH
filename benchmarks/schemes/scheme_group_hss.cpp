@@ -34,6 +34,8 @@ int main(int argc, char** argv)
             cfg.degree_f = atoi(argv[++i]);
         else if (arg == "--msg-bits" && i + 1 < argc)
             cfg.msg_bits = atoi(argv[++i]);
+        else if (arg == "--seed" && i + 1 < argc)
+            cfg.random_seed = argv[++i];
         else if (arg == "--verbose")
             cfg.verbose = true;
     }

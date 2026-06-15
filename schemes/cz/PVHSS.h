@@ -51,6 +51,7 @@ inline void PvhssGen(NTL::vec_ZZ_pX &hss_ek1, NTL::vec_ZZ_pX &hss_ek2,
     fp12_new(pvhss_params.A_gT);
     fp12_new(pvhss_params.const_gT);
     core_init();
+    ReseedRelicBenchmarkRandomness();
     ep_curve_init();
     ep_param_set(B12_P381);
     ep2_curve_init();

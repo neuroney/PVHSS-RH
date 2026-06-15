@@ -14,19 +14,75 @@ struct SchemeOtGroup
         VhssElgamalEk ek0, ek1;
         pvhss::group::ot::PVHSSElg1_SK sk;
         bn_t ekp0, ekp1;
+        std::vector<bench::PhaseTiming> profile;
     };
     struct ProbGenOutput { std::vector<VhssElgamalCt> Ix; };
-    struct ServerOutput { pvhss::group::ot::PROOF proof; };
+    struct ServerOutput {
+        pvhss::group::ot::PROOF proof;
+        std::vector<bench::PhaseTiming> profile;
+    };
     struct VerifyOutput { bool accepted; };
 
     static SetupOutput Setup(const bench::BenchConfig& cfg) {
         SetupOutput pp;
         pp.param.skLen=cfg.sk_len; pp.param.vkLen=cfg.vk_len;
         pp.param.msg_bits=cfg.msg_bits; pp.param.degree_f=cfg.degree_f; pp.param.msg_num=cfg.msg_num;
-        pvhss::group::ot::PVHSSElg1_Setup(pp.param, pp.ek0, pp.ek1);
-        bn_new(pp.ekp0); bn_new(pp.ekp1);
-        pvhss::group::ot::PVHSSElg1_KeyGen(pp.param, pp.sk, pp.ekp0, pp.ekp1);
+        auto vhss = bench::MeasureOnce([&]() {
+            VhssElgamalGen(pp.param.pk, pp.ek0, pp.ek1, cfg.sk_len, cfg.vk_len);
+        });
+        auto extra = bench::MeasureOnce([&]() {
+            pvhss::group::ot::Ped_ComGen(pp.param.ck);
+            bn_t A;
+            bn_new(A);
+            ep2_new(pp.param.ck.g2_A);
+            ZZtoBn(A, (pp.ek1[1] - pp.ek0[1]) % pp.param.pk.N);
+            ep2_mul_gen(pp.param.ck.g2_A, A);
+
+            bn_new(pp.ekp0); bn_new(pp.ekp1);
+            pvhss::group::ot::PVHSSElg1_KeyGen(pp.param, pp.sk, pp.ekp0, pp.ekp1);
+        });
+        pp.profile.push_back({"SetupVhss", vhss});
+        pp.profile.push_back({"SetupExtra", extra});
         return pp;
+    }
+    static std::vector<bench::PhaseTiming> SetupProfile(
+        const bench::BenchConfig& cfg, int cyctimes) {
+        auto vhss = bench::Measure("", [&]() {
+            pvhss::group::ot::PVHSSElg1_Para param;
+            param.skLen=cfg.sk_len; param.vkLen=cfg.vk_len;
+            VhssElgamalEk ek0, ek1;
+            VhssElgamalGen(param.pk, ek0, ek1, cfg.sk_len, cfg.vk_len);
+        }, cyctimes, "SetupVhss");
+
+        SeedBenchmarkRandomness("SetupVhss");
+        pvhss::group::ot::PVHSSElg1_Para base;
+        base.skLen=cfg.sk_len; base.vkLen=cfg.vk_len;
+        base.msg_bits=cfg.msg_bits; base.degree_f=cfg.degree_f; base.msg_num=cfg.msg_num;
+        VhssElgamalEk base_ek0, base_ek1;
+        VhssElgamalGen(base.pk, base_ek0, base_ek1, cfg.sk_len, cfg.vk_len);
+
+        auto extra = bench::Measure("", [&]() {
+            pvhss::group::ot::PVHSSElg1_Para param;
+            param.pk = base.pk;
+            param.skLen=cfg.sk_len; param.vkLen=cfg.vk_len;
+            param.msg_bits=cfg.msg_bits; param.degree_f=cfg.degree_f; param.msg_num=cfg.msg_num;
+            VhssElgamalEk ek0 = base_ek0;
+            VhssElgamalEk ek1 = base_ek1;
+
+            pvhss::group::ot::Ped_ComGen(param.ck);
+            bn_t A;
+            bn_new(A);
+            ep2_new(param.ck.g2_A);
+            ZZtoBn(A, (ek1[1] - ek0[1]) % param.pk.N);
+            ep2_mul_gen(param.ck.g2_A, A);
+
+            bn_t ekp0, ekp1;
+            bn_new(ekp0); bn_new(ekp1);
+            pvhss::group::ot::PVHSSElg1_SK sk;
+            pvhss::group::ot::PVHSSElg1_KeyGen(param, sk, ekp0, ekp1);
+        }, cyctimes, "SetupExtra");
+
+        return {{"Vhss", vhss}, {"Extra", extra}};
     }
     static ProbGenOutput ProbGen(const SetupOutput& pp, const std::vector<NTL::ZZ>& x) {
         ProbGenOutput task; NTL::vec_ZZ X; X.SetLength(x.size());
@@ -39,8 +95,59 @@ struct SchemeOtGroup
         bn_t ekpb; bn_new(ekpb);
         if(sid==0) bn_copy(ekpb, pp.ekp0); else bn_copy(ekpb, pp.ekp1);
         auto Ix_copy = task.Ix; std::vector<std::vector<int>> F_TEST;
-        pvhss::group::ot::PVHSSElg1_Compute(out.proof, sid, pp.param, (sid==0)?pp.ek0:pp.ek1, Ix_copy, F_TEST, ekpb);
+        int prf_key = 0;
+        VhssElgamalMv y_b_res;
+        auto vhss = bench::MeasureOnce([&]() {
+            VhssElgamalEvaluateMPE(y_b_res, sid, Ix_copy, pp.param.pk,
+                                   (sid==0)?pp.ek0:pp.ek1, prf_key,
+                                   pp.param.degree_f);
+        });
+        auto extra = bench::MeasureOnce([&]() {
+            VhssElgamalMv sk_b;
+            VhssElgamalConvertInput(sk_b, sid, pp.param.pk,
+                                    (sid==0)?pp.ek0:pp.ek1, pp.param.pk_f,
+                                    prf_key);
+            y_b_res[0] = y_b_res[0] + sk_b[0];
+            y_b_res[2] = y_b_res[2] + sk_b[2];
+            pvhss::group::ot::Ped_Prove(out.proof, sid, y_b_res[0], y_b_res[2],
+                                        pp.param.ck, prf_key, ekpb);
+        });
+        out.profile.push_back({"Compute" + std::to_string(sid) + "Vhss", vhss});
+        out.profile.push_back({"Compute" + std::to_string(sid) + "Extra", extra});
         return out;
+    }
+    static std::vector<bench::PhaseTiming> ComputeProfile(
+        const SetupOutput& pp, const ProbGenOutput& task, int sid,
+        int cyctimes) {
+        const auto& ek = (sid == 0) ? pp.ek0 : pp.ek1;
+        bn_t ekpb; bn_new(ekpb);
+        if (sid == 0) bn_copy(ekpb, pp.ekp0); else bn_copy(ekpb, pp.ekp1);
+
+        auto vhss = bench::Measure("", [&]() {
+            int prf_key = 0;
+            VhssElgamalMv y_b_res;
+            VhssElgamalEvaluateMPE(y_b_res, sid, task.Ix, pp.param.pk, ek,
+                                   prf_key, pp.param.degree_f);
+        }, cyctimes, "Compute" + std::to_string(sid) + "Vhss");
+
+        int base_prf_key = 0;
+        VhssElgamalMv base_y;
+        VhssElgamalEvaluateMPE(base_y, sid, task.Ix, pp.param.pk, ek,
+                               base_prf_key, pp.param.degree_f);
+        auto extra = bench::Measure("", [&]() {
+            int prf_key = base_prf_key;
+            VhssElgamalMv y_b_res = base_y;
+            VhssElgamalMv sk_b;
+            VhssElgamalConvertInput(sk_b, sid, pp.param.pk, ek, pp.param.pk_f,
+                                    prf_key);
+            y_b_res[0] = y_b_res[0] + sk_b[0];
+            y_b_res[2] = y_b_res[2] + sk_b[2];
+            pvhss::group::ot::PROOF proof;
+            pvhss::group::ot::Ped_Prove(proof, sid, y_b_res[0], y_b_res[2],
+                                        pp.param.ck, prf_key, ekpb);
+        }, cyctimes, "Compute" + std::to_string(sid) + "Extra");
+
+        return {{"Vhss", vhss}, {"Extra", extra}};
     }
     static VerifyOutput Verify(const SetupOutput& pp, const ProbGenOutput&, const ServerOutput& o0, const ServerOutput& o1) {
         return {pvhss::group::ot::PVHSSElg1_Verify(o0.proof, o1.proof, pp.param.ck)};
