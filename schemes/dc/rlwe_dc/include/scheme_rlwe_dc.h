@@ -50,7 +50,8 @@ struct SchemeRlweDc {
             ep2_new(pp.param.vk);
             ZZtoBn(A, A_ZZ);
             ep2_mul_gen(pp.param.vk, A);
-
+        });
+        auto gen = bench::MeasureOnce([&]() {
             bn_t ekp0[2],ekp1[2];
             bn_new(ekp0[0]);bn_new(ekp0[1]);bn_new(ekp1[0]);bn_new(ekp1[1]);
             pvhss::rlwe::dc::KeyGen(pp.param,pp.sk,pp.modulus,pp.pkePk,ekp0,ekp1);
@@ -59,6 +60,7 @@ struct SchemeRlweDc {
         });
         pp.profile.push_back({"SetupVhss", vhss});
         pp.profile.push_back({"SetupExtra", extra});
+        pp.profile.push_back({"Gen", gen});
         return pp;
     }
     static ProbGenOutput ProbGen(const SetupOutput& pp, const std::vector<NTL::ZZ>& x) {

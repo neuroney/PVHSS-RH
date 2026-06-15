@@ -58,5 +58,5 @@ Additional paths can also be overridden by environment variables:
 The runner writes `benchmarks/results/schemes/scheme_timing.csv`:
 
 ```text
-scheme,degree,seed,Setup_ms,SetupVhss_ms,SetupExtra_ms,ProbGen_ms,Compute0_ms,Compute0Vhss_ms,Compute0Extra_ms,Compute1_ms,Compute1Vhss_ms,Compute1Extra_ms,Verify_ms,Decode_ms
+scheme,degree,seed,Setup_ms,SetupVhss_ms,SetupExtra_ms,Gen_ms,ProbGen_ms,Compute0_ms,Compute0Vhss_ms,Compute0Extra_ms,Compute1_ms,Compute1Vhss_ms,Compute1Extra_ms,Verify_ms,Decode_ms
 ```

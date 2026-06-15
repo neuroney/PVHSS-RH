@@ -37,7 +37,8 @@ struct SchemeGroupDc
             ep2_new(pp.param.vk);
             ZZtoBn(A, (pp.ek1[1] - pp.ek0[1]) % pp.param.pk.N);
             ep2_mul_gen(pp.param.vk, A);
-
+        });
+        auto gen = bench::MeasureOnce([&]() {
             bn_t ekp0[2], ekp1[2];
             bn_new(ekp0[0]);bn_new(ekp0[1]);bn_new(ekp1[0]);bn_new(ekp1[1]);
             pvhss::group::dc::PVHSSElg2_KeyGen(pp.param, pp.sk, ekp0, ekp1);
@@ -46,6 +47,7 @@ struct SchemeGroupDc
         });
         pp.profile.push_back({"SetupVhss", vhss});
         pp.profile.push_back({"SetupExtra", extra});
+        pp.profile.push_back({"Gen", gen});
         return pp;
     }
     static ProbGenOutput ProbGen(const SetupOutput& pp, const std::vector<NTL::ZZ>& x) {

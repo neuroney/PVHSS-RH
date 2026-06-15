@@ -46,7 +46,7 @@ extract_phase() {
 }
 
 # CSV header — all possible phases
-echo "scheme,degree,seed,Setup_ms,SetupVhss_ms,SetupExtra_ms,ProbGen_ms,Compute0_ms,Compute0Vhss_ms,Compute0Extra_ms,Compute1_ms,Compute1Vhss_ms,Compute1Extra_ms,Verify_ms,Decode_ms" > "$OUT_FILE"
+echo "scheme,degree,seed,Setup_ms,SetupVhss_ms,SetupExtra_ms,Gen_ms,ProbGen_ms,Compute0_ms,Compute0Vhss_ms,Compute0Extra_ms,Compute1_ms,Compute1Vhss_ms,Compute1Extra_ms,Verify_ms,Decode_ms" > "$OUT_FILE"
 
 IFS=',' read -r -a DEGREE_ARRAY <<< "$DEGREES"
 
@@ -71,6 +71,7 @@ for degree in "${DEGREE_ARRAY[@]}"; do
         s=$(extract_phase "Setup"    "$output")
         s_vhss=$(extract_phase "SetupVhss" "$output")
         s_extra=$(extract_phase "SetupExtra" "$output")
+        gen=$(extract_phase "Gen" "$output")
         p=$(extract_phase "ProbGen"  "$output")
         c0=$(extract_phase "Compute0" "$output")
         c0_vhss=$(extract_phase "Compute0Vhss" "$output")
@@ -81,7 +82,7 @@ for degree in "${DEGREE_ARRAY[@]}"; do
         v=$(extract_phase "Verify"   "$output")
         d=$(extract_phase "Decode"   "$output")
 
-        echo "$scheme,$degree,$SEED,$s,$s_vhss,$s_extra,$p,$c0,$c0_vhss,$c0_extra,$c1,$c1_vhss,$c1_extra,$v,$d" >> "$OUT_FILE"
+        echo "$scheme,$degree,$SEED,$s,$s_vhss,$s_extra,$gen,$p,$c0,$c0_vhss,$c0_extra,$c1,$c1_vhss,$c1_extra,$v,$d" >> "$OUT_FILE"
         echo "done"
     done
 done
