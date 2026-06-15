@@ -1,4 +1,5 @@
 #pragma once
+
 #include "helper.h"
 
 using NTL::Mat;
@@ -7,10 +8,11 @@ using NTL::vec_ZZ;
 using NTL::vec_ZZ_pX;
 using NTL::ZZ;
 using NTL::ZZX;
+using NTL::ZZ_p;
 using NTL::ZZ_pX;
 using NTL::ZZ_pXModulus;
 
-namespace pvhss { namespace rlwe { namespace ot {
+namespace pvhss { namespace rlwe { namespace common {
 
 struct PKE_Para
 {
@@ -37,13 +39,14 @@ struct VHSS_Para
     ZZ_pX alpha;
 };
 
-// Workspace for PKE_DDec to avoid repeated temporary allocations
 struct PKEWorkspace {
     ZZ coeff;
     ZZX temp;
     ZZ_pX temp1;
     ZZ_pX temp2;
 };
+
+void EncodeBinaryPolynomial(ZZ_pX &out, ZZ value, int bits);
 
 void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk);
 void SetParams(PKE_Para &pkePara);
@@ -63,11 +66,16 @@ ZZ HssOutputCoeff(const ZZ_p& coeff, const PKE_Para& pkePara, const ZZ& output_m
 ZZ HssOutputPolyAtTwo(const ZZ_pX& poly, const PKE_Para& pkePara, const ZZ& output_mod);
 void HssConvertInput(vec_ZZ_pX &tb_y, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& ek, const vec_ZZ_pX& C_X);
 
+void HssEvaluateMPE(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix,
+                    const PKE_Para &pkePara, ZZ_pXModulus modulus,
+                    const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f,
+                    const vec_ZZ_pX &M1);
 
-void HssEvaluateMPE(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, const PKE_Para &pkePara, ZZ_pXModulus modulus, const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f,
-    const vec_ZZ_pX & M1);
+void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara,
+              const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk);
 
-    void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk);
-    void EncodeBinaryPolynomial(ZZ_pX &out, ZZ value, int bits);
+bool VHSS_Verify(const vec_ZZ_pX &y_0_res, const vec_ZZ_pX &y_1_res,
+                 const vec_ZZ_pX &Y_0_res, const vec_ZZ_pX &Y_1_res,
+                 const VHSS_Para &vk);
 
-}}} // namespace pvhss::rlwe::ot
+}}} // namespace pvhss::rlwe::common

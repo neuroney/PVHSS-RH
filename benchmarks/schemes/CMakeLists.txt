@@ -38,8 +38,8 @@ add_scheme_bench(scheme_group_hss
 # ============================================================
 add_scheme_bench(scheme_group_vhss
     "${S}/vhss/group_vhss/include"
-    "${S}/hss/group_hss/src/HSSElg.cpp"
-    "${S}/vhss/group_vhss/include;${S}/hss/group_hss/include"
+    ""
+    "${S}/vhss/group_vhss/include"
     scheme_group_vhss.cpp
 )
 
@@ -98,8 +98,8 @@ add_scheme_bench(scheme_rlwe_hss
 # ============================================================
 add_scheme_bench(scheme_rlwe_vhss
     "${S}/vhss/rlwe_vhss/include"
-    "${S}/vhss/rlwe_vhss/src/VHSSRLWE.cpp"
-    "${S}/vhss/rlwe_vhss/include"
+    "${S}/rlwe/common/src/RLWEVHSS.cpp"
+    "${S}/vhss/rlwe_vhss/include;${S}/rlwe/common/include"
     scheme_rlwe_vhss.cpp
 )
 
@@ -108,8 +108,8 @@ add_scheme_bench(scheme_rlwe_vhss
 # ============================================================
 add_scheme_bench(scheme_rlwe_ot
     "${S}/ot/rlwe_ot/include"
-    "${S}/ot/rlwe_ot/src/Ped.cpp;${S}/ot/rlwe_ot/src/PiOTRLWE.cpp;${S}/ot/rlwe_ot/src/VHSSRLWE.cpp"
-    "${S}/ot/rlwe_ot/include;${S}/vhss/rlwe_vhss/include"
+    "${S}/ot/rlwe_ot/src/Ped.cpp;${S}/ot/rlwe_ot/src/PiOTRLWE.cpp;${S}/rlwe/common/src/RLWEVHSS.cpp"
+    "${S}/ot/rlwe_ot/include;${S}/rlwe/common/include"
     scheme_rlwe_ot.cpp
 )
 
@@ -118,9 +118,7 @@ add_scheme_bench(scheme_rlwe_ot
 # ============================================================
 add_scheme_bench(scheme_rlwe_dc
     "${S}/dc/rlwe_dc/include"
-    "${S}/dc/rlwe_dc/src/DecPed.cpp;${S}/dc/rlwe_dc/src/PiDCRLWE.cpp;${S}/dc/rlwe_dc/src/VHSSRLWE.cpp"
-    "${S}/dc/rlwe_dc/include;${S}/vhss/rlwe_vhss/include"
+    "${S}/dc/rlwe_dc/src/DecPed.cpp;${S}/dc/rlwe_dc/src/PiDCRLWE.cpp;${S}/rlwe/common/src/RLWEVHSS.cpp"
+    "${S}/dc/rlwe_dc/include;${S}/rlwe/common/include"
     scheme_rlwe_dc.cpp
 )
-
-

@@ -1,6 +1,6 @@
 #pragma once
 #include "Ped.h"
-#include "VHSSRLWE.h"
+#include "RLWEVHSS.h"
 
 using NTL::vec_ZZ;
 using NTL::vec_ZZ_pX;
@@ -10,6 +10,27 @@ using NTL::ZZ_pX;
 using NTL::ZZ_pXModulus;
 
 namespace pvhss { namespace rlwe { namespace ot {
+
+using pvhss::rlwe::common::Data;
+using pvhss::rlwe::common::PKE_Para;
+using pvhss::rlwe::common::PKEWorkspace;
+using pvhss::rlwe::common::VHSS_Para;
+using pvhss::rlwe::common::EncodeBinaryPolynomial;
+using pvhss::rlwe::common::GenerateData;
+using pvhss::rlwe::common::HssAddMemory;
+using pvhss::rlwe::common::HssAddMemoryInPlace;
+using pvhss::rlwe::common::HssConvertInput;
+using pvhss::rlwe::common::HssEvaluateMPE;
+using pvhss::rlwe::common::HssGen;
+using pvhss::rlwe::common::HssOutputCoeff;
+using pvhss::rlwe::common::HssOutputPolyAtTwo;
+using pvhss::rlwe::common::PKE_DDec;
+using pvhss::rlwe::common::PKE_Enc;
+using pvhss::rlwe::common::PKE_Gen;
+using pvhss::rlwe::common::PKE_OKDM;
+using pvhss::rlwe::common::SetParams;
+using pvhss::rlwe::common::VHSS_Enc;
+using pvhss::rlwe::common::VHSS_Mult;
 
 typedef ZZ PVHSS_SK;
 typedef vec_ZZ_pX PVHSS_CT;

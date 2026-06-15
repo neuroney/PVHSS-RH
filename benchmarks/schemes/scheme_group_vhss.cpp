@@ -1,7 +1,7 @@
 /// VHSS scheme benchmark using the scheme's native MPE evaluator.
 
 #include "scheme_bench_runner.h"
-#include "scheme_vhss.h"
+#include "scheme_group_vhss.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -39,7 +39,7 @@ int main(int argc, char** argv)
             cfg.verbose = true;
     }
 
-    bench::RunSchemeBench<scheme::SchemeVhss>(cfg);
+    bench::RunSchemeBench<scheme::SchemeGroupVhss>(cfg);
 
     return 0;
 }

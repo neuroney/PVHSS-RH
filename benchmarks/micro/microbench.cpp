@@ -4,7 +4,7 @@
 #include "VHSSElg.h"
 #include "HSSElg.h"
 #include "HSSRLWE.h"
-#include "VHSSRLWE.h"
+#include "RLWEVHSS.h"
 
 #include <chrono>
 #include <cmath>
@@ -22,7 +22,7 @@ using BenchFn = std::function<void()>;
 
 namespace group_hss = pvhss::group::hss;
 namespace rlwe_hss = pvhss::rlwe::hss;
-namespace rlwe_vhss = pvhss::rlwe::vhss;
+namespace rlwe_vhss = pvhss::rlwe::common;
 
 using HSSGroup_PK = group_hss::HssPublicKey;
 using HSSGroup_EK = group_hss::HssEvalKey;

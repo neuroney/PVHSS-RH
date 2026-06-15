@@ -16,7 +16,8 @@ void Setup(PVHSSPara &param, vec_ZZ_pX &pkePk,
     pkeSk.SetLength(2);
     PKE_Gen(param.pkePara, pkePk, pkeSk);
     ZZ_pXModulus modulus(param.pkePara.xN);
-    VHSS_Gen(param.vhssPara, param.pkePara, modulus, pkeSk);
+    pvhss::rlwe::common::VHSS_Gen(
+        param.vhssPara, param.pkePara, modulus, pkeSk);
 
     DecPed_ComGen(param.ck, param.f_sk);
 

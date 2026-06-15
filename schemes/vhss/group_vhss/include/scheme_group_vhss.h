@@ -9,7 +9,7 @@
 
 namespace pvhss { namespace scheme {
 
-struct SchemeVhss
+struct SchemeGroupVhss
 {
     static constexpr bool ReportDecodeTime = false;
 

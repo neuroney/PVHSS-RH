@@ -62,8 +62,8 @@ inline void PvhssGen(NTL::vec_ZZ_pX &hss_ek1, NTL::vec_ZZ_pX &hss_ek2,
     // Evaluation keys
     RandomZZpx(hss_ek1[0], params.N, params.q_bit);
     RandomZZpx(hss_ek1[1], params.N, params.q_bit);
-    hss_ek2[0] = sk[0] - hss_ek1[0];
-    hss_ek2[1] = sk[1] - hss_ek1[1];
+    hss_ek2[0] = sk[0] + hss_ek1[0];
+    hss_ek2[1] = sk[1] + hss_ek1[1];
 
     // Alpha
     NTL::ZZ A;
@@ -209,7 +209,7 @@ inline bool PvhssVerify(const NTL::ZZ_pX &y1, const NTL::ZZ_pX &y2,
     NTL::ZZX y_zzx;
     {
         NTL::ZZ_pX y_zz_px;
-        y_zz_px = y1 + y2;
+        y_zz_px = y2 - y1;
         NTL::conv(y_zzx, y_zz_px);
     }  // y_zz_px destroyed here with original modulus
 
@@ -224,11 +224,11 @@ inline bool PvhssVerify(const NTL::ZZ_pX &y1, const NTL::ZZ_pX &y2,
     ZZtoBn(y_bn, y_zz);
 
     fp12_exp(right_side, pvhss_params.A_gT, y_bn);
-    fp12_mul(right_side, right_side, pvhss_params.const_gT);
 
     pp_map_oatep_k12(gtT1, g1T1, pvhss_params.g2_gen);
     pp_map_oatep_k12(gtT2, pvhss_params.g1_gen, g2T2);
-    fp12_mul(left_side, gtT1, gtT2);
+    fp12_inv(gtT1, gtT1);
+    fp12_mul(left_side, gtT2, gtT1);
 
     return fp12_cmp(left_side, right_side) == RLC_EQ;
 }

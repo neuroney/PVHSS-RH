@@ -164,8 +164,8 @@ void HssGen(vec_ZZ_pX &hssEk_1, vec_ZZ_pX &hssEk_2,
     RandomZZpx(hssEk_1[0], pkePara.N, pkePara.q_bit);
     RandomZZpx(hssEk_1[1], pkePara.N, pkePara.q_bit);
 
-    hssEk_2[0] = pkeSk[0] - hssEk_1[0];
-    hssEk_2[1] = pkeSk[1] - hssEk_1[1];
+    hssEk_2[0] = pkeSk[0] + hssEk_1[0];
+    hssEk_2[1] = pkeSk[1] + hssEk_1[1];
 }
 
 void HSS_Enc(vec_ZZ_pX &C, const PKE_Para &pkePara, const ZZ_pXModulus &modulus,

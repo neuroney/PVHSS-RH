@@ -70,7 +70,7 @@ struct SchemeRlweHss
     }
     static NTL::ZZ Decode(const SetupOutput& pp, const ServerOutput& o0, const ServerOutput& o1) {
         (void)pp;
-        NTL::ZZ_pX d=o0.y_share[0]+o1.y_share[0];
+        NTL::ZZ_pX d=o1.y_share[0]-o0.y_share[0];
         NTL::ZZX dzx;NTL::conv(dzx,d);
         NTL::ZZ value(0);EvalZZX(value,dzx);
         return value;

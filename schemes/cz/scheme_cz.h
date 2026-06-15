@@ -47,7 +47,7 @@ struct SchemeCz {
         return {ok};
     }
     static NTL::ZZ Decode(const SetupOutput&, const ServerOutput& o0, const ServerOutput& o1) {
-        NTL::ZZ_pX d=o0.y+o1.y;NTL::ZZX dzx;NTL::conv(dzx,d);NTL::ZZ r(0);EvalZZX(r,dzx);return r;
+        NTL::ZZ_pX d=o1.y-o0.y;NTL::ZZX dzx;NTL::conv(dzx,d);NTL::ZZ r(0);EvalZZX(r,dzx);return r;
     }
 };
 }}

@@ -1,10 +1,9 @@
-
-#include "VHSSRLWE.h"
+#include "RLWEVHSS.h"
 
 using namespace NTL;
 using namespace std;
 
-namespace pvhss { namespace rlwe { namespace dc {
+namespace pvhss { namespace rlwe { namespace common {
 
 namespace {
 ZZ PlaintextCoeffToOutputMod(const ZZ& coeff, const PKE_Para& pkePara, const ZZ& output_mod)
@@ -64,7 +63,6 @@ void GenerateData(Data &data, const PKE_Para& pkePara, const vec_ZZ_pX& pkePk)
 
 void PKE_Gen(PKE_Para &pkePara, vec_ZZ_pX &pkePk, vec_ZZ_pX &pkeSk)
 {
-    // initialize the parameters
     SetParams(pkePara);
 
     NTL::power(pkePara.p, 2, pkePara.p_bit);
@@ -79,7 +77,6 @@ void PKE_Gen(PKE_Para &pkePara, vec_ZZ_pX &pkePk, vec_ZZ_pX &pkeSk)
     pkePara.twice_q = 2 * pkePara.q;
     pkePara.half_p = pkePara.p / 2;
 
-    // gen sk
     ZZ_pX hat_s, e;
     RandomZZpx(pkePk[0], pkePara.N, pkePara.q_bit);
     RlweSecretKey(hat_s, pkePara.N, pkePara.hsk);
@@ -87,7 +84,6 @@ void PKE_Gen(PKE_Para &pkePara, vec_ZZ_pX &pkePk, vec_ZZ_pX &pkeSk)
 
     MulMod(pkePk[1], pkePk[0], hat_s, modulus);
     pkePk[1] = pkePk[1] + e;
-    // gen sk
     SetCoeff(pkeSk[0], 0, 1);
     pkeSk[1] = hat_s;
 }
@@ -128,7 +124,6 @@ void PKE_OKDM(vec_ZZ_pX &C, const PKE_Para &pkePara, const ZZ_pXModulus& modulus
     C[3] = c_xs2[1];
 }
 
-// Helper: round one polynomial from mod q to mod p
 static inline void RoundQToP(ZZ_pX& out, const ZZ_pX& in, const PKE_Para& para, PKEWorkspace& ws)
 {
     conv(ws.temp, in);
@@ -146,7 +141,6 @@ static inline void RoundQToP(ZZ_pX& out, const ZZ_pX& in, const PKE_Para& para, 
     conv(out, ws.temp);
 }
 
-// Helper: decrypt and round one half of the dual ciphertext
 static inline void DDecOneHalf(
     ZZ_pX& out,
     const ZZ_pX& sk0,
@@ -175,30 +169,16 @@ void SetParams(PKE_Para &pkePara)
     pkePara.N = 32768;
     pkePara.p_bit = 319;
     pkePara.q_bit = 662;
-    // switch (pkePara.d)
-    // {
-    // case 5:
-    //     pkePara.N = 32768;
-    //     pkePara.p_bit = 319;
-    //     pkePara.q_bit = 662;
-    //     break;
-    // case 10:
-    //     pkePara.N = 65536;
-    //     pkePara.p_bit = 576;
-    //     pkePara.q_bit = 1177;
-    //     break;
-    // case 15:
 }
 
 void HssGen(vec_ZZ_pX &hssEk_1, vec_ZZ_pX &hssEk_2,
              const PKE_Para& pkePara, const vec_ZZ_pX& pkeSk)
 {
-
     RandomZZpx(hssEk_1[0], pkePara.N, pkePara.q_bit);
     RandomZZpx(hssEk_1[1], pkePara.N, pkePara.q_bit);
 
-    hssEk_2[0] = pkeSk[0] - hssEk_1[0];
-    hssEk_2[1] = pkeSk[1] - hssEk_1[1];
+    hssEk_2[0] = pkeSk[0] + hssEk_1[0];
+    hssEk_2[1] = pkeSk[1] + hssEk_1[1];
 }
 
 void VHSS_Enc(vec_ZZ_pX &C, const PKE_Para &pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkePk, const ZZ_pX &x)
@@ -250,10 +230,13 @@ ZZ HssOutputPolyAtTwo(const ZZ_pX& poly, const PKE_Para& pkePara, const ZZ& outp
     return result;
 }
 
-// RMS-optimized recurrence: H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]
-// Reduces VHSS_Mult calls from O(k*d^2) to O(k*d).
-void HssEvaluateMPE(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, const PKE_Para &pkePara, ZZ_pXModulus modulus, const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f, const vec_ZZ_pX &M1)
+void HssEvaluateMPE(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix,
+                    const PKE_Para &pkePara, ZZ_pXModulus modulus,
+                    const vec_ZZ_pX &pkeSk, int &prf_key, int degree_f,
+                    const vec_ZZ_pX &M1)
 {
+    (void)b;
+    (void)prf_key;
     int k = Ix.size();
 
     Mat<ZZ_pX> dp_prev, dp_curr;
@@ -272,17 +255,14 @@ void HssEvaluateMPE(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, cons
 
     for (int i = 1; i <= k; i++)
     {
-        // dp_curr[0] = constant 1 (inherited from dp_prev[0])
         dp_curr[0] = dp_prev[0];
 
-        // H_i[s] = H_{i-1}[s] + x_i * H_i[s-1]  for s = 1..degree_f
-        for (int s = 1; s <= degree_f; s++) {
+        for (int s = 1; s <= degree_f; s++)
+        {
             dp_curr[s].SetLength(2);
             dp_curr[s][0] = 0;
             dp_curr[s][1] = 0;
-            // Start with H_{i-1}[s]
             HssAddMemoryInPlace(dp_curr[s], dp_prev[s]);
-            // Add x_i * H_i[s-1]
             VHSS_Mult(product, pkePara, modulus, dp_curr[s - 1], Ix[i - 1]);
             HssAddMemoryInPlace(dp_curr[s], product);
         }
@@ -291,13 +271,14 @@ void HssEvaluateMPE(vec_ZZ_pX &y_b_res, int b, const vector<vec_ZZ_pX> &Ix, cons
     y_b_res.SetLength(2);
     y_b_res[0] = 0;
     y_b_res[1] = 0;
-    for (int s = 1; s <= degree_f; s++) {
+    for (int s = 1; s <= degree_f; s++)
+    {
         HssAddMemoryInPlace(y_b_res, dp_prev[s]);
     }
 }
 
-
-void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk)
+void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara,
+              const ZZ_pXModulus& modulus, const vec_ZZ_pX& pkeSk)
 {
     ZZ alpha_scalar;
     do { RandomBits(alpha_scalar, 255); } while (IsZero(alpha_scalar));
@@ -323,4 +304,13 @@ void VHSS_Gen(VHSS_Para &vhssPara, const PKE_Para& pkePara, const ZZ_pXModulus& 
     vhssPara.vhssEk_4[1] = alpha_pkeSk[1] + vhssPara.vhssEk_3[1];
 }
 
-}}} // namespace pvhss::rlwe::dc
+bool VHSS_Verify(const vec_ZZ_pX &y_0_res, const vec_ZZ_pX &y_1_res,
+                 const vec_ZZ_pX &Y_0_res, const vec_ZZ_pX &Y_1_res,
+                 const VHSS_Para &vk)
+{
+    ZZ_pX y = y_1_res[0] - y_0_res[0];
+    ZZ_pX Y = Y_1_res[0] - Y_0_res[0];
+    return (y * vk.alpha == Y);
+}
+
+}}} // namespace pvhss::rlwe::common
