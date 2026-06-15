@@ -50,11 +50,8 @@ struct SchemeRlweHss
         pvhss::rlwe::hss::PKE_Gen(pp.pkePara,pp.pkePk,pp.pkeSk);
         pp.modulus=NTL::ZZ_pXModulus(pp.pkePara.xN);
         pvhss::rlwe::hss::HssGen(pp.hssEk1,pp.hssEk2,pp.pkePara,pp.pkeSk);
-        pp.M1_0.SetLength(2); pp.M1_1.SetLength(2); NTL::vec_ZZ_pX C1;C1.SetLength(4);
-        NTL::ZZ_pX one; DecimalToBinary(one,NTL::ZZ(1),1);
-        pvhss::rlwe::hss::PKE_OKDM(C1,pp.pkePara,pp.modulus,pp.pkePk,one);
-        pvhss::rlwe::hss::HssConvertInput(pp.M1_0,pp.pkePara,pp.modulus,pp.hssEk1,C1);
-        pvhss::rlwe::hss::HssConvertInput(pp.M1_1,pp.pkePara,pp.modulus,pp.hssEk2,C1);
+        pp.M1_0 = pp.hssEk1;
+        pp.M1_1 = pp.hssEk2;
         return pp;
     }
     static ProbGenOutput ProbGen(const SetupOutput& pp, const std::vector<NTL::ZZ>& x) {

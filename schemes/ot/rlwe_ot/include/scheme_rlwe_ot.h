@@ -31,14 +31,10 @@ struct SchemeRlweOt {
             pp.modulus=NTL::ZZ_pXModulus(pp.param.pkePara.xN);
             pvhss::rlwe::common::VHSS_Gen(
                 pp.param.vhssPara, pp.param.pkePara, pp.modulus, pkeSk);
-            pp.M1_0.SetLength(2);pp.M1_1.SetLength(2);pp.M3_0.SetLength(2);pp.M3_1.SetLength(2);
-            NTL::vec_ZZ_pX C1;C1.SetLength(4);
-            NTL::ZZ_pX one; pvhss::rlwe::ot::EncodeBinaryPolynomial(one,NTL::ZZ(1),1);
-            pvhss::rlwe::ot::PKE_OKDM(C1,pp.param.pkePara,pp.modulus,pp.pkePk,one);
-            pvhss::rlwe::ot::HssConvertInput(pp.M1_0,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_1,C1);
-            pvhss::rlwe::ot::HssConvertInput(pp.M1_1,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_2,C1);
-            pvhss::rlwe::ot::HssConvertInput(pp.M3_0,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_3,C1);
-            pvhss::rlwe::ot::HssConvertInput(pp.M3_1,pp.param.pkePara,pp.modulus,pp.param.vhssPara.vhssEk_4,C1);
+            pp.M1_0 = pp.param.vhssPara.vhssEk_1;
+            pp.M1_1 = pp.param.vhssPara.vhssEk_2;
+            pp.M3_0 = pp.param.vhssPara.vhssEk_3;
+            pp.M3_1 = pp.param.vhssPara.vhssEk_4;
         });
         auto extra = bench::MeasureOnce([&]() {
             pvhss::rlwe::ot::Ped_ComGen(pp.param.ck);

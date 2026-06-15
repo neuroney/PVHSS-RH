@@ -33,14 +33,10 @@ struct SchemeRlweVhss {
         pvhss::rlwe::common::PKE_Gen(pp.pkePara,pp.pkePk,pp.pkeSk);
         pp.modulus=NTL::ZZ_pXModulus(pp.pkePara.xN);
         pvhss::rlwe::common::VHSS_Gen(pp.vhssPara,pp.pkePara,pp.modulus,pp.pkeSk);
-        pp.M1_0.SetLength(2);pp.M1_1.SetLength(2);pp.M3_0.SetLength(2);pp.M3_1.SetLength(2);
-        NTL::vec_ZZ_pX C1;C1.SetLength(4);
-        NTL::ZZ_pX one; pvhss::rlwe::common::EncodeBinaryPolynomial(one,NTL::ZZ(1),1);
-        pvhss::rlwe::common::PKE_OKDM(C1,pp.pkePara,pp.modulus,pp.pkePk,one);
-        pvhss::rlwe::common::HssConvertInput(pp.M1_0,pp.pkePara,pp.modulus,pp.vhssPara.vhssEk_1,C1);
-        pvhss::rlwe::common::HssConvertInput(pp.M1_1,pp.pkePara,pp.modulus,pp.vhssPara.vhssEk_2,C1);
-        pvhss::rlwe::common::HssConvertInput(pp.M3_0,pp.pkePara,pp.modulus,pp.vhssPara.vhssEk_3,C1);
-        pvhss::rlwe::common::HssConvertInput(pp.M3_1,pp.pkePara,pp.modulus,pp.vhssPara.vhssEk_4,C1);
+        pp.M1_0 = pp.vhssPara.vhssEk_1;
+        pp.M1_1 = pp.vhssPara.vhssEk_2;
+        pp.M3_0 = pp.vhssPara.vhssEk_3;
+        pp.M3_1 = pp.vhssPara.vhssEk_4;
         return pp;
     }
     static ProbGenOutput ProbGen(const SetupOutput& pp, const std::vector<NTL::ZZ>& x) {

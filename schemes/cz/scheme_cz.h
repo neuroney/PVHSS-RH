@@ -22,10 +22,9 @@ struct SchemeCz {
         pp.params.d=cfg.degree_f; pp.params.num_data=cfg.msg_num;
         NTL::build(pp.mod,pp.params.xN); pp.ek1.SetLength(2);pp.ek2.SetLength(2);pp.C_alpha.SetLength(4);
         PvhssGen(pp.ek1,pp.ek2,pp.C_alpha,pp.pvhss,pp.params,pp.mod,pp.pk,pp.sk);
-        NTL::ZZ_pX one; DecimalToBinary(one,NTL::ZZ(1),1); NTL::vec_ZZ_pX C1;C1.SetLength(4);
-        PvhssEnc(C1,pp.params,pp.mod,pp.pk,one); pp.M1_0.SetLength(2); pp.M1_1.SetLength(2);
-        PvhssMult(pp.M1_0,pp.params,pp.mod,pp.ek1,C1);
-        PvhssMult(pp.M1_1,pp.params,pp.mod,pp.ek2,C1); return pp;
+        pp.M1_0 = pp.ek1;
+        pp.M1_1 = pp.ek2;
+        return pp;
     }
     static ProbGenOutput ProbGen(const SetupOutput& pp, const std::vector<NTL::ZZ>& x) {
         ProbGenOutput t; for(auto& xi:x){NTL::ZZ_pX xp;DecimalToBinary(xp,xi,pp.params.msg_bit);

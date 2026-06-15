@@ -170,14 +170,11 @@ bool PVHSS_ACC_TEST(int msg_num, int degree_f)
     vector<vector<int>> F_TEST;
     GenerateRandomFunc(F_TEST, msg_num, degree_f);
 
-    PVHSS_CT C1;
     vec_ZZ_pX M1_0, M1_1, M3_0, M3_1;
-    ZZ_pX one; EncodeBinaryPolynomial(one, ZZ(1), 1);
-    VHSS_Enc(C1, param.pkePara, modulus, pkePk, one);
-    HssConvertInput(M1_0, param.pkePara, modulus, param.vhssPara.vhssEk_1, C1);
-    HssConvertInput(M1_1, param.pkePara, modulus, param.vhssPara.vhssEk_2, C1);
-    HssConvertInput(M3_0, param.pkePara, modulus, param.vhssPara.vhssEk_3, C1);
-    HssConvertInput(M3_1, param.pkePara, modulus, param.vhssPara.vhssEk_4, C1);
+    M1_0 = param.vhssPara.vhssEk_1;
+    M1_1 = param.vhssPara.vhssEk_2;
+    M3_0 = param.vhssPara.vhssEk_3;
+    M3_1 = param.vhssPara.vhssEk_4;
 
     PROOF pi0, pi1;
     timing = MeasureTimeMs([&]() {

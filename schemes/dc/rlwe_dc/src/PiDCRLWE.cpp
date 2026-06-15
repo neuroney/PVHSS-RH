@@ -201,15 +201,11 @@ bool PVHSS_ACC_TEST(int msg_num, int degree_f)
     vector<vector<int>> F_TEST;
     GenerateRandomFunc(F_TEST, msg_num, degree_f);
 
-    // M1-M4: encrypt constant "1" and convert
-    PVHSS_CT C1;
     PVHSS_MV M1, M2, M3, M4;
-    ZZ_pX one; EncodeBinaryPolynomial(one, ZZ(1), 1);
-    VHSS_Enc(C1, param.pkePara, modulus, pkePk, one);
-    HssConvertInput(M1, param.pkePara, modulus, param.vhssPara.vhssEk_1, C1);
-    HssConvertInput(M2, param.pkePara, modulus, param.vhssPara.vhssEk_2, C1);
-    HssConvertInput(M3, param.pkePara, modulus, param.vhssPara.vhssEk_3, C1);
-    HssConvertInput(M4, param.pkePara, modulus, param.vhssPara.vhssEk_4, C1);
+    M1 = param.vhssPara.vhssEk_1;
+    M2 = param.vhssPara.vhssEk_2;
+    M3 = param.vhssPara.vhssEk_3;
+    M4 = param.vhssPara.vhssEk_4;
 
     PROOF pi0, pi1;
     timing = MeasureTimeMs([&]() {
