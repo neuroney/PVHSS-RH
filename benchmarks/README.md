@@ -9,6 +9,7 @@ The final benchmark artifacts are:
 
 - `benchmarks/results/micro/micro_timing.csv`
 - `benchmarks/results/schemes/scheme_timing.csv`
+- `benchmarks/results/pir/pir_group_dc_timing.csv`
 
 ## Recommended Commands
 
@@ -31,6 +32,12 @@ Run scheme benchmarks:
 ./run_schemes.sh
 ```
 
+Run the Group-DC PIR benchmark:
+
+```bash
+./run_pir.sh
+```
+
 ## Direct Runners
 
 Use the runner scripts when you need custom parameters without editing CMake:
@@ -45,6 +52,8 @@ DEGREES=5,10,15 CYCTIMES=5 MSG_NUM=5 MSG_BITS=32 ./run_schemes.sh
 
 See [micro/README.md](micro/README.md) and
 [schemes/README.md](schemes/README.md) for detailed scheme-benchmark options.
+See [pir/README.md](pir/README.md) for the PIR protocol design,
+implementation notes, and experiment fields.
 
 ## Root Scripts
 

@@ -25,10 +25,11 @@ cmake --build build
 
 ## Benchmarks
 
-The benchmark layer writes two CSV tables:
+The benchmark layer writes three CSV tables:
 
 - `benchmarks/results/micro/micro_timing.csv`
 - `benchmarks/results/schemes/scheme_timing.csv`
+- `benchmarks/results/pir/pir_group_dc_timing.csv`
 
 ### Running benchmarks
 
@@ -42,6 +43,9 @@ cmake --build build
 
 # 3. Scheme benchmarks — 10 schemes × degrees 5,10,15
 ./run_schemes.sh
+
+# 4. Group-DC PIR benchmarks
+./run_pir.sh
 ```
 
 ### Scheme targets

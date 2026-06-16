@@ -20,10 +20,20 @@ void VhssElgamalMul(VhssElgamalMv &Mz, int idx, const VhssElgamalPk &pk,
 void VhssElgamalDdlog(NTL::ZZ &z, const VhssElgamalPk &pk, const NTL::ZZ &g);
 void VhssElgamalAddMemory(VhssElgamalMv &Mz, const VhssElgamalPk &pk,
                           const VhssElgamalMv &Mx, const VhssElgamalMv &My);
+void VhssElgamalSubMemory(VhssElgamalMv &Mz, const VhssElgamalPk &pk,
+                          const VhssElgamalMv &Mx, const VhssElgamalMv &My);
+void VhssElgamalScaleMemory(VhssElgamalMv &Mz, const VhssElgamalPk &pk,
+                            const VhssElgamalMv &Mx, const NTL::ZZ &scalar);
 void VhssElgamalEvaluateMPE(VhssElgamalMv &y_b_res, int b,
                             const std::vector<VhssElgamalCt> &Ix,
                             const VhssElgamalPk &pk, const VhssElgamalEk &ekb,
                             int &prf_key, int degree_f);
+void VhssElgamalEvaluatePirSelection(VhssElgamalMv &y_b_res, int b,
+                                     const std::vector<VhssElgamalCt> &IxBits,
+                                     const std::vector<NTL::ZZ> &database,
+                                     const VhssElgamalPk &pk,
+                                     const VhssElgamalEk &ekb,
+                                     int &prf_key);
 
 bool VhssElgamalVerify(const VhssElgamalMv &y_0_res, const VhssElgamalMv &y_1_res,
                        const VhssElgamalVk &vk);
