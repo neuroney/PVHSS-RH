@@ -28,20 +28,22 @@ struct FixedBaseTable
     long num_bits;
 };
 
-void VhssElgamalZeroMemory(VhssElgamalMv &Mz)
-{
-    Mz[0] = 0;
-    Mz[1] = 0;
-    Mz[2] = 0;
-    Mz[3] = 0;
-}
-
 void VhssElgamalOneMemory(VhssElgamalMv &Mz, int b, const VhssElgamalEk &ekb)
 {
     Mz[0] = b;
     Mz[1] = ekb[0];
     Mz[2] = ekb[1];
     Mz[3] = ekb[2];
+}
+
+void VhssElgamalConstantMemory(VhssElgamalMv &Mz, int b,
+                               const VhssElgamalPk &pk,
+                               const VhssElgamalEk &ekb,
+                               const ZZ &value)
+{
+    VhssElgamalMv one;
+    VhssElgamalOneMemory(one, b, ekb);
+    VhssElgamalScaleMemory(Mz, pk, one, value);
 }
 
 VhssElgamalPreparedInput VhssElgamalPrepareInput(const VhssElgamalCt &Ix,
@@ -82,6 +84,46 @@ FixedBaseTable BuildFixedBaseTable(const VhssElgamalPreparedInput &prep,
     tbl.skenc_val_pow2 = PrecomputePow2Table(prep.skenc_value_base, modulus, num_bits);
     tbl.skenc_mask_pow2 = PrecomputePow2Table(prep.skenc_mask_inv_base, modulus, num_bits);
     return tbl;
+}
+
+size_t ValidatePirInputs(const vector<VhssElgamalCt> &IxBits,
+                         const vector<ZZ> &database)
+{
+    const size_t logn = IxBits.size();
+    if (logn >= sizeof(size_t) * 8)
+    {
+        throw invalid_argument("PIR input is too large for size_t indexing");
+    }
+
+    const size_t expected_size = size_t{1} << logn;
+    if (database.size() != expected_size)
+    {
+        throw invalid_argument("PIR database size must be exactly 2^logn");
+    }
+
+    return logn;
+}
+
+long MaxPirExponentBits(const VhssElgamalPk &pk, const VhssElgamalMv &root)
+{
+    long max_exp_bits = NumBits(pk.N);
+    max_exp_bits = max(max_exp_bits, NumBits(root[1]));
+    max_exp_bits = max(max_exp_bits, NumBits(root[3]));
+    return max_exp_bits;
+}
+
+vector<FixedBaseTable> BuildPirDepthTables(const vector<VhssElgamalCt> &IxBits,
+                                           const VhssElgamalPk &pk,
+                                           long max_exp_bits)
+{
+    vector<FixedBaseTable> depth_tables;
+    depth_tables.reserve(IxBits.size());
+    for (size_t d = 0; d < IxBits.size(); ++d)
+    {
+        VhssElgamalPreparedInput prep = VhssElgamalPrepareInput(IxBits[d], pk);
+        depth_tables.push_back(BuildFixedBaseTable(prep, pk.N2, max_exp_bits));
+    }
+    return depth_tables;
 }
 
 // Fast exponentiation using precomputed table: base^exp = ∏_{i: bit(exp,i)=1} table[i] mod modulus.
@@ -329,66 +371,65 @@ void VhssElgamalEvaluatePirSelection(VhssElgamalMv &y_b_res, int b,
                                      const VhssElgamalEk &ekb,
                                      int &prf_key)
 {
-    const size_t logn = IxBits.size();
-    if (logn >= sizeof(size_t) * 8)
-    {
-        throw invalid_argument("PIR input is too large for size_t indexing");
-    }
+    const size_t logn = ValidatePirInputs(IxBits, database);
 
-    const size_t expected_size = size_t{1} << logn;
-    if (database.size() != expected_size)
-    {
-        throw invalid_argument("PIR database size must be exactly 2^logn");
-    }
-
-    // ── Phase 0: determine maximum exponent bit-width for table sizing ──
-    // The MAC components (My[1], My[3]) start as ekb keys and stay mod pk.N.
-    // ekb[2] = skLen+vkLen bits may exceed pk.N, so take the max.
     VhssElgamalMv root;
     VhssElgamalOneMemory(root, b, ekb);
-    long max_exp_bits = NumBits(pk.N);
-    max_exp_bits = max(max_exp_bits, NumBits(root[1]));
-    max_exp_bits = max(max_exp_bits, NumBits(root[3]));
 
-    // ── Phase 1: prepare inputs and precompute fixed-base pow2 tables ──
-    // Each depth reuses the same 4 bases for all 2^depth nodes.
-    // Precomputing base^(2^i) once per depth eliminates the squaring cost
-    // from every subsequent PowerMod, saving ~2× on the exponentiation.
-    vector<FixedBaseTable> depth_tables;
-    depth_tables.reserve(logn);
-    for (size_t d = 0; d < logn; ++d)
+    if (logn == 0)
     {
-        VhssElgamalPreparedInput prep = VhssElgamalPrepareInput(IxBits[d], pk);
-        depth_tables.push_back(BuildFixedBaseTable(prep, pk.N2, max_exp_bits));
+        VhssElgamalConstantMemory(y_b_res, b, pk, ekb, database[0]);
+        return;
     }
 
-    // ── Phase 2: build selection tree using fast fixed-base multiplication ──
-    vector<VhssElgamalMv> level(1);
-    level[0] = root;
+    const long max_exp_bits = MaxPirExponentBits(pk, root);
+    vector<FixedBaseTable> depth_tables =
+        BuildPirDepthTables(IxBits, pk, max_exp_bits);
 
-    for (size_t depth = 0; depth < logn; ++depth)
+    // First fold: A + x_d * (B - A).  The input bit is converted to a memory
+    // value once, then reused linearly for every adjacent database pair.
+    VhssElgamalMv last_bit;
+    VhssElgamalMulPreparedFast(last_bit, pk, depth_tables[logn - 1],
+                               root, prf_key);
+
+    vector<VhssElgamalMv> level(database.size() / 2);
+    for (size_t pair = 0; pair < level.size(); ++pair)
     {
-        vector<VhssElgamalMv> next(level.size() * 2);
-        for (size_t node = 0; node < level.size(); ++node)
-        {
-            VhssElgamalMv right;
-            VhssElgamalMulPreparedFast(right, pk, depth_tables[depth],
-                                       level[node], prf_key);
+        const ZZ &left_value = database[2 * pair];
+        const ZZ diff = database[2 * pair + 1] - left_value;
 
-            VhssElgamalSubMemory(next[2 * node], pk, level[node], right);
-            next[2 * node + 1] = right;
+        VhssElgamalMv left_const;
+        VhssElgamalConstantMemory(left_const, b, pk, ekb, left_value);
+
+        VhssElgamalMv scaled_bit;
+        VhssElgamalScaleMemory(scaled_bit, pk, last_bit, diff);
+        VhssElgamalAddMemory(level[pair], pk, left_const, scaled_bit);
+    }
+
+    // Remaining folds combine memory values and therefore need one RMS
+    // multiplication per pair: x_l * (right - left).
+    for (size_t bit_pos = logn - 1; bit_pos > 0; --bit_pos)
+    {
+        const size_t depth = bit_pos - 1;
+        vector<VhssElgamalMv> next(level.size() / 2);
+        for (size_t pair = 0; pair < next.size(); ++pair)
+        {
+            const VhssElgamalMv &left = level[2 * pair];
+            const VhssElgamalMv &right = level[2 * pair + 1];
+
+            VhssElgamalMv diff;
+            VhssElgamalSubMemory(diff, pk, right, left);
+
+            VhssElgamalMv product;
+            VhssElgamalMulPreparedFast(product, pk, depth_tables[depth],
+                                       diff, prf_key);
+
+            VhssElgamalAddMemory(next[pair], pk, left, product);
         }
         level.swap(next);
     }
 
-    // ── Phase 3: weighted sum over database (unchanged) ──
-    VhssElgamalZeroMemory(y_b_res);
-    for (size_t j = 0; j < database.size(); ++j)
-    {
-        VhssElgamalMv weighted;
-        VhssElgamalScaleMemory(weighted, pk, level[j], database[j]);
-        VhssElgamalAddMemory(y_b_res, pk, y_b_res, weighted);
-    }
+    y_b_res = level[0];
 }
 
 bool VhssElgamalVerify(const VhssElgamalMv &y_0_res, const VhssElgamalMv &y_1_res, const VhssElgamalVk &vk)
