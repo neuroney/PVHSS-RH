@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -478,12 +477,6 @@ struct WyPirInvocation {
     return output;
   }
 
-  std::size_t communication_bytes(std::size_t item_size) const
-  {
-    return kServerCount * query_bytes_per_server() +
-           kServerCount * answer_bytes_per_server(item_size);
-  }
-
   std::size_t query_bytes_per_server() const
   {
     return m * field_bytes();
@@ -514,11 +507,6 @@ struct CdQuery {
   std::size_t index = 0;
   WyPirInvocation leaf;
   std::vector<PathQuery> path;
-
-  std::size_t communication_bytes(const MerkleTree& tree) const
-  {
-    return communication_breakdown(tree).total_online_bytes();
-  }
 
   CommunicationBreakdown communication_breakdown(const MerkleTree& tree) const
   {
@@ -641,8 +629,7 @@ struct Config {
 
 static void usage()
 {
-  std::cout << "usage: cdpir [--items N] [--block-size BYTES] [--rounds N]\n"
-               "                    [--cyctimes N]\n"
+  std::cout << "usage: cdpir [--items N] [--block-size BYTES] [--cyctimes N]\n"
                "                 [--seed N] [--prime DECIMAL] [--cheat] [--self-test]\n";
 }
 
@@ -674,8 +661,6 @@ static Config parse_config(int argc, char** argv)
       config.items = parse_number<std::size_t>(require_value("--items"), "--items");
     } else if (arg == "--block-size") {
       config.block_size = parse_number<std::size_t>(require_value("--block-size"), "--block-size");
-    } else if (arg == "--rounds") {
-      config.rounds = parse_number<std::size_t>(require_value("--rounds"), "--rounds");
     } else if (arg == "--cyctimes") {
       config.rounds = parse_number<std::size_t>(require_value("--cyctimes"), "--cyctimes");
     } else if (arg == "--seed") {
@@ -711,19 +696,6 @@ static double ms(Duration duration)
 static void print_time_ms(const std::string& label, double value)
 {
   std::cout << label << ": " << value << " ms  RSD: 0%\n";
-}
-
-static std::string human_bytes(double bytes)
-{
-  const char* units[] = {"B", "KiB", "MiB", "GiB"};
-  std::size_t unit = 0;
-  while (bytes >= 1024.0 && unit + 1 < 4) {
-    bytes /= 1024.0;
-    ++unit;
-  }
-  std::ostringstream out;
-  out << std::fixed << std::setprecision(3) << bytes << ' ' << units[unit];
-  return out.str();
 }
 
 static void run_self_tests()
@@ -913,7 +885,6 @@ static void run_benchmark(const Config& config)
             << static_cast<std::size_t>(avg_answer0_bytes * 8.0) << "\n";
   std::cout << "FormulaTotalBits: " << static_cast<std::size_t>(avg_total_online_bytes * 8.0)
             << "\n";
-  std::cout << "SimulatedComm: " << human_bytes(avg_total_online_bytes) << "\n";
   if (config.cheat) {
     std::cout << "TamperTrials: " << detected_cheats << "/" << config.rounds << "\n";
   }
