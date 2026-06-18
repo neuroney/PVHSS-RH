@@ -122,22 +122,15 @@ scheme::SchemeGroupOt::ServerOutput AnswerPIR(
     VhssElgamalMv y_b_res;
     const VhssElgamalEk &ekb = (sid == 0) ? pp.ek0 : pp.ek1;
 
-    const auto eval = bench::MeasureOnce([&]() {
-        VhssElgamalEvaluatePirSelection(y_b_res, sid, query.Ix, database,
-                                        pp.param.pk, ekb, prf_key);
-    });
-    const auto proof = bench::MeasureOnce([&]() {
-        VhssElgamalMv sk_b;
-        VhssElgamalConvertInput(sk_b, sid, pp.param.pk, ekb,
-                                pp.param.pk_f, prf_key);
-        y_b_res[0] = y_b_res[0] + sk_b[0];
-        y_b_res[2] = y_b_res[2] + sk_b[2];
-        pvhss::group::ot::Ped_Prove(out.proof, sid, y_b_res[0],
-                                    y_b_res[2], pp.param.ck, prf_key, ekpb);
-    });
-
-    out.profile.push_back({"Answer" + to_string(sid) + "Eval", eval});
-    out.profile.push_back({"Answer" + to_string(sid) + "Proof", proof});
+    VhssElgamalEvaluatePirSelection(y_b_res, sid, query.Ix, database,
+                                    pp.param.pk, ekb, prf_key);
+    VhssElgamalMv sk_b;
+    VhssElgamalConvertInput(sk_b, sid, pp.param.pk, ekb,
+                            pp.param.pk_f, prf_key);
+    y_b_res[0] = y_b_res[0] + sk_b[0];
+    y_b_res[2] = y_b_res[2] + sk_b[2];
+    pvhss::group::ot::Ped_Prove(out.proof, sid, y_b_res[0],
+                                y_b_res[2], pp.param.ck, prf_key, ekpb);
     return out;
 }
 
@@ -275,7 +268,7 @@ int main(int argc, char **argv)
         cout << "-------------------------------------------------------\n";
 
         scheme::SchemeGroupOt::SetupOutput setup_val;
-        bench::MeasureWithRecordedProfile("Setup", setup_val, [&]() {
+        bench::Measure("Setup", [&]() {
             setup_val = scheme::SchemeGroupOt::Setup(bcfg);
         }, pcfg.cyctimes, "Setup");
 
@@ -289,12 +282,12 @@ int main(int argc, char **argv)
         }, pcfg.cyctimes, "Query");
 
         scheme::SchemeGroupOt::ServerOutput out0_val;
-        bench::MeasureWithRecordedProfile("Answer0", out0_val, [&]() {
+        bench::Measure("Answer0", [&]() {
             out0_val = AnswerPIR(setup_val, query_val, database, 0);
         }, pcfg.cyctimes, "Answer0");
 
         scheme::SchemeGroupOt::ServerOutput out1_val;
-        bench::MeasureWithRecordedProfile("Answer1", out1_val, [&]() {
+        bench::Measure("Answer1", [&]() {
             out1_val = AnswerPIR(setup_val, query_val, database, 1);
         }, pcfg.cyctimes, "Answer1");
 

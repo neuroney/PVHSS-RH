@@ -126,17 +126,10 @@ scheme::SchemeGroupDc::ServerOutput AnswerPIR(
     VhssElgamalMv y_b_res;
     const VhssElgamalEk &ekb = (sid == 0) ? pp.ek0 : pp.ek1;
 
-    const auto eval = bench::MeasureOnce([&]() {
-        VhssElgamalEvaluatePirSelection(y_b_res, sid, query.Ix, database,
-                                        pp.param.pk, ekb, prf_key);
-    });
-    const auto proof = bench::MeasureOnce([&]() {
-        pvhss::group::dc::PVHSSElg2_Prove(out.proof, sid, y_b_res[0],
-                                          y_b_res[2], pp.param, ekpb);
-    });
-
-    out.profile.push_back({"Answer" + to_string(sid) + "Eval", eval});
-    out.profile.push_back({"Answer" + to_string(sid) + "Proof", proof});
+    VhssElgamalEvaluatePirSelection(y_b_res, sid, query.Ix, database,
+                                    pp.param.pk, ekb, prf_key);
+    pvhss::group::dc::PVHSSElg2_Prove(out.proof, sid, y_b_res[0],
+                                      y_b_res[2], pp.param, ekpb);
     return out;
 }
 
@@ -282,7 +275,7 @@ int main(int argc, char **argv)
         cout << "-------------------------------------------------------\n";
 
         scheme::SchemeGroupDc::SetupOutput setup_val;
-        bench::MeasureWithRecordedProfile("Setup", setup_val, [&]() {
+        bench::Measure("Setup", [&]() {
             setup_val = scheme::SchemeGroupDc::Setup(bcfg);
         }, pcfg.cyctimes, "Setup");
 
@@ -296,12 +289,12 @@ int main(int argc, char **argv)
         }, pcfg.cyctimes, "Query");
 
         scheme::SchemeGroupDc::ServerOutput out0_val;
-        bench::MeasureWithRecordedProfile("Answer0", out0_val, [&]() {
+        bench::Measure("Answer0", [&]() {
             out0_val = AnswerPIR(setup_val, query_val, database, 0);
         }, pcfg.cyctimes, "Answer0");
 
         scheme::SchemeGroupDc::ServerOutput out1_val;
-        bench::MeasureWithRecordedProfile("Answer1", out1_val, [&]() {
+        bench::Measure("Answer1", [&]() {
             out1_val = AnswerPIR(setup_val, query_val, database, 1);
         }, pcfg.cyctimes, "Answer1");
 

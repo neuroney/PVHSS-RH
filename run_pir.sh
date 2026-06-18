@@ -4,9 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="${BUILD_DIR:-$SCRIPT_DIR/build}"
 OUT_DIR="${OUT_DIR:-$SCRIPT_DIR/benchmarks/results/pir}"
-DB_SIZES="${DB_SIZES:-1024}"
+DB_SIZES="${DB_SIZES:-2,4,8,16,32,64,128,256,512,1024}"
 CYCTIMES="${CYCTIMES:-1}"
-RECORD_BITS="${RECORD_BITS:-16}"
+RECORD_BITS="${RECORD_BITS:-32}"
 SEED="${SEED:-20260615}"
 TAMPER="${TAMPER:-1}"
 RUN_GROUP_DC="${RUN_GROUP_DC:-0}"
@@ -46,7 +46,7 @@ GROUP_OUT_FILE="$OUT_DIR/pir_group_dc_timing.csv"
 GROUP_OT_OUT_FILE="$OUT_DIR/pir_group_ot_timing.csv"
 CDPIR_OUT_FILE="$OUT_DIR/cdpir_timing.csv"
 COMPARE_OUT_FILE="$OUT_DIR/pir_comparison_timing.csv"
-GROUP_PIR_HEADER="scheme,db_size,logn,record_bits,index,seed,Setup_ms,SetupVhss_ms,SetupExtra_ms,Gen_ms,Query_ms,Answer0_ms,Answer0Eval_ms,Answer0Proof_ms,Answer1_ms,Answer1Eval_ms,Answer1Proof_ms,Verify_ms,Decode_ms,Correctness,TamperRejected,QueryBitsPerServer,Answer0Bits,Answer1Bits,TotalOnlineBits,FormulaQueryBitsPerServer,FormulaAnswerBitsPerServer,FormulaTotalBits"
+GROUP_PIR_HEADER="scheme,db_size,logn,record_bits,index,Setup_ms,Gen_ms,Query_ms,Answer0_ms,Answer1_ms,Verify_ms,Decode_ms,QueryBitsPerServer,Answer0Bits,Answer1Bits,TotalOnlineBits,FormulaQueryBitsPerServer,FormulaAnswerBitsPerServer,FormulaTotalBits"
 
 extract_phase() {
     local phase="$1"
@@ -67,6 +67,14 @@ sum_ms() {
         n = split(values, parts, " ")
         for (i = 1; i <= n; ++i) total += parts[i]
         print total
+    }'
+}
+
+max_ms() {
+    local a="$1"
+    local b="$2"
+    awk -v a="$a" -v b="$b" 'BEGIN {
+        print (a >= b) ? a : b
     }'
 }
 
@@ -91,32 +99,23 @@ run_group_pir() {
     local output
     output=$("$bin" "${args[@]}" 2>&1)
 
-    local setup setup_vhss setup_extra gen query
-    local answer0 answer0_eval answer0_proof
-    local answer1 answer1_eval answer1_proof
+    local setup gen query
+    local answer0 answer1
     local verify decode
     setup=$(extract_phase "Setup" "$output")
-    setup_vhss=$(extract_phase "SetupVhss" "$output")
-    setup_extra=$(extract_phase "SetupExtra" "$output")
     gen=$(extract_phase "Gen" "$output")
     query=$(extract_phase "Query" "$output")
     answer0=$(extract_phase "Answer0" "$output")
-    answer0_eval=$(extract_phase "Answer0Eval" "$output")
-    answer0_proof=$(extract_phase "Answer0Proof" "$output")
     answer1=$(extract_phase "Answer1" "$output")
-    answer1_eval=$(extract_phase "Answer1Eval" "$output")
-    answer1_proof=$(extract_phase "Answer1Proof" "$output")
     verify=$(extract_phase "Verify" "$output")
     decode=$(extract_phase "Decode" "$output")
 
-    local logn record_bits index correctness tamper_rejected
+    local logn record_bits index
     local query_bits answer0_bits answer1_bits total_bits
     local formula_query_bits formula_answer_bits formula_total_bits
     logn=$(extract_field "LogN" "$output")
     record_bits=$(extract_field "RecordBits" "$output")
     index=$(extract_field "Index" "$output")
-    correctness=$(extract_field "Correctness" "$output")
-    tamper_rejected=$(extract_field "TamperRejected" "$output")
     query_bits=$(extract_field "QueryBitsPerServer" "$output")
     answer0_bits=$(extract_field "Answer0Bits" "$output")
     answer1_bits=$(extract_field "Answer1Bits" "$output")
@@ -125,14 +124,13 @@ run_group_pir() {
     formula_answer_bits=$(extract_field "FormulaAnswerBitsPerServer" "$output")
     formula_total_bits=$(extract_field "FormulaTotalBits" "$output")
 
-    echo "$scheme,$db_size,$logn,$record_bits,$index,$SEED,$setup,$setup_vhss,$setup_extra,$gen,$query,$answer0,$answer0_eval,$answer0_proof,$answer1,$answer1_eval,$answer1_proof,$verify,$decode,$correctness,$tamper_rejected,$query_bits,$answer0_bits,$answer1_bits,$total_bits,$formula_query_bits,$formula_answer_bits,$formula_total_bits" >> "$out_file"
+    echo "$scheme,$db_size,$logn,$record_bits,$index,$setup,$gen,$query,$answer0,$answer1,$verify,$decode,$query_bits,$answer0_bits,$answer1_bits,$total_bits,$formula_query_bits,$formula_answer_bits,$formula_total_bits" >> "$out_file"
 
-    local offline answer_total verify_decode online
-    offline=$(sum_ms "$setup" "$gen")
-    answer_total=$(sum_ms "$answer0" "$answer1")
-    verify_decode=$(sum_ms "$verify" "$decode")
-    online=$(sum_ms "$query" "$answer0" "$answer1" "$verify" "$decode")
-    echo "$scheme,$db_size,$record_bits,$SEED,$setup,$offline,$query,$answer_total,$verify_decode,$online,$total_bits,$correctness,$tamper_rejected" >> "$COMPARE_OUT_FILE"
+    local protocol_query protocol_answer protocol_rec
+    protocol_query=$(sum_ms "$gen" "$query")
+    protocol_answer=$(max_ms "$answer0" "$answer1")
+    protocol_rec=$(sum_ms "$verify" "$decode")
+    echo "$scheme,$db_size,$record_bits,$setup,$protocol_query,$protocol_answer,$protocol_rec" >> "$COMPARE_OUT_FILE"
     echo "done"
 }
 
@@ -145,10 +143,11 @@ if enabled "$RUN_GROUP_OT"; then
 fi
 
 if enabled "$RUN_CDPIR"; then
-    echo "scheme,db_size,logn,record_bits,block_size,index,seed,Setup_ms,Gen_ms,Query_ms,Answer0_ms,Answer1_ms,Verify_ms,Decode_ms,Correctness,TamperRejected,QueryBitsPerServer,Answer0Bits,Answer1Bits,TotalOnlineBits,FormulaQueryBitsPerServer,FormulaAnswerBitsPerServer,FormulaTotalBits,FieldBits,FieldBytes,MerkleDepth,PaddedItems" > "$CDPIR_OUT_FILE"
+    echo "scheme,db_size,logn,record_bits,block_size,index,Setup_ms,Gen_ms,Query_ms,Answer0_ms,Answer1_ms,Verify_ms,Decode_ms,QueryBitsPerServer,Answer0Bits,Answer1Bits,TotalOnlineBits,FormulaQueryBitsPerServer,FormulaAnswerBitsPerServer,FormulaTotalBits,FieldBits,FieldBytes,MerkleDepth,PaddedItems" > "$CDPIR_OUT_FILE"
 fi
 
-echo "scheme,db_size,record_bits,seed,Setup_ms,Offline_ms,Query_ms,AnswerTotal_ms,VerifyDecode_ms,Online_ms,TotalOnlineBits,Correctness,TamperRejected" > "$COMPARE_OUT_FILE"
+# Protocol-level comparison: Query=Gen+Input, Answer=max(server0, server1), Rec=Verify+Decode.
+echo "scheme,db_size,record_bits,Setup_ms,Query_ms,Answer_ms,Rec_ms" > "$COMPARE_OUT_FILE"
 
 echo "===== PIR Benchmarks ====="
 echo "DB sizes:    $DB_SIZES"
@@ -209,8 +208,6 @@ for db_size in "${SIZE_ARRAY[@]}"; do
         record_bits=$(extract_field "RecordBits" "$output")
         block_size=$(extract_field "BlockSizeBytes" "$output")
         index=$(extract_field "Index" "$output")
-        correctness=$(extract_field "Correctness" "$output")
-        tamper_rejected=$(extract_field "TamperRejected" "$output")
         query_bits=$(extract_field "QueryBitsPerServer" "$output")
         answer0_bits=$(extract_field "Answer0Bits" "$output")
         answer1_bits=$(extract_field "Answer1Bits" "$output")
@@ -223,13 +220,12 @@ for db_size in "${SIZE_ARRAY[@]}"; do
         merkle_depth=$(extract_field "MerkleDepth" "$output")
         padded_items=$(extract_field "PaddedItems" "$output")
 
-        echo "cdpir,$db_size,$logn,$record_bits,$block_size,$index,$SEED,$setup,$gen,$query,$answer0,$answer1,$verify,$decode,$correctness,$tamper_rejected,$query_bits,$answer0_bits,$answer1_bits,$total_bits,$formula_query_bits,$formula_answer_bits,$formula_total_bits,$field_bits,$field_bytes,$merkle_depth,$padded_items" >> "$CDPIR_OUT_FILE"
+        echo "cdpir,$db_size,$logn,$record_bits,$block_size,$index,$setup,$gen,$query,$answer0,$answer1,$verify,$decode,$query_bits,$answer0_bits,$answer1_bits,$total_bits,$formula_query_bits,$formula_answer_bits,$formula_total_bits,$field_bits,$field_bytes,$merkle_depth,$padded_items" >> "$CDPIR_OUT_FILE"
 
-        offline=$(sum_ms "$setup" "$gen")
-        answer_total=$(sum_ms "$answer0" "$answer1")
-        verify_decode=$(sum_ms "$verify" "$decode")
-        online=$(sum_ms "$query" "$answer0" "$answer1" "$verify" "$decode")
-        echo "cdpir,$db_size,$record_bits,$SEED,$setup,$offline,$query,$answer_total,$verify_decode,$online,$total_bits,$correctness,$tamper_rejected" >> "$COMPARE_OUT_FILE"
+        protocol_query=$(sum_ms "$gen" "$query")
+        protocol_answer=$(max_ms "$answer0" "$answer1")
+        protocol_rec=$(sum_ms "$verify" "$decode")
+        echo "cdpir,$db_size,$record_bits,$setup,$protocol_query,$protocol_answer,$protocol_rec" >> "$COMPARE_OUT_FILE"
         echo "done"
     fi
 done
