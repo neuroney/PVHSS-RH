@@ -1,12 +1,16 @@
 # PVHSS-RH
 
 ## Project Overview
-This repository contains the implementation for *Publicly Verifiable Homomorphic Secret Sharing with Context Hiding and Result Hiding* as described in our paper. 
+PVHSS-RH is a CMake-based C++17 research artifact for publicly verifiable homomorphic secret sharing with context and result hiding. This repository accompanies the following paper:
 
+> Jinyuan Li and Liang Feng Zhang. "Publicly Verifiable Homomorphic Secret Sharing with Context and Result Hiding." *IEEE Transactions on Information Forensics and Security*, 2026. [https://doi.org/10.1109/TIFS.2026.3744639](https://doi.org/10.1109/TIFS.2026.3744639).
+
+The repository includes group-based and RLWE-based implementations, comparison schemes, and benchmarks for primitive operations, scheme evaluation, and private information retrieval (PIR).
 
 ### Features
-- C++17 implementation of PVHSS-RH
-- Benchmarking utilities
+- Group-based and RLWE-based implementations of PVHSS-RH
+- HSS, VHSS, and comparison scheme implementations
+- Benchmark drivers and CSV timing outputs for experimental evaluation and reproducibility
 
 > **Note:** This codebase is for academic and research purposes only. It is not intended for production use and has not been extensively tested for security vulnerabilities.
 
@@ -54,3 +58,22 @@ cmake --build build
 |---------|---------|
 | Group   | `scheme_group_tcc25` `scheme_group_hss` `scheme_group_vhss` `scheme_group_ot` `scheme_group_dc` |
 | RLWE    | `scheme_rlwe_cz` `scheme_rlwe_hss` `scheme_rlwe_vhss` `scheme_rlwe_ot` `scheme_rlwe_dc` |
+
+## Citation
+
+If you use this repository in academic work, please cite:
+
+```bibtex
+@article{li2026pvhss,
+  author = {Jinyuan Li and Liang Feng Zhang},
+  title = {Publicly Verifiable Homomorphic Secret Sharing with Context and Result Hiding},
+  journal = {IEEE Transactions on Information Forensics and Security},
+  year = {2026},
+  doi = {10.1109/TIFS.2026.3744639},
+  url = {https://doi.org/10.1109/TIFS.2026.3744639}
+}
+```
+
+## License
+
+Released under the MIT License. See [LICENSE](LICENSE) for details.
