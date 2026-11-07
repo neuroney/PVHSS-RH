@@ -3,7 +3,7 @@
 ## Project Overview
 PVHSS-RH is a CMake-based C++17 research artifact for publicly verifiable homomorphic secret sharing with context and result hiding. This repository accompanies the following paper:
 
-> Jinyuan Li and Liang Feng Zhang. "Publicly Verifiable Homomorphic Secret Sharing with Context and Result Hiding." *IEEE Transactions on Information Forensics and Security*, 2026. [https://doi.org/10.1109/TIFS.2026.3744639](https://doi.org/10.1109/TIFS.2026.3744639).
+> Jinyuan Li and Liang Feng Zhang. "Publicly Verifiable Homomorphic Secret Sharing with Context and Result Hiding." *IEEE Transactions on Information Forensics and Security*, vol. 21, pp. 9604–9619, 2026. [https://doi.org/10.1109/TIFS.2026.3744639](https://doi.org/10.1109/TIFS.2026.3744639).
 
 The repository includes group-based and RLWE-based implementations, comparison schemes, and benchmarks for primitive operations, scheme evaluation, and private information retrieval (PIR).
 
@@ -69,6 +69,9 @@ If you use this repository in academic work, please cite:
   title = {Publicly Verifiable Homomorphic Secret Sharing with Context and Result Hiding},
   journal = {IEEE Transactions on Information Forensics and Security},
   year = {2026},
+  volume={21},
+  number={},
+  pages={9604-9619},
   doi = {10.1109/TIFS.2026.3744639},
   url = {https://doi.org/10.1109/TIFS.2026.3744639}
 }
